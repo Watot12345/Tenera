@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import '../models/payment.dart';
+import '../models/portfolio_analytics.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
 
@@ -457,6 +458,114 @@ class DatabaseHelper {
     }
 
     return result;
+  }
+
+  // ----------------------------------------------------
+  // PORTFOLIO ANALYTICS (BUSINESS TIER)
+  // ----------------------------------------------------
+  Future<PortfolioAnalyticsSummary> getPortfolioAnalytics() async {
+    final properties = await getProperties();
+    final tenants = await getTenants();
+    final payments = await getPayments();
+
+    final List<PropertyAnalyticsItem> propertyItems = [];
+    int totalPortfolioUnits = 0;
+    int totalPortfolioOccupied = 0;
+    int totalPortfolioOverdue = 0;
+    int totalPortfolioVacant = 0;
+    int totalPotentialRent = 0;
+    int totalCollected = 0;
+    int totalArrears = 0;
+
+    // Calculate sum of potential revenue first for share calculation
+    for (final p in properties) {
+      final potential = p.rooms.isNotEmpty
+          ? p.rooms.fold(0, (sum, r) => sum + (r.rentAmount ?? 0))
+          : p.monthlyRevenue;
+      totalPotentialRent += potential;
+    }
+
+    for (final p in properties) {
+      final totalUnits = p.rooms.isNotEmpty ? p.rooms.length : p.totalUnits;
+      final occupiedUnits = p.rooms.isNotEmpty
+          ? p.rooms.where((r) => r.status == RoomStatus.occupied || r.status == RoomStatus.overdue).length
+          : p.occupiedUnits;
+      final overdueUnits = p.rooms.isNotEmpty
+          ? p.rooms.where((r) => r.status == RoomStatus.overdue).length
+          : 0;
+      final vacantUnits = totalUnits - occupiedUnits;
+
+      final potentialRev = p.rooms.isNotEmpty
+          ? p.rooms.fold(0, (sum, r) => sum + (r.rentAmount ?? 0))
+          : p.monthlyRevenue;
+
+      // Match payments for this property by name
+      final propPayments = payments.where((pay) {
+        return pay.location.toLowerCase().contains(p.name.toLowerCase());
+      }).toList();
+      final collected = propPayments.fold(0, (sum, pay) => sum + pay.amount);
+
+      // Match arrears for this property
+      final propOverdueTenants = tenants.where((t) {
+        return t.isOverdue && t.location.toLowerCase().contains(p.name.toLowerCase());
+      }).toList();
+      int arrears = propOverdueTenants.fold(0, (sum, t) => sum + t.amount);
+      if (arrears == 0 && overdueUnits > 0) {
+        arrears = p.rooms
+            .where((r) => r.status == RoomStatus.overdue)
+            .fold(0, (sum, r) => sum + (r.rentAmount ?? 0));
+      }
+
+      final occRate = totalUnits > 0 ? (occupiedUnits / totalUnits) * 100.0 : 0.0;
+      final collRate = potentialRev > 0 ? (collected / potentialRev) * 100.0 : 0.0;
+      final sharePct = totalPotentialRent > 0 ? (potentialRev / totalPotentialRent) * 100.0 : 0.0;
+      final avgRent = totalUnits > 0 ? (potentialRev / totalUnits).round() : 0;
+
+      propertyItems.add(PropertyAnalyticsItem(
+        propertyId: p.id,
+        propertyName: p.name,
+        propertyAddress: p.address,
+        totalUnits: totalUnits,
+        occupiedUnits: occupiedUnits,
+        overdueUnits: overdueUnits,
+        vacantUnits: vacantUnits,
+        potentialRevenue: potentialRev,
+        collectedRevenue: collected,
+        arrearsAmount: arrears,
+        occupancyRate: occRate,
+        collectionRate: collRate,
+        revenueSharePercent: sharePct,
+        averageRentPerUnit: avgRent,
+      ));
+
+      totalPortfolioUnits += totalUnits;
+      totalPortfolioOccupied += occupiedUnits;
+      totalPortfolioOverdue += overdueUnits;
+      totalPortfolioVacant += vacantUnits;
+      totalCollected += collected;
+      totalArrears += arrears;
+    }
+
+    final overallOccRate = totalPortfolioUnits > 0
+        ? (totalPortfolioOccupied / totalPortfolioUnits) * 100.0
+        : 0.0;
+    final overallCollRate = totalPotentialRent > 0
+        ? (totalCollected / totalPotentialRent) * 100.0
+        : 0.0;
+
+    return PortfolioAnalyticsSummary(
+      totalProperties: properties.length,
+      totalUnits: totalPortfolioUnits,
+      totalOccupied: totalPortfolioOccupied,
+      totalOverdue: totalPortfolioOverdue,
+      totalVacant: totalPortfolioVacant,
+      totalPotentialMonthlyRent: totalPotentialRent,
+      totalCollected: totalCollected,
+      totalArrears: totalArrears,
+      overallOccupancyRate: overallOccRate,
+      overallCollectionRate: overallCollRate,
+      propertyItems: propertyItems,
+    );
   }
 
   Future<void> insertProperty(PropertyItem property) async {

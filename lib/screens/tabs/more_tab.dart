@@ -5,6 +5,7 @@ import '../../services/sync_service.dart';
 import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
+import '../portfolio_analytics_screen.dart';
 import '../privacy_policy_screen.dart';
 import '../reports_export_screen.dart';
 import '../subscription_plans_screen.dart';
@@ -313,6 +314,71 @@ class _MoreTabState extends State<MoreTab> {
                     },
                   ),
                 ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Business Tier Tools Section
+          const Text(
+            'Business Tier Tools',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: ListTile(
+                key: const Key('more_portfolio_analytics'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryDeep.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.domain_rounded, color: AppTheme.primaryDeep, size: 22),
+                ),
+                title: const Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('Cross-property performance, occupancy % & delinquency reports', style: TextStyle(fontSize: 12)),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'BUSINESS',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.ink,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                onTap: () async {
+                  final canAccess = await PlanGuardService.requireBusiness(
+                    context: context,
+                    featureName: 'Portfolio Analytics',
+                    featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
+                  );
+                  if (!canAccess || !context.mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
+                  );
+                },
               ),
             ),
           ),

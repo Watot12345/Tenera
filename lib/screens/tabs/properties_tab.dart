@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/property.dart';
+import '../../services/plan_guard_service.dart';
 import '../../theme/app_theme.dart';
+import '../portfolio_analytics_screen.dart';
 
 class PropertiesTab extends StatelessWidget {
   final List<PropertyItem> properties;
@@ -41,52 +43,104 @@ class PropertiesTab extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.apartment_rounded,
-                    color: AppTheme.ink,
-                    size: 28,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.apartment_rounded,
+                        color: AppTheme.ink,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total Portfolio',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${properties.length} Properties · $totalUnits Units',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$occupiedUnits Occupied · $vacantUnits Vacant',
+                            style: const TextStyle(
+                              color: AppTheme.accent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Portfolio',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                const SizedBox(height: 14),
+                const Divider(height: 1, color: Colors.white24),
+                const SizedBox(height: 12),
+                InkWell(
+                  key: const Key('btn_open_portfolio_analytics'),
+                  onTap: () async {
+                    final canAccess = await PlanGuardService.requireBusiness(
+                      context: context,
+                      featureName: 'Portfolio Analytics',
+                      featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
+                    );
+                    if (!canAccess || !context.mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.analytics_rounded, color: AppTheme.accent, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Multi-Property Analytics',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${properties.length} Properties · $totalUnits Units',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '$occupiedUnits Occupied · $vacantUnits Vacant',
-                        style: const TextStyle(
-                          color: AppTheme.accent,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                        _PropertiesBusinessBadge(),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -269,6 +323,30 @@ class PropertiesTab extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PropertiesBusinessBadge extends StatelessWidget {
+  const _PropertiesBusinessBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.accent,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text(
+        'BUSINESS',
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: AppTheme.ink,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }

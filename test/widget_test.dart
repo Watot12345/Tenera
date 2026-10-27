@@ -5,7 +5,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tenera/main.dart';
 import 'package:tenera/models/payment.dart';
 import 'package:tenera/models/property.dart';
+import 'package:tenera/models/portfolio_analytics.dart';
 import 'package:tenera/models/tenant.dart';
+import 'package:tenera/screens/home_screen.dart';
+import 'package:tenera/screens/portfolio_analytics_screen.dart';
 import 'package:tenera/screens/privacy_policy_screen.dart';
 import 'package:tenera/screens/reports_export_screen.dart';
 import 'package:tenera/screens/subscription_plans_screen.dart';
@@ -785,6 +788,119 @@ void main() {
       featureBenefit: 'Split electric & water bills accurately per room.',
     );
     expect(canAccessPro, isTrue);
+  });
+
+  testWidgets('PlanGuardService: enforces Business tier requirement and presents Business upgrade paywall',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+    final context = tester.element(find.byType(HomeScreen));
+
+    // Pro subscriber attempting to access Business feature
+    final canAccessPro = await PlanGuardService.requireBusiness(
+      context: context,
+      featureName: 'Portfolio Analytics',
+      featureBenefit: 'Unlock cross-property yield comparisons.',
+    );
+    expect(canAccessPro, isFalse);
+    await tester.pumpAndSettle();
+
+    // Verify Business Upgrade modal is displayed with BUSINESS badge
+    expect(find.text('Portfolio Analytics'), findsOneWidget);
+    expect(find.text('BUSINESS'), findsWidgets);
+    expect(find.byKey(const Key('btn_upgrade_business_feature_modal')), findsOneWidget);
+
+    // Dismiss modal
+    await tester.tap(find.text('Maybe Later'));
+    await tester.pumpAndSettle();
+
+    // Switch to Business: access granted
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'business');
+
+    final canAccessBusiness = await PlanGuardService.requireBusiness(
+      context: context,
+      featureName: 'Portfolio Analytics',
+      featureBenefit: 'Unlock cross-property yield comparisons.',
+    );
+    expect(canAccessBusiness, isTrue);
+  });
+
+  testWidgets('Multi-Property Portfolio Analytics: loads metrics, renders cross-property comparison, previews and exports CSV',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'business',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to Properties tab
+    await tester.tap(find.byKey(const Key('nav_properties')));
+    await tester.pumpAndSettle();
+
+    // Verify Multi-Property Analytics button is rendered on the Total Portfolio card
+    expect(find.byKey(const Key('btn_open_portfolio_analytics')), findsOneWidget);
+
+    // Retrieve summary via test database
+    late PortfolioAnalyticsSummary summary;
+    await tester.runAsync(() async {
+      summary = await DatabaseHelper.instance.getPortfolioAnalytics();
+    });
+
+    // Pump PortfolioAnalyticsScreen directly with loaded summary
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: PortfolioAnalyticsScreen(
+          initialSummary: summary,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify PortfolioAnalyticsScreen is displayed
+    expect(find.text('Portfolio Analytics'), findsOneWidget);
+    expect(find.text('PORTFOLIO CASHFLOW & OCCUPANCY'), findsOneWidget);
+    expect(find.text('Occupancy Rate'), findsOneWidget);
+    expect(find.text('Collection Efficiency'), findsOneWidget);
+    expect(find.text('Cross-Property Comparison (3)'), findsOneWidget);
+
+    // Verify first property card (Mabini)
+    expect(find.text('Mabini Apts'), findsOneWidget);
+
+    // Scroll down to view remaining properties
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(find.text('Rizal House'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(find.text('Sampaguita Place'), findsOneWidget);
+
+    // Test CSV preview dialog
+    await tester.tap(find.byKey(const Key('btn_preview_portfolio_csv')));
+    await tester.pumpAndSettle();
+    expect(find.text('CSV Report Preview'), findsOneWidget);
+    expect(find.textContaining('TENERA BUSINESS - MULTI-PROPERTY PORTFOLIO ANALYTICS REPORT'), findsOneWidget);
+
+    // Tap "Copy CSV" inside modal
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Copy CSV'));
+    await tester.pumpAndSettle();
+    expect(find.text('CSV Report Preview'), findsNothing);
+
+    // Test direct Copy CSV AppBar action
+    await tester.tap(find.byKey(const Key('btn_copy_portfolio_csv_appbar')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Portfolio Analytics CSV copied to clipboard'), findsOneWidget);
   });
 }
 
