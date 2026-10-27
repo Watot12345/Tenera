@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tenera/main.dart';
+import 'package:tenera/models/lease_contract.dart';
 import 'package:tenera/models/payment.dart';
 import 'package:tenera/models/property.dart';
 import 'package:tenera/models/portfolio_analytics.dart';
 import 'package:tenera/models/tenant.dart';
 import 'package:tenera/screens/home_screen.dart';
+import 'package:tenera/screens/lease_contract_screen.dart';
 import 'package:tenera/screens/portfolio_analytics_screen.dart';
 import 'package:tenera/screens/privacy_policy_screen.dart';
 import 'package:tenera/screens/reports_export_screen.dart';
@@ -991,5 +993,119 @@ void main() {
     // Banner removed, financials unmasked!
     expect(find.byKey(const Key('banner_staff_mode_active')), findsNothing);
   });
+
+  test('LeaseContract model: converts currency to words and generates valid contract text', () {
+    expect(LeaseContract.numberToPesoWords(6500), 'SIX THOUSAND FIVE HUNDRED PESOS ONLY');
+    expect(LeaseContract.numberToPesoWords(13000), 'THIRTEEN THOUSAND PESOS ONLY');
+    expect(LeaseContract.numberToPesoWords(1000000), 'ONE MILLION PESOS ONLY');
+    expect(LeaseContract.ordinal(1), '1st');
+    expect(LeaseContract.ordinal(2), '2nd');
+    expect(LeaseContract.ordinal(3), '3rd');
+    expect(LeaseContract.ordinal(5), '5th');
+    expect(LeaseContract.ordinal(11), '11th');
+    expect(LeaseContract.ordinal(22), '22nd');
+
+    final contract = LeaseContract(
+      landlordName: 'Juan Dela Cruz',
+      landlordAddress: 'Quezon City',
+      landlordContact: '09171234567',
+      tenantName: 'Elena Santos',
+      tenantAddress: 'Manila',
+      tenantContact: '09189876543',
+      tenantIdInfo: 'National ID: 1234',
+      propertyName: 'Sampaguita Place',
+      unitCode: 'Room 2B',
+      propertyAddress: '123 Katipunan Ave',
+      monthlyRent: 6500,
+      securityDeposit: 13000,
+      advanceRent: 6500,
+      startDate: DateTime(2026, 11, 1),
+      endDate: DateTime(2027, 11, 1),
+      dueDayOfMonth: 5,
+    );
+
+    final text = contract.toFormattedContractText();
+    expect(text.contains('CONTRACT OF LEASE'), isTrue);
+    expect(text.contains('Juan Dela Cruz'), isTrue);
+    expect(text.contains('Elena Santos'), isTrue);
+    expect(text.contains('Sampaguita Place'), isTrue);
+    expect(text.contains('Room 2B'), isTrue);
+    expect(text.contains('SIX THOUSAND FIVE HUNDRED PESOS ONLY'), isTrue);
+    expect(text.contains('SECTION 4: ADVANCE RENTAL & SECURITY DEPOSIT'), isTrue);
+    expect(text.contains('SECTION 5: UTILITIES & SUB-METERING'), isTrue);
+    expect(text.contains('SECTION 9: DEFAULT & TERMINATION'), isTrue);
+  });
+
+  testWidgets('Printable Philippine Lease Agreement: opens from More tab, edits clauses, switches to preview and prints/copies',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'business',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to More tab
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    // Scroll to Business Tier Tools
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -350));
+    await tester.pumpAndSettle();
+
+    // Verify Lease Contracts tile exists
+    expect(find.byKey(const Key('more_lease_contracts')), findsOneWidget);
+
+    // Tap to open LeaseContractScreen
+    await tester.tap(find.byKey(const Key('more_lease_contracts')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify screen title and type
+    expect(find.byType(LeaseContractScreen), findsOneWidget);
+    expect(find.text('Lease Agreement Generator'), findsOneWidget);
+    expect(find.text('Edit Agreement'), findsOneWidget);
+    expect(find.text('Contract Preview'), findsOneWidget);
+
+    // Test form fields
+    expect(find.byKey(const Key('input_contract_landlord_name')), findsOneWidget);
+    expect(find.byKey(const Key('input_contract_tenant_name')), findsOneWidget);
+    // Scroll to rent field
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('input_contract_rent')), findsOneWidget);
+
+    // Change rent to 7500
+    await tester.enterText(find.byKey(const Key('input_contract_rent')), '7500');
+    await tester.pumpAndSettle();
+
+    // Switch to Preview Tab
+    await tester.tap(find.text('Contract Preview'));
+    await tester.pumpAndSettle();
+
+    // Verify rendered contract contains updated rent
+    expect(find.byKey(const Key('text_rendered_contract')), findsOneWidget);
+    expect(find.textContaining('7,500.00'), findsWidgets);
+
+    // Tap "Copy All Text" button
+    await tester.tap(find.byKey(const Key('btn_copy_contract')));
+    await tester.pumpAndSettle();
+    expect(find.text('✅ Full lease contract copied to clipboard! Ready to paste into Google Docs or Word.'), findsOneWidget);
+
+    // Tap "Print View" button to open modal
+    await tester.tap(find.byKey(const Key('btn_print_contract')));
+    await tester.pumpAndSettle();
+    expect(find.text('Print-Ready Contract'), findsOneWidget);
+    expect(find.byKey(const Key('btn_modal_copy_contract')), findsOneWidget);
+
+    // Tap modal copy button and close
+    await tester.tap(find.byKey(const Key('btn_modal_copy_contract')));
+    await tester.pumpAndSettle();
+    expect(find.text('Contract copied! Paste and print from any text editor or browser.'), findsOneWidget);
+  });
 }
+
 

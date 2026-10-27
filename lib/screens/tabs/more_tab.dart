@@ -7,6 +7,7 @@ import '../../services/sync_service.dart';
 import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
+import '../lease_contract_screen.dart';
 import '../portfolio_analytics_screen.dart';
 import '../privacy_policy_screen.dart';
 import '../reports_export_screen.dart';
@@ -465,6 +466,50 @@ class _MoreTabState extends State<MoreTab> {
                       );
                     },
                   ),
+                  if (!_isStaffMode) ...[
+                    const Divider(height: 1, indent: 60),
+                    ListTile(
+                      key: const Key('more_lease_contracts'),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryDeep.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.assignment_turned_in_rounded, color: AppTheme.primaryDeep, size: 22),
+                      ),
+                      title: const Text('Philippine Lease Agreement Contracts', style: TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: const Text('Residential contract generator with tenant autofill & 1-tap copy', style: TextStyle(fontSize: 12)),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'BUSINESS',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.ink,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      onTap: () async {
+                        final canAccess = await PlanGuardService.requireBusiness(
+                          context: context,
+                          featureName: 'Lease Agreement Contracts',
+                          featureBenefit: 'Generate legally formatted Philippine residential lease contracts with auto-filled tenant details and 1-click clipboard export.',
+                        );
+                        if (!canAccess || !context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LeaseContractScreen()),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
