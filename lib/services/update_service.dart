@@ -183,7 +183,7 @@ class UpdateService {
     }
   }
 
-  /// Displays senior-friendly update prompt modal
+  /// Displays modern, intuitive update prompt modal
   void showUpdateDialog(BuildContext context, AppUpdateInfo info) {
     showDialog(
       context: context,

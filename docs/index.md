@@ -5,7 +5,11 @@ title: Tenera Property Manager
 
 # Tenera Property Manager
 
-> **Senior-Friendly, Offline-First Property & Tenant Management**  
+<p align="center">
+  <img src="assets/app_icon_squircle.png" alt="Tenera App Icon" width="100" style="border-radius: 24px;">
+</p>
+
+> **Simple, Modern & Offline-First Property & Tenant Management**  
 > Manage rental properties, track payments, take cash photos, record digital reference numbers, and keep 100% of your records locally on your device — with optional cloud sync to Firebase.
 
 [![GitHub Release](https://img.shields.io/github/v/release/Watot12345/Tenera?color=E9C46A&label=Latest%20Release)](https://github.com/Watot12345/Tenera/releases/latest)
@@ -50,7 +54,7 @@ If you downloaded the APK directly to your phone:
 ### 1. 🏠 Roof Ledger Dashboard
 - **Monthly Revenue at a Glance**: Live metrics of collected rent vs. expected rent for the month.
 - **Vacancy & Overdue Tracking**: Instant status cards for overdue rent, due soon, and vacant units.
-- **High-Contrast, Senior-Friendly Interface**: Clear typography, accessible color accents, and large touch targets.
+- **Clean, Accessible & Intuitive Design**: Clear typography, accessible color accents, and large touch targets designed for fast daily workflows.
 
 ### 2. ⚡ Quick Payment Logging
 - **Instant Search**: Type tenant name, initials, or unit number to quickly select tenants.

@@ -23,7 +23,7 @@ All official releases of Tenera are published to the [GitHub Releases](https://g
 - **In-App Update Engine**: Integrated `UpdateService` which queries the GitHub Releases API and prompts users when new APK releases are published.
 
 #### User Interface & Experience
-- **Concept C Roof Ledger Theme**: Modern, senior-friendly aesthetic with high-contrast palette tokens (`#1D3557` Deep Navy, `#E9C46A` Warm Gold, `#2A9D8F` Paid Emerald, `#E76F51` Overdue Terracotta).
+- **Concept C Roof Ledger Theme**: Modern, clean aesthetic with high-contrast palette tokens (`#1D3557` Deep Navy, `#E9C46A` Warm Gold, `#2A9D8F` Paid Emerald, `#E76F51` Overdue Terracotta).
 - **Payment Dialog Enhancements**:
   - Live tenant candidate search by name, unit, or initials.
   - Cash photo proof attachment.
