@@ -5,6 +5,7 @@ import '../../services/firebase_service.dart';
 import '../../services/plan_guard_service.dart';
 import '../../services/staff_mode_service.dart';
 import '../../services/sync_service.dart';
+import '../../services/theme_service.dart';
 import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
@@ -114,9 +115,9 @@ class _MoreTabState extends State<MoreTab> {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: AppTheme.getSurfaceColor(context),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppTheme.border),
+              border: Border.all(color: AppTheme.getBorderColor(context)),
             ),
             child: Row(
               children: [
@@ -590,13 +591,128 @@ class _MoreTabState extends State<MoreTab> {
           const SizedBox(height: 20),
         ],
 
+          // Appearance & Display (Dark Mode) Section
+          Text(
+            'Appearance & Display',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.getInkMutedColor(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeService.themeModeNotifier,
+            builder: (context, themeMode, _) {
+              return Material(
+                color: AppTheme.getSurfaceColor(context),
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
+                  ),
+                  child: ListTile(
+                    key: const Key('tile_theme_mode'),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        themeMode == ThemeMode.dark
+                            ? Icons.dark_mode_rounded
+                            : (themeMode == ThemeMode.light
+                                ? Icons.light_mode_rounded
+                                : Icons.brightness_auto_rounded),
+                        color: AppTheme.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      'App Theme / Dark Mode',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.getInkColor(context),
+                      ),
+                    ),
+                    subtitle: Text(
+                      themeMode == ThemeMode.dark
+                          ? 'Dark Mode Active'
+                          : (themeMode == ThemeMode.light
+                              ? 'Light Mode Active'
+                              : 'System Default (Auto)'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.getInkMutedColor(context),
+                      ),
+                    ),
+                    trailing: DropdownButtonHideUnderline(
+                      child: DropdownButton<ThemeMode>(
+                        key: const Key('dropdown_theme_mode'),
+                        value: themeMode,
+                        dropdownColor: AppTheme.getSurfaceColor(context),
+                        borderRadius: BorderRadius.circular(12),
+                        icon: const Icon(Icons.arrow_drop_down_rounded),
+                        items: [
+                          DropdownMenuItem(
+                            value: ThemeMode.system,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.brightness_auto_rounded, size: 16, color: AppTheme.getInkMutedColor(context)),
+                                const SizedBox(width: 6),
+                                Text('System', style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(context))),
+                              ],
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: ThemeMode.light,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.light_mode_rounded, size: 16, color: Color(0xFFF2A33A)),
+                                const SizedBox(width: 6),
+                                Text('Light', style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(context))),
+                              ],
+                            ),
+                          ),
+                          DropdownMenuItem(
+                            value: ThemeMode.dark,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.dark_mode_rounded, size: 16, color: Color(0xFF1BA69A)),
+                                const SizedBox(width: 6),
+                                Text('Dark', style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(context))),
+                              ],
+                            ),
+                          ),
+                        ],
+                        onChanged: (newMode) {
+                          if (newMode != null) {
+                            ThemeService.setThemeMode(newMode);
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+
           // Cloud Sync & Firebase Section
-          const Text(
+          Text(
             'Cloud & Database Sync',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: AppTheme.getInkMutedColor(context),
             ),
           ),
           const SizedBox(height: 8),

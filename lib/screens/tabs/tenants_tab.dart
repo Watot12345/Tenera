@@ -64,10 +64,12 @@ class _TenantsTabState extends State<TenantsTab> {
 
     final uri = Uri.parse('https://m.me/$clean');
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {}
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (_) {}
+    }
   }
 
   Future<void> _callPhone(TenantBill tenant) async {
@@ -137,9 +139,9 @@ class _TenantsTabState extends State<TenantsTab> {
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppTheme.surface,
+                    color: AppTheme.getSurfaceColor(context),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.02),
@@ -239,9 +241,9 @@ class _TenantsTabState extends State<TenantsTab> {
               padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
               margin: const EdgeInsets.only(top: 10),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: AppTheme.getSurfaceColor(context),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
@@ -303,9 +305,9 @@ class _TenantsTabState extends State<TenantsTab> {
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppTheme.surface,
+                        color: AppTheme.getSurfaceColor(context),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+                        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
                       ),
                       child: Column(
                         children: [
@@ -330,8 +332,8 @@ class _TenantsTabState extends State<TenantsTab> {
                                   children: [
                                     Text(
                                       tenant.name,
-                                      style: const TextStyle(
-                                        color: AppTheme.ink,
+                                      style: TextStyle(
+                                        color: AppTheme.getInkColor(context),
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -339,8 +341,8 @@ class _TenantsTabState extends State<TenantsTab> {
                                     const SizedBox(height: 2),
                                     Text(
                                       tenant.location,
-                                      style: const TextStyle(
-                                        color: AppTheme.inkMuted,
+                                      style: TextStyle(
+                                        color: AppTheme.getInkMutedColor(context),
                                         fontSize: 13,
                                       ),
                                     ),
@@ -386,8 +388,8 @@ class _TenantsTabState extends State<TenantsTab> {
                                 children: [
                                   Text(
                                     '₱${currencyFormat.format(tenant.amount)}',
-                                    style: const TextStyle(
-                                      color: AppTheme.ink,
+                                    style: TextStyle(
+                                      color: AppTheme.getInkColor(context),
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
                                     ),

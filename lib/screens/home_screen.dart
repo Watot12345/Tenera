@@ -1381,10 +1381,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       .trim();
                   final uri = Uri.parse('https://m.me/$clean');
                   try {
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    }
-                  } catch (_) {}
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } catch (_) {
+                    try {
+                      await launchUrl(uri);
+                    } catch (_) {}
+                  }
                 },
                 icon: const Icon(Icons.chat_bubble_rounded, size: 15, color: Color(0xFF0084FF)),
                 label: const Text('FB Messenger', style: TextStyle(color: Color(0xFF0084FF), fontWeight: FontWeight.w700, fontSize: 13)),
@@ -1413,11 +1415,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     path: cleanPhone,
                     queryParameters: <String, String>{'body': reminderText},
                   );
-                  canLaunchUrl(smsUri).then((canLaunch) {
-                    if (canLaunch) {
-                      launchUrl(smsUri, mode: LaunchMode.externalApplication);
-                    }
-                  }).catchError((_) {});
+                  launchUrl(smsUri, mode: LaunchMode.externalApplication).catchError((_) {
+                    return launchUrl(smsUri).catchError((_) => false);
+                  });
                 }
               },
               icon: const Icon(Icons.share_rounded, size: 18),
@@ -1612,7 +1612,7 @@ class _HomeScreenState extends State<HomeScreen> {
         : 0.0;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: _buildAppBar(currentDateStr),
       body: SafeArea(
         child: Column(
@@ -1693,21 +1693,21 @@ class _HomeScreenState extends State<HomeScreen> {
   PreferredSizeWidget? _buildAppBar(String currentDateStr) {
     if (_currentNavIndex == 0) {
       return AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 20,
-        title: const Row(
+        title: Row(
           children: [
             RoofLedgerLogo(
               size: 28,
-              isLight: false,
+              isLight: AppTheme.isDark(context),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Text(
               'Tenera',
               style: TextStyle(
-                color: AppTheme.ink,
+                color: AppTheme.getInkColor(context),
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
@@ -1721,8 +1721,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Center(
               child: Text(
                 currentDateStr,
-                style: const TextStyle(
-                  color: AppTheme.inkMuted,
+                style: TextStyle(
+                  color: AppTheme.getInkMutedColor(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -1788,7 +1788,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return AppBar(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       titleSpacing: 20,
@@ -1797,8 +1797,8 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppTheme.ink,
+            style: TextStyle(
+              color: AppTheme.getInkColor(context),
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
@@ -1806,8 +1806,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Text(
             subtitle,
-            style: const TextStyle(
-              color: AppTheme.inkMuted,
+            style: TextStyle(
+              color: AppTheme.getInkMutedColor(context),
               fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
@@ -1932,34 +1932,35 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNav() {
+    final isDark = AppTheme.isDark(context);
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.getSurfaceColor(context),
         border: Border(
-          top: BorderSide(color: AppTheme.border.withValues(alpha: 0.8)),
+          top: BorderSide(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
         ),
       ),
       child: NavigationBarTheme(
         data: NavigationBarThemeData(
-          indicatorColor: const Color(0xFFE3F4EA), // Soft active pill
+          indicatorColor: isDark ? const Color(0xFF1B3D38) : const Color(0xFFE3F4EA), // Soft active pill
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
+              return TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.primary,
+                color: isDark ? AppTheme.darkPrimary : AppTheme.primary,
               );
             }
-            return const TextStyle(
+            return TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: AppTheme.inkMuted,
+              color: isDark ? AppTheme.darkInkMuted : AppTheme.inkMuted,
             );
           }),
         ),
         child: NavigationBar(
           height: 64,
-          backgroundColor: AppTheme.surface,
+          backgroundColor: AppTheme.getSurfaceColor(context),
           selectedIndex: _currentNavIndex,
           onDestinationSelected: (index) async {
             setState(() {

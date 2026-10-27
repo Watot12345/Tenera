@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'services/firebase_service.dart';
+import 'services/theme_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
@@ -20,6 +21,7 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
+  await ThemeService.initialize();
   FirebaseService.instance.initialize();
   runApp(const TeneraApp());
 }
@@ -29,11 +31,18 @@ class TeneraApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Tenera',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: const SplashScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeService.themeModeNotifier,
+      builder: (context, currentMode, _) {
+        return MaterialApp(
+          title: 'Tenera',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: currentMode,
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }

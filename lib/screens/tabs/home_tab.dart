@@ -58,26 +58,26 @@ class HomeTab extends StatelessWidget {
           // 2. Overdue and Vacant Units (Side by Side)
           Row(
             children: [
-              Expanded(child: _buildOverdueCard()),
+              Expanded(child: _buildOverdueCard(context)),
               const SizedBox(width: 12),
-              Expanded(child: _buildVacantCard()),
+              Expanded(child: _buildVacantCard(context)),
             ],
           ),
 
           const SizedBox(height: 20),
 
           // 3. In-Page Quick Actions Bar (Icon Logo Only)
-          _buildQuickActionsRow(),
+          _buildQuickActionsRow(context),
 
           const SizedBox(height: 24),
 
           // 4. Overdue Section with direct tap-to-pay
-          _buildOverdueSection(),
+          _buildOverdueSection(context),
 
           const SizedBox(height: 24),
 
           // 5. Due soon Section with direct tap-to-pay
-          _buildDueSoonSection(),
+          _buildDueSoonSection(context),
         ],
       ),
     );
@@ -152,31 +152,31 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildOverdueCard() {
+  Widget _buildOverdueCard(BuildContext context) {
     final currencyFormat = NumberFormat('#,###');
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline_rounded,
                 color: AppTheme.statusOverdue,
                 size: 18,
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
                 'Overdue',
                 style: TextStyle(
-                  color: AppTheme.ink,
+                  color: AppTheme.getInkColor(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -198,29 +198,29 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildVacantCard() {
+  Widget _buildVacantCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.home_outlined,
-                color: AppTheme.inkMuted,
+                color: AppTheme.getInkMutedColor(context),
                 size: 19,
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
                 'Vacant units',
                 style: TextStyle(
-                  color: AppTheme.ink,
+                  color: AppTheme.getInkColor(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -230,8 +230,8 @@ class HomeTab extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             '$vacantUnits of $totalUnits',
-            style: const TextStyle(
-              color: AppTheme.ink,
+            style: TextStyle(
+              color: AppTheme.getInkColor(context),
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
@@ -242,14 +242,14 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionsRow() {
+  Widget _buildQuickActionsRow(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Quick Actions',
           style: TextStyle(
-            color: AppTheme.ink,
+            color: AppTheme.getInkColor(context),
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -259,6 +259,7 @@ class HomeTab extends StatelessWidget {
           children: [
             Expanded(
               child: _buildQuickActionItem(
+                context: context,
                 icon: Icons.payments_rounded,
                 tooltip: 'Record payment',
                 key: const Key('quick_action_record_payment'),
@@ -268,6 +269,7 @@ class HomeTab extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _buildQuickActionItem(
+                context: context,
                 icon: Icons.person_add_alt_1_rounded,
                 tooltip: 'Add Tenant',
                 key: const Key('quick_action_add_tenant'),
@@ -277,6 +279,7 @@ class HomeTab extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _buildQuickActionItem(
+                context: context,
                 icon: Icons.domain_add_rounded,
                 tooltip: 'Add Property',
                 key: const Key('quick_action_add_property'),
@@ -286,6 +289,7 @@ class HomeTab extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: _buildQuickActionItem(
+                context: context,
                 icon: Icons.chat_bubble_outline_rounded,
                 tooltip: 'Remind Tenants',
                 key: const Key('quick_action_remind'),
@@ -299,6 +303,7 @@ class HomeTab extends StatelessWidget {
   }
 
   Widget _buildQuickActionItem({
+    required BuildContext context,
     required IconData icon,
     required String tooltip,
     required VoidCallback onTap,
@@ -307,7 +312,7 @@ class HomeTab extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: AppTheme.surface,
+        color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           key: key,
@@ -317,7 +322,7 @@ class HomeTab extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+              border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
             ),
             child: Center(
               child: Container(
@@ -339,7 +344,7 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildOverdueSection() {
+  Widget _buildOverdueSection(BuildContext context) {
     final unpaidOverdue = overdueTenants.where((t) => !t.isPaid).toList();
 
     return Column(
@@ -348,10 +353,10 @@ class HomeTab extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Overdue',
               style: TextStyle(
-                color: AppTheme.ink,
+                color: AppTheme.getInkColor(context),
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
               ),
@@ -359,7 +364,7 @@ class HomeTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: AppTheme.statusOverdueBg,
+                color: AppTheme.getStatusOverdueBg(context),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -375,23 +380,23 @@ class HomeTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (unpaidOverdue.isEmpty)
-          _buildEmptyCard('No overdue rent. All caught up!')
+          _buildEmptyCard(context, 'No overdue rent. All caught up!')
         else
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: AppTheme.getSurfaceColor(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+              border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
             ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: unpaidOverdue.length,
               separatorBuilder: (context, index) =>
-                  Divider(height: 1, color: AppTheme.border.withValues(alpha: 0.6)),
+                  Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.6)),
               itemBuilder: (context, index) {
                 final tenant = unpaidOverdue[index];
-                return _buildTenantTile(tenant);
+                return _buildTenantTile(context, tenant);
               },
             ),
           ),
@@ -399,7 +404,7 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildDueSoonSection() {
+  Widget _buildDueSoonSection(BuildContext context) {
     final unpaidDueSoon = dueSoonTenants.where((t) => !t.isPaid).toList();
 
     return Column(
@@ -408,10 +413,10 @@ class HomeTab extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Due soon',
               style: TextStyle(
-                color: AppTheme.ink,
+                color: AppTheme.getInkColor(context),
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
               ),
@@ -419,7 +424,7 @@ class HomeTab extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: AppTheme.statusDueSoonBg,
+                color: AppTheme.getStatusDueSoonBg(context),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -435,23 +440,23 @@ class HomeTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (unpaidDueSoon.isEmpty)
-          _buildEmptyCard('No upcoming rent due this week.')
+          _buildEmptyCard(context, 'No upcoming rent due this week.')
         else
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: AppTheme.getSurfaceColor(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+              border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
             ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: unpaidDueSoon.length,
               separatorBuilder: (context, index) =>
-                  Divider(height: 1, color: AppTheme.border.withValues(alpha: 0.6)),
+                  Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.6)),
               itemBuilder: (context, index) {
                 final tenant = unpaidDueSoon[index];
-                return _buildTenantTile(tenant);
+                return _buildTenantTile(context, tenant);
               },
             ),
           ),
@@ -459,7 +464,7 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildTenantTile(TenantBill tenant) {
+  Widget _buildTenantTile(BuildContext context, TenantBill tenant) {
     final currencyFormat = NumberFormat('#,###');
 
     return InkWell(
@@ -471,7 +476,7 @@ class HomeTab extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: const Color(0xFFE0F2F1),
+              backgroundColor: AppTheme.isDark(context) ? const Color(0xFF1B3D38) : const Color(0xFFE0F2F1),
               child: Text(
                 tenant.initials,
                 style: const TextStyle(
@@ -488,8 +493,8 @@ class HomeTab extends StatelessWidget {
                 children: [
                   Text(
                     tenant.name,
-                    style: const TextStyle(
-                      color: AppTheme.ink,
+                    style: TextStyle(
+                      color: AppTheme.getInkColor(context),
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -497,8 +502,8 @@ class HomeTab extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     tenant.location,
-                    style: const TextStyle(
-                      color: AppTheme.inkMuted,
+                    style: TextStyle(
+                      color: AppTheme.getInkMutedColor(context),
                       fontSize: 13,
                     ),
                   ),
@@ -510,8 +515,8 @@ class HomeTab extends StatelessWidget {
               children: [
                 Text(
                   '₱${currencyFormat.format(tenant.amount)}',
-                  style: const TextStyle(
-                    color: AppTheme.ink,
+                  style: TextStyle(
+                    color: AppTheme.getInkColor(context),
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                   ),
@@ -526,12 +531,12 @@ class HomeTab extends StatelessWidget {
                         child: InkWell(
                           onTap: () => onSendReminder(tenant),
                           borderRadius: BorderRadius.circular(6),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                             child: Icon(
                               Icons.chat_bubble_outline_rounded,
                               size: 14,
-                              color: AppTheme.inkMuted,
+                              color: AppTheme.getInkMutedColor(context),
                             ),
                           ),
                         ),
@@ -542,8 +547,8 @@ class HomeTab extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: tenant.isOverdue
-                            ? AppTheme.statusOverdueBg
-                            : AppTheme.statusDueSoonBg,
+                            ? AppTheme.getStatusOverdueBg(context)
+                            : AppTheme.getStatusDueSoonBg(context),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -582,20 +587,20 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyCard(String message) {
+  Widget _buildEmptyCard(BuildContext context, String message) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
       ),
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(
-            color: AppTheme.inkMuted,
+          style: TextStyle(
+            color: AppTheme.getInkMutedColor(context),
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),

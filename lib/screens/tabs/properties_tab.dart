@@ -187,9 +187,9 @@ class PropertiesTab extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                   decoration: BoxDecoration(
-                    color: AppTheme.surface,
+                    color: AppTheme.getSurfaceColor(context),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                   ),
                   child: Column(
                     children: [
@@ -237,9 +237,9 @@ class PropertiesTab extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

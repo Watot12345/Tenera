@@ -16,6 +16,7 @@ import 'package:tenera/screens/reports_export_screen.dart';
 import 'package:tenera/screens/subscription_plans_screen.dart';
 import 'package:tenera/services/database_helper.dart';
 import 'package:tenera/services/plan_guard_service.dart';
+import 'package:tenera/services/theme_service.dart';
 import 'package:tenera/theme/app_theme.dart';
 
 void main() {
@@ -1183,6 +1184,43 @@ void main() {
 
     // Verify upgrade banner is visible
     expect(find.text('Tenera Pro & Plans'), findsOneWidget);
+  });
+
+  testWidgets('Dark mode support: Appearance settings allows toggling Light, Dark, and System modes',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to More tab
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    // Verify Appearance section exists
+    expect(find.text('Appearance & Display'), findsOneWidget);
+    expect(find.byKey(const Key('tile_theme_mode')), findsOneWidget);
+
+    // Switch theme mode to Dark
+    await ThemeService.setThemeMode(ThemeMode.dark);
+    await tester.pumpAndSettle();
+
+    // Verify Dark Theme is active
+    expect(ThemeService.themeModeNotifier.value, ThemeMode.dark);
+
+    // Switch theme mode to Light
+    await ThemeService.setThemeMode(ThemeMode.light);
+    await tester.pumpAndSettle();
+
+    expect(ThemeService.themeModeNotifier.value, ThemeMode.light);
+
+    // Reset to System
+    await ThemeService.setThemeMode(ThemeMode.system);
+    await tester.pumpAndSettle();
+
+    expect(ThemeService.themeModeNotifier.value, ThemeMode.system);
   });
 }
 

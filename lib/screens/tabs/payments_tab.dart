@@ -157,9 +157,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: AppTheme.getSurfaceColor(context),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+                border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
               ),
               child: const Center(
                 child: Text(
@@ -183,9 +183,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppTheme.surface,
+                        color: AppTheme.getSurfaceColor(context),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+                        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
                       ),
                       child: Row(
                         children: [
