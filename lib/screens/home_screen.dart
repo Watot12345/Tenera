@@ -472,6 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final isSelected = selectedMethod == method;
                         return Expanded(
                           child: GestureDetector(
+                            key: Key('payment_method_$method'),
                             onTap: () {
                               setSheetState(() {
                                 selectedMethod = method;
@@ -749,6 +750,42 @@ class _HomeScreenState extends State<HomeScreen> {
     final messengerController = TextEditingController();
     bool autoRemind = true;
 
+    PropertyItem? selectedProperty;
+    RoomUnit? selectedRoom;
+
+    if (_properties.isNotEmpty) {
+      if (defaultUnit != null && defaultUnit.isNotEmpty) {
+        for (final p in _properties) {
+          if (defaultUnit.contains(p.name)) {
+            selectedProperty = p;
+            break;
+          }
+        }
+      }
+      selectedProperty ??= _properties.firstWhere(
+        (p) => p.rooms.any((r) => r.status == RoomStatus.vacant),
+        orElse: () => _properties.first,
+      );
+
+      final vacant = selectedProperty.rooms.where((r) => r.status == RoomStatus.vacant).toList();
+      if (defaultUnit != null && defaultUnit.isNotEmpty) {
+        for (final r in selectedProperty.rooms) {
+          if (defaultUnit.contains(r.code)) {
+            selectedRoom = r;
+            break;
+          }
+        }
+      }
+      selectedRoom ??= vacant.firstOrNull;
+
+      if (unitController.text.isEmpty && selectedRoom != null) {
+        unitController.text = 'Room ${selectedRoom.code} · ${selectedProperty.name}';
+      }
+      if (rentController.text.isEmpty && selectedRoom != null) {
+        rentController.text = '${selectedRoom.rentAmount ?? 4000}';
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -756,6 +793,10 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (modalCtx, setModalState) {
+            final vacantRooms = selectedProperty != null
+                ? selectedProperty!.rooms.where((r) => r.status == RoomStatus.vacant).toList()
+                : <RoomUnit>[];
+
             return Container(
               padding: EdgeInsets.only(
                 left: 20,
@@ -814,6 +855,90 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    if (_properties.isNotEmpty) ...[
+                      DropdownButtonFormField<PropertyItem>(
+                        key: const Key('dropdown_select_property'),
+                        initialValue: selectedProperty,
+                        decoration: const InputDecoration(
+                          labelText: 'Select Property',
+                          prefixIcon: Icon(Icons.apartment_rounded),
+                        ),
+                        items: _properties.map((p) {
+                          final vacCount = p.rooms.where((r) => r.status == RoomStatus.vacant).length;
+                          return DropdownMenuItem<PropertyItem>(
+                            value: p,
+                            child: Text(
+                              '${p.name} ($vacCount vacant)',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (prop) {
+                          if (prop == null) return;
+                          setModalState(() {
+                            selectedProperty = prop;
+                            final vac = prop.rooms.where((r) => r.status == RoomStatus.vacant).toList();
+                            selectedRoom = vac.firstOrNull;
+                            if (selectedRoom != null) {
+                              unitController.text = 'Room ${selectedRoom!.code} · ${prop.name}';
+                              rentController.text = '${selectedRoom!.rentAmount ?? 4000}';
+                            } else {
+                              unitController.text = 'Unit · ${prop.name}';
+                            }
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      if (selectedProperty != null) ...[
+                        if (vacantRooms.isNotEmpty)
+                          DropdownButtonFormField<RoomUnit>(
+                            key: ValueKey('dropdown_select_room_${selectedProperty?.id ?? ""}'),
+                            initialValue: selectedRoom,
+                            decoration: const InputDecoration(
+                              labelText: 'Available Room to Assign',
+                              prefixIcon: Icon(Icons.meeting_room_outlined),
+                            ),
+                            items: vacantRooms.map((r) {
+                              return DropdownMenuItem<RoomUnit>(
+                                value: r,
+                                child: Text(
+                                  'Room ${r.code} — ₱${NumberFormat('#,###').format(r.rentAmount ?? 4000)}/mo',
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (room) {
+                              if (room == null) return;
+                              setModalState(() {
+                                selectedRoom = room;
+                                unitController.text = 'Room ${room.code} · ${selectedProperty!.name}';
+                                rentController.text = '${room.rentAmount ?? 4000}';
+                              });
+                            },
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.background,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppTheme.border),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.inkMuted),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'All units in ${selectedProperty!.name} are occupied. Specifying a unit code below.',
+                                    style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 12),
+                      ],
+                    ],
                     TextField(
                       controller: unitController,
                       decoration: const InputDecoration(
@@ -911,13 +1036,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             .join()
                             .toUpperCase();
 
+                        final assignedLoc = unitController.text.trim().isEmpty
+                            ? (selectedRoom != null && selectedProperty != null
+                                ? 'Room ${selectedRoom!.code} · ${selectedProperty!.name}'
+                                : 'Room 4 · Mabini Apts')
+                            : unitController.text.trim();
+
                         final newTenant = TenantBill(
                           id: 't_${DateTime.now().millisecondsSinceEpoch}',
                           name: nameController.text.trim(),
                           initials: initials.isEmpty ? 'TN' : initials,
-                          location: unitController.text.trim().isEmpty
-                              ? 'Room 4 · Mabini Apts'
-                              : unitController.text.trim(),
+                          location: assignedLoc,
                           amount: newRent,
                           statusText: 'In 7 days',
                           isOverdue: false,
@@ -935,7 +1064,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           _dueSoonTenants.add(newTenant);
                           _recomputeLedger();
                         });
+
+                        // Assign room to tenant in database if a room was selected
+                        if (selectedProperty != null && selectedRoom != null) {
+                          DatabaseHelper.instance.assignRoom(
+                            selectedProperty!.id,
+                            selectedRoom!.code,
+                            nameController.text.trim(),
+                            newRent,
+                          );
+                        }
+
                         DatabaseHelper.instance.insertTenant(newTenant);
+                        _loadFromDatabase();
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -1693,10 +1834,20 @@ class _HomeScreenState extends State<HomeScreen> {
           totalUnits: _totalUnits,
           overdueTenants: _overdueTenants,
           dueSoonTenants: _dueSoonTenants,
-          onRecordPaymentQuick: () => _openRecordPaymentDialog(),
-          onAddTenantQuick: () => _openAddTenantDialog(),
-          onAddPropertyQuick: _openAddPropertyDialog,
+          onRecordPaymentQuick: () {
+            setState(() => _currentNavIndex = 3);
+            _openRecordPaymentDialog();
+          },
+          onAddTenantQuick: () {
+            setState(() => _currentNavIndex = 2);
+            _openAddTenantDialog();
+          },
+          onAddPropertyQuick: () {
+            setState(() => _currentNavIndex = 1);
+            _openAddPropertyDialog();
+          },
           onRemindOverdueQuick: () {
+            setState(() => _currentNavIndex = 2);
             final unpaid = _overdueTenants.where((t) => !t.isPaid).toList();
             if (unpaid.isNotEmpty) {
               _sendFriendlyReminder(unpaid.first);

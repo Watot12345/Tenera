@@ -678,6 +678,27 @@ class DatabaseHelper {
     await _recalculateProperty(propertyId);
   }
 
+  Future<void> assignRoom(String propertyId, String roomCode, String tenantName, int rentAmount) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.update(
+      'rooms',
+      {
+        'status': 'occupied',
+        'tenant_name': tenantName,
+        'rent_amount': rentAmount,
+        'status_text': 'Due soon',
+        'updated_at': now,
+        'is_synced': 0,
+      },
+      where: 'property_id = ? AND code = ?',
+      whereArgs: [propertyId, roomCode],
+    );
+
+    await _recalculateProperty(propertyId);
+  }
+
   Future<void> vacateRoom(String propertyId, String roomCode) async {
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;

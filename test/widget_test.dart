@@ -475,7 +475,7 @@ void main() {
     expect(find.text('Juan Carlos'), findsWidgets);
 
     // Tap Juan Carlos to select
-    await tester.tap(find.text('Juan Carlos').first);
+    await tester.tap(find.text('Juan Carlos').last);
     await tester.pumpAndSettle();
 
     // 2. Test Optional Cash Photo when Cash is selected
@@ -494,7 +494,7 @@ void main() {
     expect(find.text('Proof of cash handed over'), findsOneWidget);
 
     // 3. Test Digital Payment (GCash / Bank Transfer) with Reference Number
-    await tester.tap(find.text('GCash'));
+    await tester.tap(find.text('GCash').last);
     await tester.pumpAndSettle();
 
     // Reference number field appears
