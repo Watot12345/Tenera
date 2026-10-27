@@ -1,0 +1,115 @@
+# -----------------------------------------------------------------------------
+# Tenera - Flutter Project .gitignore
+# -----------------------------------------------------------------------------
+
+# Flutter / Dart / Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+**/doc/api/
+*.dart_tool
+.packages
+
+# Android
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/.cxx/
+**/android/**/GeneratedPluginRegistrant.java
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+
+# Android Keystore & Signing Secrets
+*.keystore
+*.jks
+key.properties
+
+# iOS & macOS
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/ephemeral/
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/profile
+**/ios/**/xcuserdata/
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+**/macos/**/xcuserdata/
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+DerivedData/
+
+# Linux & Windows
+**/linux/flutter/ephemeral/
+**/windows/flutter/ephemeral/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+x64/
+x86/
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# IDEs & Text Editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+
+# Widget Preview
+.widget_preview/
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.json
+
+# Personal & Non-Project Documents / Temporary Files
+*.docx
+*.xlsx
+*.pptx
+google*.html
+*.log
+*.crash

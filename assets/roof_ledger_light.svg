@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 270" fill="none">
+  <!-- Chevron roof -->
+  <path d="M17 106 L134.5 17 L252 106" stroke="#FFFFFF" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top ledger bar -->
+  <path d="M51 160 L218 160" stroke="#FFFFFF" stroke-width="27" stroke-linecap="round"/>
+  <!-- Middle ledger bar -->
+  <path d="M51 207 L218 207" stroke="#FFFFFF" stroke-width="27" stroke-linecap="round"/>
+  <!-- Bottom ledger bar (accent) -->
+  <path d="M51 254 L143 254" stroke="#F2A33A" stroke-width="27" stroke-linecap="round"/>
+</svg>

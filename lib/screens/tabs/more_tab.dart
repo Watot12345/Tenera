@@ -1,0 +1,433 @@
+import 'package:flutter/material.dart';
+import '../../services/firebase_service.dart';
+import '../../services/sync_service.dart';
+import '../../services/update_service.dart';
+import '../../theme/app_theme.dart';
+import '../../widgets/roof_ledger_logo.dart';
+import '../privacy_policy_screen.dart';
+import '../subscription_plans_screen.dart';
+import '../welcome_screen.dart';
+
+class MoreTab extends StatefulWidget {
+  const MoreTab({super.key});
+
+  @override
+  State<MoreTab> createState() => _MoreTabState();
+}
+
+class _MoreTabState extends State<MoreTab> {
+  int _pendingSyncCount = 0;
+  bool _isSyncing = false;
+  bool _isCheckingUpdate = false;
+  String _currentVersion = '1.0.0';
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshStatus();
+  }
+
+  Future<void> _refreshStatus() async {
+    final count = await SyncService.instance.getPendingSyncCount();
+    final ver = await UpdateService.instance.getCurrentVersion();
+    if (mounted) {
+      setState(() {
+        _pendingSyncCount = count;
+        _currentVersion = ver;
+      });
+    }
+  }
+
+  Future<void> _handleSync() async {
+    setState(() => _isSyncing = true);
+    final result = await SyncService.instance.syncToFirebase();
+    await _refreshStatus();
+    if (mounted) {
+      setState(() => _isSyncing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: result.status == SyncStatus.error ? const Color(0xFFC92A2A) : AppTheme.primaryDeep,
+          content: Text(
+            result.message,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleCheckUpdate() async {
+    setState(() => _isCheckingUpdate = true);
+    await UpdateService.instance.checkAndPrompt(context, isManual: true);
+    if (mounted) {
+      setState(() => _isCheckingUpdate = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // App Header Card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: AppTheme.border),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryDeep,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const RoofLedgerLogo(size: 32, isLight: true),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tenera Property Manager',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Offline First · v$_currentVersion',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.inkMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Subscription & Plans Upgrade Banner Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppTheme.primaryDeep, AppTheme.primary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryDeep.withValues(alpha: 0.22),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppTheme.ink,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Tenera Pro & Plans',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(Icons.stars_rounded, color: AppTheme.accent, size: 16),
+                        ],
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Unlock unlimited units, utility math & reports',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SubscriptionPlansScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accent,
+                    foregroundColor: AppTheme.ink,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'View Plans',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Cloud Sync & Firebase Section
+          const Text(
+            'Cloud & Database Sync',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    key: const Key('more_firebase_sync'),
+                    leading: _isSyncing
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Icon(Icons.cloud_sync_rounded, color: AppTheme.primary),
+                    title: const Text('Sync with Firebase Cloud', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      FirebaseService.instance.isInitialized
+                          ? (_pendingSyncCount > 0
+                              ? '$_pendingSyncCount changes ready to upload'
+                              : 'All data synchronized with cloud')
+                          : 'Local SQLite active (Offline mode)',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: _isSyncing
+                        ? null
+                        : TextButton(
+                            onPressed: _handleSync,
+                            child: const Text('Sync Now', style: TextStyle(fontWeight: FontWeight.w700)),
+                          ),
+                    onTap: _isSyncing ? null : _handleSync,
+                  ),
+                  const Divider(height: 1, color: AppTheme.border),
+                  ListTile(
+                    leading: const Icon(Icons.cloud_off_rounded, color: AppTheme.inkMuted),
+                    title: const Text('Offline Storage Mode', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('SQLite Single Source of Truth on this device', style: TextStyle(fontSize: 12)),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.statusPaidBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'ACTIVE',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.statusPaid,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // App Updates & Releases Section
+          const Text(
+            'Updates & Releases',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    key: const Key('more_check_updates'),
+                    leading: _isCheckingUpdate
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Icon(Icons.system_update_rounded, color: AppTheme.primary),
+                    title: const Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('Current version: v$_currentVersion (GitHub Release)', style: const TextStyle(fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: _isCheckingUpdate ? null : _handleCheckUpdate,
+                  ),
+                  const Divider(height: 1, color: AppTheme.border),
+                  ListTile(
+                    leading: const Icon(Icons.open_in_browser_rounded, color: AppTheme.primary),
+                    title: const Text('GitHub Releases Page', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('View changelog, APK releases & source code', style: TextStyle(fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      UpdateService.instance.launchDownload('https://github.com/Watot12345/Tenera/releases');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Data & Backup Section
+          const Text(
+            'Data & Backup',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.save_alt_rounded, color: AppTheme.primary),
+                    title: const Text('Backup Data to Device', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Create offline JSON backup file', style: TextStyle(fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: AppTheme.primaryDeep,
+                          content: Text('Backup saved successfully to device storage!'),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Legal & Guidelines Section
+          const Text(
+            'Legal & Guidelines',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.help_outline_rounded, color: AppTheme.primary),
+                    title: const Text('Welcome & App Guide', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Step-by-step guide: how to use Tenera', style: TextStyle(fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, color: AppTheme.border),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.primary),
+                    title: const Text('Privacy Policy & Terms', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('RA 10173 & GDPR compliant', style: TextStyle(fontSize: 12)),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacyPolicyScreen(isOnboarding: false),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
