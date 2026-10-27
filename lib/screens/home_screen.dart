@@ -11,7 +11,6 @@ import '../services/plan_guard_service.dart';
 import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/roof_ledger_logo.dart';
-import 'privacy_policy_screen.dart';
 import 'property_rooms_screen.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
@@ -19,7 +18,6 @@ import 'tabs/payments_tab.dart';
 import 'tabs/properties_tab.dart';
 import 'tabs/tenants_tab.dart';
 import 'utility_calculator_screen.dart';
-import 'welcome_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1085,16 +1083,16 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     final savedPhone = prefs.getString('tenant_phone_${tenant.id}') ?? '';
     final phoneController = TextEditingController(text: savedPhone);
-    int selectedTone = tenant.isOverdue ? 2 : 0; // 0: Polite, 1: Due Soon, 2: Overdue
+    int selectedTone = 0; // 0: Polite (classic), 1: Due Soon, 2: Overdue
 
     String composeMessage(int tone) {
       final formattedAmount = NumberFormat('#,###').format(tenant.amount);
       final roomDisplay = tenant.location.split('·')[0].trim();
       switch (tone) {
         case 1:
-          return 'Hi ${tenant.name}, gentle reminder that your rent of ₱$formattedAmount for $roomDisplay is due soon (${tenant.statusText}). Thank you! - Landlord';
+          return 'Hi ${tenant.name}, gentle reminder that your rent of ₱$formattedAmount for $roomDisplay is due soon (${tenant.statusText}). Thank you!';
         case 2:
-          return 'Hello ${tenant.name}, gentle follow-up regarding your overdue rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Kindly settle via cash or GCash when possible. Thank you!';
+          return 'Hello ${tenant.name}, this is a gentle reminder regarding your overdue rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Thank you!';
         case 0:
         default:
           return 'Hello ${tenant.name}, this is a gentle reminder regarding your rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Thank you!';
@@ -1537,46 +1535,22 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_isPro)
             IconButton(
               key: const Key('home_action_utility_splitter'),
-            icon: const Icon(Icons.bolt_rounded, color: AppTheme.primary),
-            tooltip: 'Utility Sub-Meter Splitter',
-            onPressed: () async {
-              final canAccess = await PlanGuardService.requirePro(
-                context: context,
-                featureName: 'Utility Sub-Meter Splitter',
-                featureBenefit: 'Split electric & water sub-meter bills accurately per room with zero math errors.',
-              );
-              if (!canAccess || !mounted) return;
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const UtilityCalculatorScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.help_outline_rounded, color: AppTheme.inkMuted),
-            tooltip: 'Welcome Guide',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const WelcomeScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.privacy_tip_outlined, color: AppTheme.inkMuted),
-            tooltip: 'Privacy Policy & Terms',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const PrivacyPolicyScreen(
-                    isOnboarding: false,
+              icon: const Icon(Icons.bolt_rounded, color: AppTheme.primary),
+              tooltip: 'Utility Sub-Meter Splitter',
+              onPressed: () async {
+                final canAccess = await PlanGuardService.requirePro(
+                  context: context,
+                  featureName: 'Utility Sub-Meter Splitter',
+                  featureBenefit: 'Split electric & water sub-meter bills accurately per room with zero math errors.',
+                );
+                if (!canAccess || !mounted) return;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const UtilityCalculatorScreen(),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
         ],
       );
     }
@@ -1645,15 +1619,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       actions: [
         if (actionButton != null) actionButton,
-        IconButton(
-          icon: const Icon(Icons.help_outline_rounded, color: AppTheme.inkMuted),
-          tooltip: 'Welcome Guide',
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-            );
-          },
-        ),
       ],
     );
   }
