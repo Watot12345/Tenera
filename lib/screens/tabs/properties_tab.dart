@@ -10,6 +10,7 @@ class PropertiesTab extends StatelessWidget {
   final VoidCallback onAddProperty;
   final Function(PropertyItem?) onViewRooms;
   final bool isStaffMode;
+  final bool isBusiness;
 
   const PropertiesTab({
     super.key,
@@ -17,6 +18,7 @@ class PropertiesTab extends StatelessWidget {
     required this.onAddProperty,
     required this.onViewRooms,
     this.isStaffMode = false,
+    this.isBusiness = false,
   });
 
   @override
@@ -98,7 +100,7 @@ class PropertiesTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (!isStaffMode) ...[
+                if (isBusiness && !isStaffMode) ...[
                   const SizedBox(height: 14),
                   const Divider(height: 1, color: Colors.white24),
                   const SizedBox(height: 12),

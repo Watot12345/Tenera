@@ -45,16 +45,22 @@ class _HomeScreenState extends State<HomeScreen> {
         db.getTenants(),
         db.getPayments(),
         StaffModeService.isStaffMode(),
+        PlanGuardService.isPro(),
+        PlanGuardService.isBusiness(),
       ]);
 
       final props = results[0] as List<PropertyItem>;
       final tenants = results[1] as List<TenantBill>;
       final payments = results[2] as List<PaymentRecord>;
       final isStaff = results[3] as bool;
+      final isPro = results[4] as bool;
+      final isBusiness = results[5] as bool;
 
       if (mounted) {
         setState(() {
           _isStaffMode = isStaff;
+          _isPro = isPro;
+          _isBusiness = isBusiness;
           _properties = props;
           _overdueTenants = tenants.where((t) => t.isOverdue && !t.isPaid).toList();
           _dueSoonTenants = tenants.where((t) => !t.isOverdue && !t.isPaid).toList();
@@ -70,8 +76,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refreshStaffMode() async {
     final staff = await StaffModeService.isStaffMode();
+    final isPro = await PlanGuardService.isPro();
+    final isBusiness = await PlanGuardService.isBusiness();
     if (mounted) {
-      setState(() => _isStaffMode = staff);
+      setState(() {
+        _isStaffMode = staff;
+        _isPro = isPro;
+        _isBusiness = isBusiness;
+      });
     }
   }
 
@@ -103,6 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _vacantUnits = 0;
   int _totalUnits = 0;
   bool _isStaffMode = false;
+  bool _isPro = false;
+  bool _isBusiness = false;
 
   // Real database-backed lists (no static hardcoded data)
   List<PropertyItem> _properties = [];
@@ -1520,8 +1534,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          IconButton(
-            key: const Key('home_action_utility_splitter'),
+          if (_isPro)
+            IconButton(
+              key: const Key('home_action_utility_splitter'),
             icon: const Icon(Icons.bolt_rounded, color: AppTheme.primary),
             tooltip: 'Utility Sub-Meter Splitter',
             onPressed: () async {
@@ -1682,6 +1697,7 @@ class _HomeScreenState extends State<HomeScreen> {
           properties: _properties,
           onAddProperty: _openAddPropertyDialog,
           isStaffMode: _isStaffMode,
+          isBusiness: _isBusiness,
           onViewRooms: (prop) async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -1732,7 +1748,11 @@ class _HomeScreenState extends State<HomeScreen> {
           onShowReceipt: (rec) => _showReceiptDialog(rec),
         );
       case 4:
-        return MoreTab(onStaffModeToggled: _refreshStaffMode);
+        return MoreTab(
+          isPro: _isPro,
+          isBusiness: _isBusiness,
+          onStaffModeToggled: _refreshStaffMode,
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -1773,8 +1793,14 @@ class _HomeScreenState extends State<HomeScreen> {
               _currentNavIndex = index;
             });
             final staff = await StaffModeService.isStaffMode();
-            if (mounted && staff != _isStaffMode) {
-              setState(() => _isStaffMode = staff);
+            final isPro = await PlanGuardService.isPro();
+            final isBusiness = await PlanGuardService.isBusiness();
+            if (mounted) {
+              setState(() {
+                _isStaffMode = staff;
+                _isPro = isPro;
+                _isBusiness = isBusiness;
+              });
             }
           },
           destinations: const [

@@ -18,8 +18,15 @@ import '../welcome_screen.dart';
 
 class MoreTab extends StatefulWidget {
   final FutureOr<void> Function()? onStaffModeToggled;
+  final bool isPro;
+  final bool isBusiness;
 
-  const MoreTab({super.key, this.onStaffModeToggled});
+  const MoreTab({
+    super.key,
+    this.onStaffModeToggled,
+    this.isPro = false,
+    this.isBusiness = false,
+  });
 
   @override
   State<MoreTab> createState() => _MoreTabState();
@@ -30,23 +37,42 @@ class _MoreTabState extends State<MoreTab> {
   bool _isSyncing = false;
   bool _isCheckingUpdate = false;
   bool _isStaffMode = false;
+  late bool _isPro;
+  late bool _isBusiness;
   String _currentVersion = '1.0.0';
 
   @override
   void initState() {
     super.initState();
+    _isPro = widget.isPro;
+    _isBusiness = widget.isBusiness;
     _refreshStatus();
+  }
+
+  @override
+  void didUpdateWidget(covariant MoreTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isPro != widget.isPro || oldWidget.isBusiness != widget.isBusiness) {
+      setState(() {
+        _isPro = widget.isPro;
+        _isBusiness = widget.isBusiness;
+      });
+    }
   }
 
   Future<void> _refreshStatus() async {
     final count = await SyncService.instance.getPendingSyncCount();
     final ver = await UpdateService.instance.getCurrentVersion();
     final staff = await StaffModeService.isStaffMode();
+    final pro = await PlanGuardService.isPro();
+    final business = await PlanGuardService.isBusiness();
     if (mounted) {
       setState(() {
         _pendingSyncCount = count;
         _currentVersion = ver;
         _isStaffMode = staff;
+        _isPro = pro;
+        _isBusiness = business;
       });
     }
   }
@@ -194,12 +220,16 @@ class _MoreTabState extends State<MoreTab> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => const SubscriptionPlansScreen(),
                       ),
                     );
+                    await _refreshStatus();
+                    if (widget.onStaffModeToggled != null) {
+                      await widget.onStaffModeToggled!();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.accent,
@@ -219,16 +249,17 @@ class _MoreTabState extends State<MoreTab> {
           ),
           const SizedBox(height: 20),
 
-          // Pro Landlord Tools Section
-          const Text(
-            'Pro Landlord Tools',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+          // Pro Landlord Tools Section - only shown when Pro or Business plan is availed
+          if (_isPro) ...[
+            const Text(
+              'Pro Landlord Tools',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.inkMuted,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
           Material(
             color: AppTheme.surface,
@@ -327,8 +358,10 @@ class _MoreTabState extends State<MoreTab> {
             ),
           ),
           const SizedBox(height: 20),
+        ],
 
-          // Business Tier Tools Section
+        // Business Tier Tools Section - only shown when Business plan is availed
+        if (_isBusiness) ...[
           const Text(
             'Business Tier Tools',
             style: TextStyle(
@@ -555,6 +588,7 @@ class _MoreTabState extends State<MoreTab> {
             ),
           ),
           const SizedBox(height: 20),
+        ],
 
           // Cloud Sync & Firebase Section
           const Text(

@@ -1138,7 +1138,41 @@ void main() {
     expect(find.byKey(const Key('btn_vip_email')), findsOneWidget);
     expect(find.text('WhatsApp Concierge'), findsOneWidget);
   });
+
+  testWidgets('Plan-based dynamic tool visibility: Starter hides gated tools, Pro and Business reveal them',
+      (WidgetTester tester) async {
+    // 1. Initial State: Starter Plan
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'starter',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Verify bills action in HomeScreen AppBar is HIDDEN for Starter
+    expect(find.byKey(const Key('home_action_utility_splitter')), findsNothing);
+
+    // Navigate to Properties tab: Portfolio Analytics button is HIDDEN
+    await tester.tap(find.byKey(const Key('nav_properties')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('btn_open_portfolio_analytics')), findsNothing);
+
+    // Navigate to More tab: Pro & Business tools sections are HIDDEN
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('more_utility_calculator')), findsNothing);
+    expect(find.byKey(const Key('more_reports_export')), findsNothing);
+    expect(find.byKey(const Key('more_portfolio_analytics')), findsNothing);
+    expect(find.byKey(const Key('more_caretaker_mode')), findsNothing);
+    expect(find.byKey(const Key('more_lease_contracts')), findsNothing);
+    expect(find.byKey(const Key('more_vip_support')), findsNothing);
+
+    // Verify upgrade banner is visible
+    expect(find.text('Tenera Pro & Plans'), findsOneWidget);
+  });
 }
+
+
 
 
 
