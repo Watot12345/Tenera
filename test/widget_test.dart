@@ -1106,6 +1106,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Contract copied! Paste and print from any text editor or browser.'), findsOneWidget);
   });
+
+  testWidgets('VIP Priority Support: opens dedicated concierge modal for Business landlords',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'business',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to More tab
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    // Scroll to Business Tier Tools
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -380));
+    await tester.pumpAndSettle();
+
+    // Verify VIP Support tile exists
+    expect(find.byKey(const Key('more_vip_support')), findsOneWidget);
+
+    // Tap to open VIP Support Concierge
+    await tester.tap(find.byKey(const Key('more_vip_support')));
+    await tester.pumpAndSettle();
+
+    // Verify modal options
+    expect(find.text('Dedicated Philippine Concierge for Business Landlords'), findsOneWidget);
+    expect(find.byKey(const Key('btn_vip_whatsapp')), findsOneWidget);
+    expect(find.byKey(const Key('btn_vip_phone')), findsOneWidget);
+    expect(find.byKey(const Key('btn_vip_email')), findsOneWidget);
+    expect(find.text('WhatsApp Concierge'), findsOneWidget);
+  });
 }
+
 
 

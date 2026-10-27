@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/firebase_service.dart';
 import '../../services/plan_guard_service.dart';
 import '../../services/staff_mode_service.dart';
@@ -509,6 +510,45 @@ class _MoreTabState extends State<MoreTab> {
                         );
                       },
                     ),
+                    const Divider(height: 1, indent: 60),
+                    ListTile(
+                      key: const Key('more_vip_support'),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.support_agent_rounded, color: Color(0xFF128C7E), size: 22),
+                      ),
+                      title: const Text('VIP Priority Support', style: TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: const Text('Direct WhatsApp, phone & dedicated landlord concierge', style: TextStyle(fontSize: 12)),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'BUSINESS',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.ink,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      onTap: () async {
+                        final canAccess = await PlanGuardService.requireBusiness(
+                          context: context,
+                          featureName: 'VIP Priority Support',
+                          featureBenefit: 'Connect directly with a dedicated Tenera account manager via WhatsApp or direct Philippine phone line.',
+                        );
+                        if (!canAccess || !context.mounted) return;
+                        _showVipSupportModal();
+                      },
+                    ),
                   ],
                 ],
               ),
@@ -738,6 +778,113 @@ class _MoreTabState extends State<MoreTab> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showVipSupportModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.support_agent_rounded, color: Color(0xFF128C7E), size: 26),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'VIP Priority Support',
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.ink),
+                          ),
+                          Text(
+                            'Dedicated Philippine Concierge for Business Landlords',
+                            style: TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  key: const Key('btn_vip_whatsapp'),
+                  leading: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 24),
+                  title: const Text('WhatsApp Concierge', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('+63 917 888 3637 · Response within 15 mins', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppTheme.border),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    launchUrl(Uri.parse('https://wa.me/639178883637'), mode: LaunchMode.externalApplication);
+                  },
+                ),
+                const SizedBox(height: 10),
+                ListTile(
+                  key: const Key('btn_vip_phone'),
+                  leading: const Icon(Icons.phone_in_talk_rounded, color: AppTheme.primaryDeep, size: 24),
+                  title: const Text('Direct Phone Assistance', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('+63 917 888 3637 · Landlord Priority Line', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppTheme.border),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    launchUrl(Uri.parse('tel:+639178883637'), mode: LaunchMode.externalApplication);
+                  },
+                ),
+                const SizedBox(height: 10),
+                ListTile(
+                  key: const Key('btn_vip_email'),
+                  leading: const Icon(Icons.mail_outline_rounded, color: AppTheme.inkMuted, size: 24),
+                  title: const Text('VIP Email Queue', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('support@tenera.ph · High-priority routing', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppTheme.border),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    launchUrl(Uri.parse('mailto:support@tenera.ph?subject=VIP%20Support%20Request%20-%20Tenera%20Business'), mode: LaunchMode.externalApplication);
+                  },
+                ),
+                const SizedBox(height: 14),
+                const Center(
+                  child: Text(
+                    'Operating Hours: 8:00 AM – 8:00 PM PHT (Mon – Sun)',
+                    style: TextStyle(fontSize: 11, color: AppTheme.inkMuted, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
