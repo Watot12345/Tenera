@@ -88,7 +88,7 @@ class PropertiesTab extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '$occupiedUnits Occupied · $vacantUnits Vacant',
+                            '$occupiedUnits Occupied · $vacantUnits Vacant · ${isStaffMode ? '••••••' : '₱${currencyFormat.format(properties.fold<int>(0, (sum, p) => sum + p.monthlyRevenue))}/mo'}',
                             style: const TextStyle(
                               color: AppTheme.accent,
                               fontSize: 13,

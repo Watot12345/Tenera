@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/payment.dart';
 import '../models/property.dart';
@@ -98,12 +97,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _collectedAmount = _paymentRecords.fold<int>(0, (sum, p) => sum + p.amount);
 
-    final unpaidTotal = _overdueTenants.fold<int>(0, (sum, t) => sum + t.amount) +
-        _dueSoonTenants.fold<int>(0, (sum, t) => sum + t.amount);
+    final propertyExpected = _properties.fold<int>(0, (sum, p) => sum + p.monthlyRevenue);
+    final tenantExpected = _allTenants.fold<int>(0, (sum, t) => sum + t.amount);
 
-    _expectedAmount = _collectedAmount + unpaidTotal;
-    if (_expectedAmount == 0 && _properties.isNotEmpty) {
-      _expectedAmount = _properties.fold<int>(0, (sum, p) => sum + p.monthlyRevenue);
+    if (propertyExpected > 0) {
+      _expectedAmount = propertyExpected;
+    } else if (tenantExpected > 0) {
+      _expectedAmount = tenantExpected;
+    } else {
+      final unpaidTotal = _overdueTenants.fold<int>(0, (sum, t) => sum + t.amount) +
+          _dueSoonTenants.fold<int>(0, (sum, t) => sum + t.amount);
+      _expectedAmount = _collectedAmount + unpaidTotal;
     }
   }
 
@@ -741,133 +745,215 @@ class _HomeScreenState extends State<HomeScreen> {
     final nameController = TextEditingController();
     final unitController = TextEditingController(text: defaultUnit ?? '');
     final rentController = TextEditingController();
+    final phoneController = TextEditingController();
+    final messengerController = TextEditingController();
+    bool autoRemind = true;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
+        return StatefulBuilder(
+          builder: (modalCtx, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.person_add_alt_1_rounded,
+                            color: AppTheme.primary,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Add New Tenant',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.ink,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.person_add_alt_1_rounded,
-                      color: AppTheme.primary,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Add New Tenant',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.ink,
+                    const SizedBox(height: 18),
+                    TextField(
+                      key: const Key('input_tenant_name'),
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tenant Full Name',
+                        hintText: 'e.g. Roberto Gomez',
+                        prefixIcon: Icon(Icons.person_outline_rounded),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Tenant Full Name',
-                  hintText: 'e.g. Roberto Gomez',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: unitController,
-                decoration: const InputDecoration(
-                  labelText: 'Room / Unit & Property',
-                  hintText: 'e.g. 2E · Mabini Apts',
-                  prefixIcon: Icon(Icons.home_work_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: rentController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Monthly Rent (₱)',
-                  hintText: 'e.g. 4500',
-                  prefixText: '₱ ',
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () async {
-                  if (nameController.text.trim().isEmpty) return;
-                  final newRent =
-                      int.tryParse(rentController.text.trim()) ?? 4000;
-                  final initials = nameController.text
-                      .trim()
-                      .split(' ')
-                      .map((w) => w.isNotEmpty ? w[0] : '')
-                      .take(2)
-                      .join()
-                      .toUpperCase();
-
-                  final newTenant = TenantBill(
-                    id: 't_${DateTime.now().millisecondsSinceEpoch}',
-                    name: nameController.text.trim(),
-                    initials: initials.isEmpty ? 'TN' : initials,
-                    location: unitController.text.trim().isEmpty
-                        ? 'Room 4 · Mabini Apts'
-                        : unitController.text.trim(),
-                    amount: newRent,
-                    statusText: 'In 7 days',
-                    isOverdue: false,
-                  );
-
-                  Navigator.pop(context);
-                  setState(() {
-                    _dueSoonTenants.add(newTenant);
-                    _recomputeLedger();
-                  });
-                  DatabaseHelper.instance.insertTenant(newTenant);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: AppTheme.primaryDeep,
-                      content: Text(
-                        'Tenant ${nameController.text.trim()} added successfully!',
-                        style: const TextStyle(color: Colors.white),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: unitController,
+                      decoration: const InputDecoration(
+                        labelText: 'Room / Unit & Property',
+                        hintText: 'e.g. 2E · Mabini Apts',
+                        prefixIcon: Icon(Icons.home_work_outlined),
                       ),
                     ),
-                  );
-                },
-                child: const Text('Save Tenant & Lease'),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: rentController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Monthly Rent (₱)',
+                        hintText: 'e.g. 4500',
+                        prefixText: '₱ ',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('input_tenant_phone'),
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Mobile Number (SMS / Call)',
+                        hintText: 'e.g. 0917 123 4567',
+                        prefixIcon: Icon(Icons.phone_android_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      key: const Key('input_tenant_messenger'),
+                      controller: messengerController,
+                      decoration: const InputDecoration(
+                        labelText: 'FB Messenger (Handle / Link)',
+                        hintText: 'e.g. m.me/robertogomez or FB Username',
+                        prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.mark_chat_unread_rounded, size: 20, color: AppTheme.primary),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Automated Reminders',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                                ),
+                                Text(
+                                  'Auto-compose friendly SMS & FB Messenger notices',
+                                  style: TextStyle(fontSize: 11, color: AppTheme.inkMuted),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch.adaptive(
+                            key: const Key('switch_auto_reminders'),
+                            value: autoRemind,
+                            activeTrackColor: AppTheme.primary,
+                            onChanged: (val) => setModalState(() => autoRemind = val),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      key: const Key('btn_save_tenant'),
+                      onPressed: () {
+                        if (nameController.text.trim().isEmpty) return;
+                        final newRent =
+                            int.tryParse(rentController.text.trim()) ?? 4000;
+                        final initials = nameController.text
+                            .trim()
+                            .split(' ')
+                            .map((w) => w.isNotEmpty ? w[0] : '')
+                            .take(2)
+                            .join()
+                            .toUpperCase();
+
+                        final newTenant = TenantBill(
+                          id: 't_${DateTime.now().millisecondsSinceEpoch}',
+                          name: nameController.text.trim(),
+                          initials: initials.isEmpty ? 'TN' : initials,
+                          location: unitController.text.trim().isEmpty
+                              ? 'Room 4 · Mabini Apts'
+                              : unitController.text.trim(),
+                          amount: newRent,
+                          statusText: 'In 7 days',
+                          isOverdue: false,
+                          phone: phoneController.text.trim().isNotEmpty
+                              ? phoneController.text.trim()
+                              : null,
+                          messenger: messengerController.text.trim().isNotEmpty
+                              ? messengerController.text.trim()
+                              : null,
+                          automatedReminders: autoRemind,
+                        );
+
+                        Navigator.pop(context);
+                        setState(() {
+                          _dueSoonTenants.add(newTenant);
+                          _recomputeLedger();
+                        });
+                        DatabaseHelper.instance.insertTenant(newTenant);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppTheme.primaryDeep,
+                            content: Text(
+                              'Tenant ${nameController.text.trim()} added successfully!',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Save Tenant & Lease'),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1031,208 +1117,177 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _launchSms(String phone, String body) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-    final Uri smsUri = Uri(
-      scheme: 'sms',
-      path: cleanPhone,
-      queryParameters: <String, String>{
-        'body': body,
-      },
-    );
+  void _sendFriendlyReminder(TenantBill tenant) {
+    final formattedAmount = NumberFormat('#,###').format(tenant.amount);
+    final roomDisplay = tenant.location.split('·')[0].trim();
+    final reminderText =
+        'Hello ${tenant.name}, this is a gentle reminder regarding your rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Thank you!';
 
-    try {
-      if (await canLaunchUrl(smsUri)) {
-        await launchUrl(smsUri, mode: LaunchMode.externalApplication);
-      } else {
-        await Clipboard.setData(ClipboardData(text: body));
-      }
-    } catch (_) {
-      await Clipboard.setData(ClipboardData(text: body));
-    }
-  }
-
-  Widget _buildToneChip(String label, int tone, int selectedTone, ValueChanged<int> onSelect) {
-    final isSelected = tone == selectedTone;
-    return Expanded(
-      child: InkWell(
-        onTap: () => onSelect(tone),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primary : AppTheme.background,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isSelected ? AppTheme.primary : AppTheme.border),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: isSelected ? Colors.white : AppTheme.ink,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _sendFriendlyReminder(TenantBill tenant) async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedPhone = prefs.getString('tenant_phone_${tenant.id}') ?? '';
-    final phoneController = TextEditingController(text: savedPhone);
-    int selectedTone = 0; // 0: Polite (classic), 1: Due Soon, 2: Overdue
-
-    String composeMessage(int tone) {
-      final formattedAmount = NumberFormat('#,###').format(tenant.amount);
-      final roomDisplay = tenant.location.split('·')[0].trim();
-      switch (tone) {
-        case 1:
-          return 'Hi ${tenant.name}, gentle reminder that your rent of ₱$formattedAmount for $roomDisplay is due soon (${tenant.statusText}). Thank you!';
-        case 2:
-          return 'Hello ${tenant.name}, this is a gentle reminder regarding your overdue rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Thank you!';
-        case 0:
-        default:
-          return 'Hello ${tenant.name}, this is a gentle reminder regarding your rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Thank you!';
-      }
-    }
-
-    if (!mounted) return;
+    final hasPhone = tenant.phone != null && tenant.phone!.isNotEmpty;
+    final hasMessenger = tenant.messenger != null && tenant.messenger!.isNotEmpty;
 
     showDialog(
       context: context,
       builder: (dialogCtx) {
-        return StatefulBuilder(
-          builder: (modalCtx, setDialogState) {
-            final messageText = composeMessage(selectedTone);
-
-            return AlertDialog(
-              backgroundColor: AppTheme.surface,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              title: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.primary, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Remind ${tenant.name}',
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Message Tone:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkMuted)),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        _buildToneChip('Polite', 0, selectedTone, (val) => setDialogState(() => selectedTone = val)),
-                        const SizedBox(width: 6),
-                        _buildToneChip('Due Soon', 1, selectedTone, (val) => setDialogState(() => selectedTone = val)),
-                        const SizedBox(width: 6),
-                        _buildToneChip('Overdue', 2, selectedTone, (val) => setDialogState(() => selectedTone = val)),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.background,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.border),
-                      ),
-                      child: Text(
-                        messageText,
-                        style: const TextStyle(fontSize: 13, color: AppTheme.ink, height: 1.4),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text('Tenant Mobile Number (Optional):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkMuted)),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. 0917 123 4567',
-                        hintStyle: const TextStyle(fontSize: 13, color: AppTheme.inkMuted),
-                        prefixIcon: const Icon(Icons.phone_android_rounded, size: 18, color: AppTheme.primary),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                      ),
-                    ),
-                  ],
+        return AlertDialog(
+          backgroundColor: AppTheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  color: AppTheme.primary,
+                  size: 20,
                 ),
               ),
-              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              actions: [
-                Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: messageText));
-                        Navigator.pop(dialogCtx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: AppTheme.primaryDeep,
-                            content: Text('Reminder copied for ${tenant.name} to send via SMS / Chat!'),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.copy_rounded, size: 16),
-                      label: const Text('Copy Text'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        key: const Key('btn_send_sms_native'),
-                        onPressed: () async {
-                          final phone = phoneController.text.trim();
-                          Navigator.pop(dialogCtx);
-                          if (phone.isNotEmpty) {
-                            await prefs.setString('tenant_phone_${tenant.id}', phone);
-                          }
-                          await Clipboard.setData(ClipboardData(text: messageText));
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: AppTheme.primaryDeep,
-                              content: Text('📱 Opening Messages for ${tenant.name}! (Text also copied to clipboard)'),
-                            ),
-                          );
-                          _launchSms(phone, messageText);
-                        },
-                        icon: const Icon(Icons.sms_rounded, size: 16),
-                        label: const Text('Send SMS', style: TextStyle(fontWeight: FontWeight.w700)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Remind ${tenant.name}',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasPhone || hasMessenger) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.send_rounded, size: 14, color: AppTheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          [
+                            if (hasPhone) '📱 ${tenant.phone}',
+                            if (hasMessenger) '💬 m.me/${tenant.messenger!.replaceAll('https://m.me/', '').replaceAll('m.me/', '')}',
+                          ].join('   ·   '),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.ink),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
-            );
-          },
+              const Text(
+                'Pre-composed reminder message:',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.inkMuted,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                child: Text(
+                  reminderText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.ink,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.inkMuted)),
+            ),
+            if (hasMessenger)
+              OutlinedButton.icon(
+                key: const Key('btn_open_fb_messenger'),
+                onPressed: () async {
+                  Clipboard.setData(ClipboardData(text: reminderText));
+                  Navigator.pop(dialogCtx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: const Color(0xFF0084FF),
+                      content: Text('💬 Opening FB Messenger for ${tenant.name}! (Reminder text copied)'),
+                    ),
+                  );
+                  final clean = tenant.messenger!
+                      .replaceAll('https://m.me/', '')
+                      .replaceAll('http://m.me/', '')
+                      .replaceAll('m.me/', '')
+                      .replaceAll('@', '')
+                      .trim();
+                  final uri = Uri.parse('https://m.me/$clean');
+                  try {
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  } catch (_) {}
+                },
+                icon: const Icon(Icons.chat_bubble_rounded, size: 15, color: Color(0xFF0084FF)),
+                label: const Text('FB Messenger', style: TextStyle(color: Color(0xFF0084FF), fontWeight: FontWeight.w700, fontSize: 13)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF0084FF)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ElevatedButton.icon(
+              key: const Key('btn_share_reminder'),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: reminderText));
+                Navigator.pop(dialogCtx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: AppTheme.primaryDeep,
+                    content: Text(
+                      'Reminder copied for ${tenant.name} to send via SMS / Chat!',
+                    ),
+                  ),
+                );
+                if (hasPhone) {
+                  final cleanPhone = tenant.phone!.replaceAll(RegExp(r'[^0-9+]'), '');
+                  final smsUri = Uri(
+                    scheme: 'sms',
+                    path: cleanPhone,
+                    queryParameters: <String, String>{'body': reminderText},
+                  );
+                  canLaunchUrl(smsUri).then((canLaunch) {
+                    if (canLaunch) {
+                      launchUrl(smsUri, mode: LaunchMode.externalApplication);
+                    }
+                  }).catchError((_) {});
+                }
+              },
+              icon: const Icon(Icons.share_rounded, size: 18),
+              label: const Text('Share Reminder', style: TextStyle(fontWeight: FontWeight.w700)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -1411,8 +1466,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final String currentDateStr =
         DateFormat('EEE, MMM d').format(DateTime.now());
     final String currentMonthStr = DateFormat('MMMM').format(DateTime.now());
-    final double collectionProgress =
-        (_collectedAmount / _expectedAmount).clamp(0.0, 1.0);
+    final double collectionProgress = _expectedAmount > 0
+        ? (_collectedAmount / _expectedAmount).clamp(0.0, 1.0)
+        : 0.0;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -1689,6 +1745,7 @@ class _HomeScreenState extends State<HomeScreen> {
           tenants: _allTenants,
           onRecordPayment: (tenant) => _openRecordPaymentDialog(tenant),
           onSendReminder: (tenant) => _sendFriendlyReminder(tenant),
+          onAddTenant: () => _openAddTenantDialog(),
           onShowReceipt: (tenant) {
             final existingRec = _paymentRecords.firstWhere(
               (r) => r.tenantName == tenant.name,

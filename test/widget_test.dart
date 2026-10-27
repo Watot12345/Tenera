@@ -380,10 +380,37 @@ void main() {
     expect(find.text('No tenants found for "nonexistenttenant999"'), findsOneWidget);
     expect(find.text('Clear Search'), findsOneWidget);
 
-    // Tap "Clear Search" button
-    await tester.tap(find.text('Clear Search'));
+    expect(find.byKey(const Key('btn_add_tenant_bar')), findsOneWidget);
+
+    // Tap "Add Tenant" button in search bar row
+    await tester.tap(find.byKey(const Key('btn_add_tenant_bar')));
     await tester.pumpAndSettle();
-    expect(find.text('Maria S.'), findsOneWidget);
+
+    // Verify modal elements: Name, Unit, Rent, Phone, FB Messenger, Auto Reminders Switch
+    expect(find.text('Add New Tenant'), findsOneWidget);
+    expect(find.byKey(const Key('input_tenant_phone')), findsOneWidget);
+    expect(find.byKey(const Key('input_tenant_messenger')), findsOneWidget);
+    expect(find.byKey(const Key('switch_auto_reminders')), findsOneWidget);
+
+    // Enter details for new tenant
+    await tester.enterText(find.byKey(const Key('input_tenant_name')), 'Eduardo Manalo');
+    await tester.enterText(find.byKey(const Key('input_tenant_phone')), '0917 111 2222');
+    await tester.enterText(find.byKey(const Key('input_tenant_messenger')), 'm.me/eduardo_manalo');
+    await tester.pumpAndSettle();
+
+    // Tap Save Tenant
+    final saveBtn = find.byKey(const Key('btn_save_tenant'));
+    await tester.ensureVisible(saveBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(saveBtn);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Tenant is added and appears with phone badge
+    expect(find.textContaining('Eduardo Manalo added'), findsOneWidget);
   });
 
   testWidgets('App Guide: opens from More tab and filters by category',
@@ -586,7 +613,7 @@ void main() {
     expect(find.text('Vacant units'), findsOneWidget);
   });
 
-  testWidgets('1-Tap SMS Reminder: opens reminder modal, switches tones, and launches SMS',
+  testWidgets('Quick action: Remind Tenants opens simple reminder dialog and copies reminder',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({
       PrivacyPolicyScreen.prefKeyAccepted: true,
@@ -605,26 +632,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify reminder dialog opens
-    expect(find.textContaining('Remind'), findsOneWidget);
-    expect(find.text('Message Tone:'), findsOneWidget);
-    expect(find.text('Polite'), findsOneWidget);
-    expect(find.text('Due Soon'), findsOneWidget);
-    expect(find.text('Overdue'), findsWidgets);
+    expect(find.textContaining('Remind Maria'), findsOneWidget);
+    expect(find.text('Pre-composed reminder message:'), findsOneWidget);
 
-    // Switch tone to "Due Soon"
-    await tester.tap(find.text('Due Soon'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('due soon'), findsOneWidget);
-
-    // Enter a phone number
-    final phoneField = find.byType(TextField).last;
-    await tester.enterText(phoneField, '09171234567');
-    await tester.pumpAndSettle();
-
-    // Tap "Send SMS"
-    final sendSmsBtn = find.byKey(const Key('btn_send_sms_native'));
-    expect(sendSmsBtn, findsOneWidget);
-    await tester.tap(sendSmsBtn);
+    // Tap "Share Reminder"
+    final shareReminderBtn = find.byKey(const Key('btn_share_reminder'));
+    expect(shareReminderBtn, findsOneWidget);
+    await tester.tap(shareReminderBtn);
     await tester.pump();
     await tester.runAsync(() async {
       await Future.delayed(const Duration(milliseconds: 300));
@@ -632,7 +646,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify confirmation feedback
-    expect(find.textContaining('Opening Messages'), findsOneWidget);
+    expect(find.textContaining('Reminder copied for'), findsOneWidget);
   });
 
   testWidgets('Revenue & BIR Tax Report: computes tax regimes, displays metrics, and exports CSV',

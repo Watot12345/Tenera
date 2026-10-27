@@ -7,6 +7,9 @@ class TenantBill {
   final String statusText;
   final bool isOverdue;
   bool isPaid;
+  final String? phone;
+  final String? messenger;
+  final bool automatedReminders;
 
   TenantBill({
     required this.id,
@@ -17,6 +20,9 @@ class TenantBill {
     required this.statusText,
     required this.isOverdue,
     this.isPaid = false,
+    this.phone,
+    this.messenger,
+    this.automatedReminders = true,
   });
 
   TenantBill copyWith({
@@ -28,6 +34,9 @@ class TenantBill {
     String? statusText,
     bool? isOverdue,
     bool? isPaid,
+    String? phone,
+    String? messenger,
+    bool? automatedReminders,
   }) {
     return TenantBill(
       id: id ?? this.id,
@@ -38,6 +47,9 @@ class TenantBill {
       statusText: statusText ?? this.statusText,
       isOverdue: isOverdue ?? this.isOverdue,
       isPaid: isPaid ?? this.isPaid,
+      phone: phone ?? this.phone,
+      messenger: messenger ?? this.messenger,
+      automatedReminders: automatedReminders ?? this.automatedReminders,
     );
   }
 }

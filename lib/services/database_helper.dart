@@ -69,6 +69,17 @@ class DatabaseHelper {
       }
     }
 
+    // Seamless migration for existing tenants table
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN phone TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN messenger TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN automated_reminders INTEGER DEFAULT 1');
+    } catch (_) {}
+
     return db;
   }
 
@@ -111,6 +122,9 @@ class DatabaseHelper {
         status_text TEXT NOT NULL,
         is_overdue INTEGER NOT NULL DEFAULT 0,
         is_paid INTEGER NOT NULL DEFAULT 0,
+        phone TEXT,
+        messenger TEXT,
+        automated_reminders INTEGER NOT NULL DEFAULT 1,
         updated_at INTEGER NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 0
       )
@@ -251,15 +265,15 @@ class DatabaseHelper {
 
     // Seed Tenants
     final tenants = [
-      {'id': 't1', 'name': 'Maria S.', 'initials': 'MS', 'location': 'Room 3 · Mabini Apts', 'amount': 3500, 'status_text': '5 days late', 'is_overdue': 1, 'is_paid': 0},
-      {'id': 't2', 'name': 'Ramon D.', 'initials': 'RD', 'location': 'Unit 2B · Mabini Apts', 'amount': 5000, 'status_text': '2 days late', 'is_overdue': 1, 'is_paid': 0},
-      {'id': 't3', 'name': 'Jun R.', 'initials': 'JR', 'location': 'Room 5 · Rizal House', 'amount': 3000, 'status_text': 'In 2 days', 'is_overdue': 0, 'is_paid': 0},
-      {'id': 't4', 'name': 'Ana P.', 'initials': 'AP', 'location': 'Unit 1A · Rizal House', 'amount': 4000, 'status_text': 'In 4 days', 'is_overdue': 0, 'is_paid': 0},
-      {'id': 't5', 'name': 'Juan Carlos', 'initials': 'JC', 'location': 'Room 1 · Mabini Apts', 'amount': 4000, 'status_text': 'Paid Oct 25', 'is_overdue': 0, 'is_paid': 1},
-      {'id': 't6', 'name': 'Elena Santos', 'initials': 'ES', 'location': 'Room 2 · Mabini Apts', 'amount': 3500, 'status_text': 'Paid Oct 24', 'is_overdue': 0, 'is_paid': 1},
-      {'id': 't7', 'name': 'Mateo Cruz', 'initials': 'MC', 'location': 'Unit 3A · Rizal House', 'amount': 5000, 'status_text': 'Paid Oct 22', 'is_overdue': 0, 'is_paid': 1},
-      {'id': 't8', 'name': 'Rosa Diaz', 'initials': 'RD', 'location': 'Unit 2A · Rizal House', 'amount': 4500, 'status_text': 'Paid Oct 20', 'is_overdue': 0, 'is_paid': 1},
-      {'id': 't9', 'name': 'Roberto Gomez', 'initials': 'RG', 'location': 'Room R4 · Mabini Apts', 'amount': 4000, 'status_text': 'Paid Oct 18', 'is_overdue': 0, 'is_paid': 1},
+      {'id': 't1', 'name': 'Maria S.', 'initials': 'MS', 'location': 'Room 3 · Mabini Apts', 'amount': 3500, 'status_text': '5 days late', 'is_overdue': 1, 'is_paid': 0, 'phone': '0917 888 1234', 'messenger': 'mariasantos', 'automated_reminders': 1},
+      {'id': 't2', 'name': 'Ramon D.', 'initials': 'RD', 'location': 'Unit 2B · Mabini Apts', 'amount': 5000, 'status_text': '2 days late', 'is_overdue': 1, 'is_paid': 0, 'phone': '0918 555 6789', 'messenger': 'ramond', 'automated_reminders': 1},
+      {'id': 't3', 'name': 'Jun R.', 'initials': 'JR', 'location': 'Room 5 · Rizal House', 'amount': 3000, 'status_text': 'In 2 days', 'is_overdue': 0, 'is_paid': 0, 'phone': '0922 333 4455', 'messenger': 'junr_ph', 'automated_reminders': 1},
+      {'id': 't4', 'name': 'Ana P.', 'initials': 'AP', 'location': 'Unit 1A · Rizal House', 'amount': 4000, 'status_text': 'In 4 days', 'is_overdue': 0, 'is_paid': 0, 'phone': '0905 111 2233', 'messenger': 'anap_official', 'automated_reminders': 1},
+      {'id': 't5', 'name': 'Juan Carlos', 'initials': 'JC', 'location': 'Room 1 · Mabini Apts', 'amount': 4000, 'status_text': 'Paid Oct 25', 'is_overdue': 0, 'is_paid': 1, 'phone': '0917 999 8877', 'messenger': 'jcarlos', 'automated_reminders': 1},
+      {'id': 't6', 'name': 'Elena Santos', 'initials': 'ES', 'location': 'Room 2 · Mabini Apts', 'amount': 3500, 'status_text': 'Paid Oct 24', 'is_overdue': 0, 'is_paid': 1, 'phone': '0927 444 5566', 'messenger': 'esantos', 'automated_reminders': 1},
+      {'id': 't7', 'name': 'Mateo Cruz', 'initials': 'MC', 'location': 'Unit 3A · Rizal House', 'amount': 5000, 'status_text': 'Paid Oct 22', 'is_overdue': 0, 'is_paid': 1, 'phone': '0919 777 6655', 'messenger': 'mateocruz', 'automated_reminders': 1},
+      {'id': 't8', 'name': 'Rosa Diaz', 'initials': 'RD', 'location': 'Unit 2A · Rizal House', 'amount': 4500, 'status_text': 'Paid Oct 20', 'is_overdue': 0, 'is_paid': 1, 'phone': '0916 222 3344', 'messenger': 'rosadiaz', 'automated_reminders': 1},
+      {'id': 't9', 'name': 'Roberto Gomez', 'initials': 'RG', 'location': 'Room R4 · Mabini Apts', 'amount': 4000, 'status_text': 'Paid Oct 18', 'is_overdue': 0, 'is_paid': 1, 'phone': '0928 333 7788', 'messenger': 'robertogomez', 'automated_reminders': 1},
       {'id': 't10', 'name': 'Carlos Tan', 'initials': 'CT', 'location': 'Room R5 · Mabini Apts', 'amount': 3500, 'status_text': 'Paid Oct 17', 'is_overdue': 0, 'is_paid': 1},
       {'id': 't11', 'name': 'Liza M.', 'initials': 'LM', 'location': 'Room R6 · Mabini Apts', 'amount': 3800, 'status_text': 'Paid Oct 16', 'is_overdue': 0, 'is_paid': 1},
       {'id': 't12', 'name': 'Danilo P.', 'initials': 'DP', 'location': 'Unit 2A · Mabini Apts', 'amount': 4200, 'status_text': 'Paid Oct 15', 'is_overdue': 0, 'is_paid': 1},
@@ -725,6 +739,9 @@ class DatabaseHelper {
         statusText: t['status_text'] as String,
         isOverdue: (t['is_overdue'] as int) == 1,
         isPaid: (t['is_paid'] as int) == 1,
+        phone: t['phone'] as String?,
+        messenger: t['messenger'] as String?,
+        automatedReminders: t['automated_reminders'] == null ? true : (t['automated_reminders'] as int) != 0,
       );
     }).toList();
   }
@@ -744,6 +761,9 @@ class DatabaseHelper {
         'status_text': tenant.statusText,
         'is_overdue': tenant.isOverdue ? 1 : 0,
         'is_paid': tenant.isPaid ? 1 : 0,
+        'phone': tenant.phone,
+        'messenger': tenant.messenger,
+        'automated_reminders': tenant.automatedReminders ? 1 : 0,
         'updated_at': now,
         'is_synced': 0,
       },
@@ -765,6 +785,9 @@ class DatabaseHelper {
         'status_text': tenant.statusText,
         'is_overdue': tenant.isOverdue ? 1 : 0,
         'is_paid': tenant.isPaid ? 1 : 0,
+        'phone': tenant.phone,
+        'messenger': tenant.messenger,
+        'automated_reminders': tenant.automatedReminders ? 1 : 0,
         'updated_at': now,
         'is_synced': 0,
       },
