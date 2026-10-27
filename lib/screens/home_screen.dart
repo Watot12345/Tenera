@@ -8,6 +8,7 @@ import '../models/property.dart';
 import '../models/tenant.dart';
 import '../services/database_helper.dart';
 import '../services/plan_guard_service.dart';
+import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/roof_ledger_logo.dart';
 import 'privacy_policy_screen.dart';
@@ -43,14 +44,17 @@ class _HomeScreenState extends State<HomeScreen> {
         db.getProperties(),
         db.getTenants(),
         db.getPayments(),
+        StaffModeService.isStaffMode(),
       ]);
 
       final props = results[0] as List<PropertyItem>;
       final tenants = results[1] as List<TenantBill>;
       final payments = results[2] as List<PaymentRecord>;
+      final isStaff = results[3] as bool;
 
       if (mounted) {
         setState(() {
+          _isStaffMode = isStaff;
           _properties = props;
           _overdueTenants = tenants.where((t) => t.isOverdue && !t.isPaid).toList();
           _dueSoonTenants = tenants.where((t) => !t.isOverdue && !t.isPaid).toList();
@@ -61,6 +65,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (_) {
       // Ignore database errors
+    }
+  }
+
+  Future<void> _refreshStaffMode() async {
+    final staff = await StaffModeService.isStaffMode();
+    if (mounted) {
+      setState(() => _isStaffMode = staff);
     }
   }
 
@@ -91,6 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _expectedAmount = 0;
   int _vacantUnits = 0;
   int _totalUnits = 0;
+  bool _isStaffMode = false;
 
   // Real database-backed lists (no static hardcoded data)
   List<PropertyItem> _properties = [];
@@ -1394,9 +1406,78 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppTheme.background,
       appBar: _buildAppBar(currentDateStr),
       body: SafeArea(
-        child: _buildBody(currentMonthStr, collectionProgress),
+        child: Column(
+          children: [
+            if (_isStaffMode) _buildStaffModeBanner(),
+            Expanded(
+              child: _buildBody(currentMonthStr, collectionProgress),
+            ),
+          ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildStaffModeBanner() {
+    return Container(
+      key: const Key('banner_staff_mode_active'),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withValues(alpha: 0.18),
+        border: const Border(
+          bottom: BorderSide(color: AppTheme.accent, width: 1.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.accent,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Icon(Icons.shield_rounded, size: 16, color: AppTheme.ink),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Caretaker Mode Active · Financials Hidden',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.primaryDeep,
+              ),
+            ),
+          ),
+          InkWell(
+            key: const Key('btn_exit_staff_mode_banner'),
+            onTap: () {
+              StaffModeService.toggleStaffMode(
+                context,
+                onModeChanged: _refreshStaffMode,
+              );
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryDeep,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Exit (PIN)',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1594,11 +1675,13 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           onTenantTap: (tenant) => _openRecordPaymentDialog(tenant),
           onSendReminder: (tenant) => _sendFriendlyReminder(tenant),
+          isStaffMode: _isStaffMode,
         );
       case 1:
         return PropertiesTab(
           properties: _properties,
           onAddProperty: _openAddPropertyDialog,
+          isStaffMode: _isStaffMode,
           onViewRooms: (prop) async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -1644,11 +1727,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return PaymentsTab(
           paymentRecords: _paymentRecords,
           collectedAmount: _collectedAmount,
+          isStaffMode: _isStaffMode,
           onRecordPayment: () => _openRecordPaymentDialog(),
           onShowReceipt: (rec) => _showReceiptDialog(rec),
         );
       case 4:
-        return const MoreTab();
+        return MoreTab(onStaffModeToggled: _refreshStaffMode);
       default:
         return const SizedBox.shrink();
     }
@@ -1684,10 +1768,14 @@ class _HomeScreenState extends State<HomeScreen> {
           height: 64,
           backgroundColor: AppTheme.surface,
           selectedIndex: _currentNavIndex,
-          onDestinationSelected: (index) {
+          onDestinationSelected: (index) async {
             setState(() {
               _currentNavIndex = index;
             });
+            final staff = await StaffModeService.isStaffMode();
+            if (mounted && staff != _isStaffMode) {
+              setState(() => _isStaffMode = staff);
+            }
           },
           destinations: const [
             NavigationDestination(

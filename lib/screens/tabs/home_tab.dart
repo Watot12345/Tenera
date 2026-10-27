@@ -20,6 +20,7 @@ class HomeTab extends StatelessWidget {
   final VoidCallback onRemindOverdueQuick;
   final Function(TenantBill) onTenantTap;
   final Function(TenantBill) onSendReminder;
+  final bool isStaffMode;
 
   const HomeTab({
     super.key,
@@ -39,6 +40,7 @@ class HomeTab extends StatelessWidget {
     required this.onRemindOverdueQuick,
     required this.onTenantTap,
     required this.onSendReminder,
+    this.isStaffMode = false,
   });
 
   @override
@@ -102,7 +104,7 @@ class HomeTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Collected in $month',
+            isStaffMode ? 'Caretaker Rent Tracking' : 'Collected in $month',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 14,
@@ -111,7 +113,7 @@ class HomeTab extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '₱${currencyFormat.format(collectedAmount)}',
+            isStaffMode ? '••••••' : '₱${currencyFormat.format(collectedAmount)}',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 36,
@@ -127,7 +129,7 @@ class HomeTab extends StatelessWidget {
             child: SizedBox(
               height: 7,
               child: LinearProgressIndicator(
-                value: progress,
+                value: isStaffMode ? 1.0 : progress,
                 backgroundColor: Colors.white.withValues(alpha: 0.22),
                 valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
               ),
@@ -136,7 +138,9 @@ class HomeTab extends StatelessWidget {
 
           const SizedBox(height: 12),
           Text(
-            'of ₱${currencyFormat.format(expectedAmount)} expected this month',
+            isStaffMode
+                ? 'Caretaker Mode Active · Financial Totals Hidden'
+                : 'of ₱${currencyFormat.format(expectedAmount)} expected this month',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.85),
               fontSize: 13,
@@ -181,7 +185,7 @@ class HomeTab extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '₱${currencyFormat.format(overdueTotal)}',
+            isStaffMode ? '••••••' : '₱${currencyFormat.format(overdueTotal)}',
             style: const TextStyle(
               color: AppTheme.statusOverdue,
               fontSize: 22,

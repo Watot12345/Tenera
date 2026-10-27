@@ -8,6 +8,7 @@ class PaymentsTab extends StatefulWidget {
   final int collectedAmount;
   final VoidCallback onRecordPayment;
   final Function(PaymentRecord) onShowReceipt;
+  final bool isStaffMode;
 
   const PaymentsTab({
     super.key,
@@ -15,6 +16,7 @@ class PaymentsTab extends StatefulWidget {
     required this.collectedAmount,
     required this.onRecordPayment,
     required this.onShowReceipt,
+    this.isStaffMode = false,
   });
 
   @override
@@ -69,7 +71,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '₱${currencyFormat.format(widget.collectedAmount)}',
+                  widget.isStaffMode ? '••••••' : '₱${currencyFormat.format(widget.collectedAmount)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 34,

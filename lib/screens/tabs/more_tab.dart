@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../services/firebase_service.dart';
 import '../../services/plan_guard_service.dart';
+import '../../services/staff_mode_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
@@ -13,7 +15,9 @@ import '../utility_calculator_screen.dart';
 import '../welcome_screen.dart';
 
 class MoreTab extends StatefulWidget {
-  const MoreTab({super.key});
+  final FutureOr<void> Function()? onStaffModeToggled;
+
+  const MoreTab({super.key, this.onStaffModeToggled});
 
   @override
   State<MoreTab> createState() => _MoreTabState();
@@ -23,6 +27,7 @@ class _MoreTabState extends State<MoreTab> {
   int _pendingSyncCount = 0;
   bool _isSyncing = false;
   bool _isCheckingUpdate = false;
+  bool _isStaffMode = false;
   String _currentVersion = '1.0.0';
 
   @override
@@ -34,10 +39,12 @@ class _MoreTabState extends State<MoreTab> {
   Future<void> _refreshStatus() async {
     final count = await SyncService.instance.getPendingSyncCount();
     final ver = await UpdateService.instance.getCurrentVersion();
+    final staff = await StaffModeService.isStaffMode();
     if (mounted) {
       setState(() {
         _pendingSyncCount = count;
         _currentVersion = ver;
+        _isStaffMode = staff;
       });
     }
   }
@@ -339,46 +346,126 @@ class _MoreTabState extends State<MoreTab> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppTheme.border),
               ),
-              child: ListTile(
-                key: const Key('more_portfolio_analytics'),
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryDeep.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.domain_rounded, color: AppTheme.primaryDeep, size: 22),
-                ),
-                title: const Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text('Cross-property performance, occupancy % & delinquency reports', style: TextStyle(fontSize: 12)),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'BUSINESS',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.ink,
-                      letterSpacing: 0.5,
+              child: Column(
+                children: [
+                  if (!_isStaffMode) ...[
+                    ListTile(
+                      key: const Key('more_portfolio_analytics'),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryDeep.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.domain_rounded, color: AppTheme.primaryDeep, size: 22),
+                      ),
+                      title: const Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: const Text('Cross-property performance, occupancy % & delinquency reports', style: TextStyle(fontSize: 12)),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accent,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'BUSINESS',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.ink,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      onTap: () async {
+                        final canAccess = await PlanGuardService.requireBusiness(
+                          context: context,
+                          featureName: 'Portfolio Analytics',
+                          featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
+                        );
+                        if (!canAccess || !context.mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
+                        );
+                      },
                     ),
+                    const Divider(height: 1, indent: 60),
+                  ],
+                  ListTile(
+                    key: const Key('more_caretaker_mode'),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _isStaffMode ? AppTheme.accent.withValues(alpha: 0.25) : AppTheme.primaryDeep.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        _isStaffMode ? Icons.shield_rounded : Icons.shield_outlined,
+                        color: AppTheme.primaryDeep,
+                        size: 22,
+                      ),
+                    ),
+                    title: const Text('Caretaker / Staff Mode', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: Text(
+                      _isStaffMode ? 'Active (Financials hidden) · Tap to exit' : 'Hide gross revenues and protect with 4-digit PIN',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _isStaffMode ? AppTheme.primaryDeep : AppTheme.inkMuted,
+                        fontWeight: _isStaffMode ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_isStaffMode) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryDeep,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'LOCKED',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'BUSINESS',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.ink,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    onTap: () async {
+                      await StaffModeService.toggleStaffMode(
+                        context,
+                        onModeChanged: () async {
+                          final staff = await StaffModeService.isStaffMode();
+                          if (mounted) {
+                            setState(() => _isStaffMode = staff);
+                          }
+                          if (widget.onStaffModeToggled != null) {
+                            await widget.onStaffModeToggled!();
+                          }
+                        },
+                      );
+                    },
                   ),
-                ),
-                onTap: () async {
-                  final canAccess = await PlanGuardService.requireBusiness(
-                    context: context,
-                    featureName: 'Portfolio Analytics',
-                    featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
-                  );
-                  if (!canAccess || !context.mounted) return;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
-                  );
-                },
+                ],
               ),
             ),
           ),

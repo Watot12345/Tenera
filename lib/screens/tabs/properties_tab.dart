@@ -9,12 +9,14 @@ class PropertiesTab extends StatelessWidget {
   final List<PropertyItem> properties;
   final VoidCallback onAddProperty;
   final Function(PropertyItem?) onViewRooms;
+  final bool isStaffMode;
 
   const PropertiesTab({
     super.key,
     required this.properties,
     required this.onAddProperty,
     required this.onViewRooms,
+    this.isStaffMode = false,
   });
 
   @override
@@ -96,53 +98,55 @@ class PropertiesTab extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                const Divider(height: 1, color: Colors.white24),
-                const SizedBox(height: 12),
-                InkWell(
-                  key: const Key('btn_open_portfolio_analytics'),
-                  onTap: () async {
-                    final canAccess = await PlanGuardService.requireBusiness(
-                      context: context,
-                      featureName: 'Portfolio Analytics',
-                      featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
-                    );
-                    if (!canAccess || !context.mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.analytics_rounded, color: AppTheme.accent, size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'Multi-Property Analytics',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                if (!isStaffMode) ...[
+                  const SizedBox(height: 14),
+                  const Divider(height: 1, color: Colors.white24),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    key: const Key('btn_open_portfolio_analytics'),
+                    onTap: () async {
+                      final canAccess = await PlanGuardService.requireBusiness(
+                        context: context,
+                        featureName: 'Portfolio Analytics',
+                        featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
+                      );
+                      if (!canAccess || !context.mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.analytics_rounded, color: AppTheme.accent, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Multi-Property Analytics',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        _PropertiesBusinessBadge(),
-                      ],
+                            ],
+                          ),
+                          _PropertiesBusinessBadge(),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -306,7 +310,7 @@ class PropertiesTab extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '₱${currencyFormat.format(prop.monthlyRevenue)}',
+                    isStaffMode ? '••••••' : '₱${currencyFormat.format(prop.monthlyRevenue)}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,

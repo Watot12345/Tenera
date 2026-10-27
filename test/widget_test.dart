@@ -902,5 +902,94 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Portfolio Analytics CSV copied to clipboard'), findsOneWidget);
   });
+
+  testWidgets('Caretaker / Staff Mode: PIN creation, financial masking, and unlock flow',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'business',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to More tab
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    // Scroll to Business Tier Tools
+    await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+
+    // Verify Caretaker / Staff Mode tile exists
+    expect(find.byKey(const Key('more_caretaker_mode')), findsOneWidget);
+
+    // Tap to enable Caretaker Mode (prompts to set Master PIN)
+    await tester.tap(find.byKey(const Key('more_caretaker_mode')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Create Master PIN'), findsOneWidget);
+
+    // Enter mismatching PIN
+    await tester.enterText(find.byKey(const Key('input_create_pin')), '1234');
+    await tester.enterText(find.byKey(const Key('input_confirm_pin')), '9999');
+    await tester.tap(find.byKey(const Key('btn_save_pin_and_enable')));
+    await tester.pumpAndSettle();
+    expect(find.text('PINs do not match'), findsOneWidget);
+
+    // Enter matching PIN
+    await tester.enterText(find.byKey(const Key('input_confirm_pin')), '1234');
+    await tester.tap(find.byKey(const Key('btn_save_pin_and_enable')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Now in Caretaker Mode!
+    // Verify top banner is active
+    expect(find.byKey(const Key('banner_staff_mode_active')), findsOneWidget);
+    expect(find.text('Caretaker Mode Active · Financials Hidden'), findsOneWidget);
+
+    // Check Home tab financial masking
+    await tester.tap(find.byKey(const Key('nav_home')));
+    await tester.pumpAndSettle();
+    expect(find.text('••••••'), findsWidgets);
+    expect(find.text('Caretaker Rent Tracking'), findsOneWidget);
+
+    // Check Properties tab masking
+    await tester.tap(find.byKey(const Key('nav_properties')));
+    await tester.pumpAndSettle();
+    expect(find.text('••••••'), findsWidgets);
+    expect(find.byKey(const Key('btn_open_portfolio_analytics')), findsNothing);
+
+    // Check Payments tab masking
+    await tester.tap(find.byKey(const Key('nav_payments')));
+    await tester.pumpAndSettle();
+    expect(find.text('••••••'), findsWidgets);
+
+    // Exit Caretaker Mode via top banner
+    await tester.tap(find.byKey(const Key('btn_exit_staff_mode_banner')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Exit Caretaker Mode'), findsOneWidget);
+
+    // Test invalid PIN
+    await tester.enterText(find.byKey(const Key('input_enter_staff_pin')), '0000');
+    await tester.tap(find.byKey(const Key('btn_verify_staff_pin')));
+    await tester.pumpAndSettle();
+    expect(find.text('Incorrect PIN. Try again.'), findsOneWidget);
+
+    // Enter valid PIN
+    await tester.enterText(find.byKey(const Key('input_enter_staff_pin')), '1234');
+    await tester.tap(find.byKey(const Key('btn_verify_staff_pin')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Banner removed, financials unmasked!
+    expect(find.byKey(const Key('banner_staff_mode_active')), findsNothing);
+  });
 }
 
