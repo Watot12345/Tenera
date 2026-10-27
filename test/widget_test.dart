@@ -495,5 +495,82 @@ void main() {
     expect(find.text('Reference / Txn No.'), findsOneWidget);
     expect(find.text('GCASH-99887766'), findsOneWidget);
   });
+
+  testWidgets('Utility Sub-Meter Splitter: opens, calculates electric kWh splits, saves and shares',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Tap the bolt action icon in the home app bar
+    final utilityBtn = find.byKey(const Key('home_action_utility_splitter'));
+    expect(utilityBtn, findsOneWidget);
+    await tester.tap(utilityBtn);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 400));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify Utility Sub-Meter Splitter screen is opened
+    expect(find.text('Utility Sub-Meter Splitter'), findsOneWidget);
+    expect(find.text('Electricity (kWh)'), findsOneWidget);
+    expect(find.text('Water (m³)'), findsOneWidget);
+    expect(find.text('Actual Bill Split'), findsOneWidget);
+    expect(find.text('Fixed Rate'), findsOneWidget);
+    expect(find.text('Equal Split'), findsOneWidget);
+
+    // Verify rooms are loaded from SQLite
+    expect(find.text('Mabini Apts'), findsOneWidget);
+    expect(find.text('R1'), findsOneWidget);
+    expect(find.text('Elena Santos'), findsOneWidget);
+
+    // Toggle to Water (m³)
+    await tester.tap(find.text('Water (m³)'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Total Water Bill (₱)'), findsOneWidget);
+
+    // Toggle back to Electricity (kWh)
+    await tester.tap(find.text('Electricity (kWh)'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Total Meralco Bill (₱)'), findsOneWidget);
+
+    // Tap "Share Breakdown"
+    await tester.tap(find.text('Share Breakdown'));
+    await tester.pumpAndSettle();
+    expect(find.text('Breakdown Copied!'), findsOneWidget);
+
+    // Close breakdown dialog
+    await tester.tap(find.text('Got it'));
+    await tester.pumpAndSettle();
+
+    // Tap "Save Readings"
+    await tester.tap(find.text('Save Readings'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Saved readings for Mabini Apts'), findsOneWidget);
+
+    // Return to Home
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+    expect(find.text('Vacant units'), findsOneWidget);
+  });
 }
 

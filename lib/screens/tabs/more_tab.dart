@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
 import '../privacy_policy_screen.dart';
 import '../subscription_plans_screen.dart';
+import '../utility_calculator_screen.dart';
 import '../welcome_screen.dart';
 
 class MoreTab extends StatefulWidget {
@@ -202,6 +203,68 @@ class _MoreTabState extends State<MoreTab> {
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Pro Landlord Tools Section
+          const Text(
+            'Pro Landlord Tools',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.border),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    key: const Key('more_utility_calculator'),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.bolt_rounded, color: AppTheme.primaryDeep, size: 22),
+                    ),
+                    title: const Text('Utility Sub-Meter Splitter', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: const Text('Split Meralco electric & water sub-meter bills per room', style: TextStyle(fontSize: 12)),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'PRO',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.ink,
+                        ),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UtilityCalculatorScreen()),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 20),

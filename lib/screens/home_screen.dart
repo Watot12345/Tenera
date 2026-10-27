@@ -13,6 +13,7 @@ import 'tabs/more_tab.dart';
 import 'tabs/payments_tab.dart';
 import 'tabs/properties_tab.dart';
 import 'tabs/tenants_tab.dart';
+import 'utility_calculator_screen.dart';
 import 'welcome_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -1290,6 +1291,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+          ),
+          IconButton(
+            key: const Key('home_action_utility_splitter'),
+            icon: const Icon(Icons.bolt_rounded, color: AppTheme.primary),
+            tooltip: 'Utility Sub-Meter Splitter',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const UtilityCalculatorScreen(),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.help_outline_rounded, color: AppTheme.inkMuted),
