@@ -185,6 +185,7 @@ void main() {
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({
       PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
     });
 
     await pumpAppAndLoadDatabase(tester);
@@ -506,6 +507,7 @@ void main() {
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({
       PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
     });
 
     await pumpAppAndLoadDatabase(tester);
@@ -755,6 +757,34 @@ void main() {
       incomingUnits: 10,
     );
     expect(canAddPro, isTrue);
+
+    // Test Pro tool guarding:
+    // Reset to starter plan
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'starter');
+    final canAccessStarter = await PlanGuardService.requirePro(
+      context: context,
+      featureName: 'Utility Sub-Meter Splitter',
+      featureBenefit: 'Split electric & water bills accurately per room.',
+    );
+    expect(canAccessStarter, isFalse);
+    await tester.pumpAndSettle();
+
+    // Verify Pro Upgrade modal
+    expect(find.text('Utility Sub-Meter Splitter'), findsOneWidget);
+    expect(find.byKey(const Key('btn_upgrade_pro_feature_modal')), findsOneWidget);
+
+    // Dismiss modal
+    await tester.tap(find.text('Maybe Later'));
+    await tester.pumpAndSettle();
+
+    // Switch to Pro: access granted immediately
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'pro');
+    final canAccessPro = await PlanGuardService.requirePro(
+      context: context,
+      featureName: 'Utility Sub-Meter Splitter',
+      featureBenefit: 'Split electric & water bills accurately per room.',
+    );
+    expect(canAccessPro, isTrue);
   });
 }
 

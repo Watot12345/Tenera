@@ -1443,7 +1443,13 @@ class _HomeScreenState extends State<HomeScreen> {
             key: const Key('home_action_utility_splitter'),
             icon: const Icon(Icons.bolt_rounded, color: AppTheme.primary),
             tooltip: 'Utility Sub-Meter Splitter',
-            onPressed: () {
+            onPressed: () async {
+              final canAccess = await PlanGuardService.requirePro(
+                context: context,
+                featureName: 'Utility Sub-Meter Splitter',
+                featureBenefit: 'Split electric & water sub-meter bills accurately per room with zero math errors.',
+              );
+              if (!canAccess || !mounted) return;
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const UtilityCalculatorScreen(),

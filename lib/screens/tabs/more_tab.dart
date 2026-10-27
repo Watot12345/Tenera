@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/firebase_service.dart';
+import '../../services/plan_guard_service.dart';
 import '../../services/sync_service.dart';
 import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
@@ -257,7 +258,13 @@ class _MoreTabState extends State<MoreTab> {
                         ),
                       ),
                     ),
-                    onTap: () {
+                    onTap: () async {
+                      final canAccess = await PlanGuardService.requirePro(
+                        context: context,
+                        featureName: 'Utility Sub-Meter Splitter',
+                        featureBenefit: 'Split electric & water sub-meter bills accurately per room with zero math errors.',
+                      );
+                      if (!canAccess || !context.mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const UtilityCalculatorScreen()),
@@ -292,7 +299,13 @@ class _MoreTabState extends State<MoreTab> {
                         ),
                       ),
                     ),
-                    onTap: () {
+                    onTap: () async {
+                      final canAccess = await PlanGuardService.requirePro(
+                        context: context,
+                        featureName: 'Revenue & BIR Tax Report',
+                        featureBenefit: 'Generate Philippine BIR tax schedules and 1-click export rental revenue to CSV.',
+                      );
+                      if (!canAccess || !context.mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const ReportsExportScreen()),
