@@ -269,6 +269,65 @@
     .step-text p {
       font-size: 14px;
       color: var(--ink-muted);
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+    .pricing-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 30px 24px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .pricing-card.featured {
+      border: 2px solid var(--accent);
+      box-shadow: 0 8px 24px rgba(233, 196, 106, 0.22);
+    }
+    .pricing-badge {
+      display: inline-block;
+      align-self: flex-start;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      background: #E8F1F5;
+      color: var(--primary-deep);
+    }
+    .pricing-badge.gold {
+      background: var(--accent);
+      color: var(--ink);
+    }
+    .pricing-price {
+      font-size: 34px;
+      font-weight: 900;
+      color: var(--primary-deep);
+      margin: 10px 0 2px;
+    }
+    .pricing-period {
+      font-size: 13px;
+      color: var(--ink-muted);
+      margin-bottom: 20px;
+    }
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 24px;
+      flex-grow: 1;
+    }
+    .pricing-features li {
+      font-size: 13px;
+      color: var(--ink);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     footer {
       background: #0F172A;
@@ -299,6 +358,7 @@
       </a>
       <nav>
         <a href="index.html">Home</a>
+        <a href="#pricing">Pricing</a>
         <a href="releases.html">Changelog</a>
         <a href="privacy-policy.html">Privacy</a>
         <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener">GitHub Repo</a>
@@ -325,10 +385,10 @@
     </div>
 
     <div class="meta-badges">
-      <span class="meta-badge badge-paid">✓ 100% Offline SQLite SSOT</span>
-      <span class="meta-badge">Android 7.0+ (Nougat to Android 14)</span>
-      <span class="meta-badge">Built-In GitHub App Updates</span>
-      <span class="meta-badge">Firebase Sync Ready</span>
+      <span class="meta-badge badge-paid">🎁 14-Day Free Trial Included</span>
+      <span class="meta-badge">Starter from only ₱49/mo</span>
+      <span class="meta-badge">✓ 100% Offline SQLite SSOT</span>
+      <span class="meta-badge">GCash & Maya Friendly</span>
     </div>
   </section>
 
@@ -372,6 +432,75 @@
         <div class="feature-icon">🔄</div>
         <h3>Automatic In-App Updates</h3>
         <p>Tenera checks the GitHub Releases API and prompts you when a newer APK is available with changelog notes and one-tap download.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="section" id="pricing">
+    <h3 class="section-title">Fair, Transparent Pricing for Filipino Landlords</h3>
+    <p class="section-subtitle">Start with a full 14-day free trial on your phone. No surprise charges. Works 100% offline.</p>
+
+    <div class="pricing-grid">
+      <!-- Starter Plan -->
+      <div class="pricing-card">
+        <span class="pricing-badge gold">14-Day Free Trial Included</span>
+        <h3 style="font-size: 20px; font-weight: 800; color: var(--primary-deep);">Starter</h3>
+        <p style="font-size: 13px; color: var(--ink-muted); margin-top: 4px;">For boarding houses & apartments (up to 15 units)</p>
+        <div class="pricing-price">₱49</div>
+        <div class="pricing-period">per month (or ₱399/year · only ₱33/mo)</div>
+        <ul class="pricing-features">
+          <li>✓ 14-Day full free trial (all features unlocked)</li>
+          <li>✓ Up to 15 units and tenants</li>
+          <li>✓ 100% offline SQLite device database</li>
+          <li>✓ Visual squircle room occupancy grid</li>
+          <li>✓ Cash photos & GCash / Bank reference logs</li>
+          <li>✓ Automatic overdue & due soon alerts</li>
+          <li>✓ Offline JSON backup & export</li>
+        </ul>
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn-primary" style="text-align: center; justify-content: center; padding: 12px; font-size: 14px;">
+          Start 14-Day Free Trial
+        </a>
+      </div>
+
+      <!-- Pro Plan (Featured) -->
+      <div class="pricing-card featured">
+        <span class="pricing-badge gold">Most Popular · Landlord Choice</span>
+        <h3 style="font-size: 20px; font-weight: 800; color: var(--primary-deep);">Tenera Pro</h3>
+        <p style="font-size: 13px; color: var(--ink-muted); margin-top: 4px;">Best for growing properties & apartments (16–50 units)</p>
+        <div class="pricing-price">₱199</div>
+        <div class="pricing-period">per month (or ₱1,499/year · only ₱125/mo)</div>
+        <ul class="pricing-features">
+          <li>✓ Unlimited properties and rooms</li>
+          <li>✓ Electric & water sub-meter utility splitter</li>
+          <li>✓ 1-Tap polite SMS & Messenger payment reminders</li>
+          <li>✓ Branded digital receipts with "PAID" stamp</li>
+          <li>✓ Monthly revenue & BIR tax reports</li>
+          <li>✓ Priority multi-room search & filters</li>
+        </ul>
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn-primary" style="background: var(--accent); color: var(--ink); text-align: center; justify-content: center; padding: 12px; font-size: 14px;">
+          Get Tenera Pro
+        </a>
+      </div>
+
+      <!-- Business Plan -->
+      <div class="pricing-card">
+        <span class="pricing-badge">Multi-Property</span>
+        <h3 style="font-size: 20px; font-weight: 800; color: var(--primary-deep);">Business</h3>
+        <p style="font-size: 13px; color: var(--ink-muted); margin-top: 4px;">For dorm chains & portfolio owners (50+ rooms)</p>
+        <div class="pricing-price">₱499</div>
+        <div class="pricing-period">per month (or ₱3,999/year · only ₱333/mo)</div>
+        <ul class="pricing-features">
+          <li>✓ Everything in Pro included</li>
+          <li>✓ Multi-property portfolio analytics dashboard</li>
+          <li>✓ Caretaker / Staff mode (conceals landlord profits)</li>
+          <li>✓ Automated Google Drive cloud backup</li>
+          <li>✓ Printable lease agreement contracts</li>
+          <li>✓ VIP direct landlord phone & WhatsApp support</li>
+        </ul>
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn-secondary" style="text-align: center; justify-content: center; padding: 12px; font-size: 14px;">
+          Get Business
+        </a>
       </div>
     </div>
   </section>

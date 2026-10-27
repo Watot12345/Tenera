@@ -8,6 +8,7 @@ class SubscriptionPlansScreen extends StatefulWidget {
 
   static const String prefKeyCurrentPlan = 'user_subscription_plan';
   static const String prefKeyBillingCycle = 'user_billing_cycle';
+  static const String prefKeyTrialStartDate = 'user_trial_start_date';
 
   @override
   State<SubscriptionPlansScreen> createState() => _SubscriptionPlansScreenState();
@@ -15,7 +16,9 @@ class SubscriptionPlansScreen extends StatefulWidget {
 
 class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
   bool _isAnnual = true;
-  String _currentPlan = 'free'; // 'free', 'pro', 'business'
+  String _currentPlan = 'starter'; // 'starter' (or 'free'), 'pro', 'business'
+  bool _isTrialActive = true;
+  int _daysRemainingInTrial = 14;
   bool _isLoading = true;
 
   @override
@@ -26,9 +29,25 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
 
   Future<void> _loadSavedPlan() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Initialize or load 14-day free trial start date
+    String? trialStartStr = prefs.getString(SubscriptionPlansScreen.prefKeyTrialStartDate);
+    if (trialStartStr == null) {
+      trialStartStr = DateTime.now().toIso8601String();
+      await prefs.setString(SubscriptionPlansScreen.prefKeyTrialStartDate, trialStartStr);
+    }
+    final trialStartDate = DateTime.tryParse(trialStartStr) ?? DateTime.now();
+    final elapsedDays = DateTime.now().difference(trialStartDate).inDays;
+    final daysRemaining = (14 - elapsedDays).clamp(0, 14);
+    final isTrialActive = elapsedDays < 14;
+
+    final savedPlan = prefs.getString(SubscriptionPlansScreen.prefKeyCurrentPlan);
+
     setState(() {
-      _currentPlan = prefs.getString(SubscriptionPlansScreen.prefKeyCurrentPlan) ?? 'free';
+      _currentPlan = (savedPlan == null || savedPlan == 'free') ? 'starter' : savedPlan;
       _isAnnual = (prefs.getString(SubscriptionPlansScreen.prefKeyBillingCycle) ?? 'annual') == 'annual';
+      _isTrialActive = isTrialActive;
+      _daysRemainingInTrial = daysRemaining;
       _isLoading = false;
     });
   }
@@ -98,7 +117,9 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                                 ),
                               ),
                               Text(
-                                '$priceText · ${_isAnnual ? "Billed Annually" : "Billed Monthly"}',
+                                planId == 'starter' || planId == 'free'
+                                    ? '14-Day Free Trial Included · Then $priceText · ${_isAnnual ? "Billed Annually" : "Billed Monthly"}'
+                                    : '$priceText · ${_isAnnual ? "Billed Annually" : "Billed Monthly"}',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppTheme.inkMuted,
@@ -166,14 +187,16 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.lock_outline_rounded, size: 18, color: AppTheme.primary),
-                          SizedBox(width: 8),
+                          const Icon(Icons.lock_outline_rounded, size: 18, color: AppTheme.primary),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Offline Guarantee: Once unlocked, your Pro features continue working 100% offline without internet.',
-                              style: TextStyle(fontSize: 11, color: AppTheme.inkMuted),
+                              planId == 'starter' || planId == 'free'
+                                  ? '14-Day Free Trial Guarantee: Zero upfront charge for 14 days. Unlocks full features offline. Cancel anytime.'
+                                  : 'Offline Guarantee: Once unlocked, your Pro features continue working 100% offline without internet.',
+                              style: const TextStyle(fontSize: 11, color: AppTheme.inkMuted),
                             ),
                           ),
                         ],
@@ -395,6 +418,63 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               ),
             ),
 
+            // 14-Day Free Trial Active Status Banner
+            if (_isTrialActive) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.accent.withValues(alpha: 0.7), width: 1.5),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.timer_rounded, color: AppTheme.ink, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Text(
+                                '14-Day Free Trial Active',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.primaryDeep,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.check_circle_rounded, color: AppTheme.statusPaid, size: 16),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$_daysRemainingInTrial days remaining. Enjoy full features before Starter begins at ₱49/mo.',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.ink,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 20),
 
             // Billing Toggle: Monthly vs Annual
@@ -474,24 +554,31 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
 
             const SizedBox(height: 20),
 
-            // Plan 1: Free / Starter
+            // Plan 1: Starter (₱49/mo with 14-day Free Trial)
             _buildPlanCard(
               title: 'Starter',
-              subtitle: 'For new landlords with 1 small building',
-              price: '₱0',
-              periodText: 'Free forever',
-              planId: 'free',
-              isCurrent: _currentPlan == 'free',
+              subtitle: 'Ideal for boarding houses & apartments (up to 15 units)',
+              price: _isAnnual ? '₱399' : '₱49',
+              periodText: _isAnnual ? 'per year (only ₱33/mo)' : 'per month (after 14-day trial)',
+              planId: 'starter',
+              isCurrent: _currentPlan == 'starter' || _currentPlan == 'free',
               isFeatured: false,
+              badgeText: '14-DAY FREE TRIAL INCLUDED',
               features: const [
-                'Up to 1 Property & 8 Units',
-                '100% Offline Local Device Ledger',
-                'Visual 6-column Squircle Room Grid',
-                'Manual Rent & Payment Recording',
-                'Overdue & Due Soon Tracking',
-                'Basic Offline JSON Backup',
+                '14-Day Full Free Trial (All features unlocked)',
+                'Up to 15 Units & Tenants',
+                '100% Offline Local Device Ledger (SQLite)',
+                'Visual 6-Column Squircle Room Grid',
+                'Rent, Water & Electric Payment Recording',
+                'GCash & Bank Ref Tracking + Cash Photo Proof',
+                'Automatic Overdue & Due Soon Alerts',
+                'Offline Data Backup & JSON Export',
               ],
-              onSelect: () => _savePlan('free', _isAnnual),
+              onSelect: () => _showCheckoutDialog(
+                'Starter',
+                'starter',
+                _isAnnual ? '₱399 / year' : '₱49 / month',
+              ),
             ),
 
             const SizedBox(height: 16),
@@ -751,7 +838,11 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('Current Plan'),
+                          child: Text(
+                            (_isTrialActive && (planId == 'starter' || planId == 'free'))
+                                ? 'Active Trial ($_daysRemainingInTrial days left)'
+                                : 'Current Plan',
+                          ),
                         )
                       : ElevatedButton(
                           onPressed: onSelect,
@@ -762,7 +853,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           child: Text(
-                            planId == 'free' ? 'Switch to Starter' : 'Choose $title',
+                            (planId == 'free' || planId == 'starter') ? 'Switch to Starter' : 'Choose $title',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,

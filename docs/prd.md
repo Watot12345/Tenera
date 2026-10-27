@@ -134,13 +134,16 @@ Tenera replaces the notebook, spreadsheet, paper receipts and chat threads a sma
 | FR-I4 | Database integrity check on demand and after restore | P1 |
 | FR-I5 | Android Auto Backup enabled as a safety net | P1 |
 
-### J. Subscription
+### J. Subscription & Pricing Tiers
 | ID | Requirement | Priority |
 |---|---|---|
-| FR-J1 | Free trial; plans limited by unit count | P0 |
-| FR-J2 | Purchase and **Restore purchases** via store billing | P0 |
-| FR-J3 | Over-limit behavior: existing data stays viewable and exportable, adding is blocked | P0 |
-| FR-J4 | Cached entitlement works offline with a grace period | P0 |
+| FR-J1 | **14-Day Free Trial** on app install with 100% features unlocked offline | P0 |
+| FR-J2 | **Starter Tier (₱49/mo or ₱399/yr)**: Up to 15 units, full offline SQLite ledger, room grid, cash photo proof, JSON backup | P0 |
+| FR-J3 | **Pro Tier (₱199/mo or ₱1,499/yr)**: Unlimited units, utility sub-meter splitter, SMS reminders, BIR tax report export | P0 |
+| FR-J4 | **Business Tier (₱499/mo or ₱3,999/yr)**: Multi-property portfolio analytics, Caretaker mode, VIP support | P1 |
+| FR-J5 | Purchase and **Restore purchases** via store billing (Google Play) and local Philippine payment vouchers (GCash / Maya) | P0 |
+| FR-J6 | Over-limit behavior: existing data stays viewable and exportable, adding is blocked | P0 |
+| FR-J7 | Cached entitlement works offline with a grace period | P0 |
 
 ## 5. Utilities Specification
 
@@ -192,8 +195,8 @@ Tenera replaces the notebook, spreadsheet, paper receipts and chat threads a sma
 Tenant accounts or login, cloud sync, online payments or gateway integrations, e-signatures, IoT, utility provider APIs, accounting/tax filing, lease document generation beyond a summary.
 
 ## 9. Open Questions
-1. Pricing and unit-count tiers; free trial length?
-2. Launch country: currency, languages, tax or receipt requirements?
+1. **Pricing and unit-count tiers; free trial length?** -> *Resolved*: 14-day full free trial on install; Starter at ₱49/mo (up to 15 units); Pro at ₱199/mo (unlimited units); Business at ₱499/mo (multi-property & team).
+2. Launch country: currency, languages, tax or receipt requirements? -> *Resolved*: Philippines first (PHP ₱, GCash/Maya friendly, BIR tax export).
 3. Android first, or both platforms at launch?
 4. Do most target landlords have sub-meters, or one shared meter per building?
 5. Is database encryption (SQLCipher) required at launch?
