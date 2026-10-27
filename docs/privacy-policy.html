@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenera - Privacy Policy & Terms</title>
+  <style>
+    :root {
+      --primary-deep: #1D3557;
+      --accent: #E9C46A;
+      --background: #F8F9FA;
+      --surface: #FFFFFF;
+      --ink: #1B2430;
+      --ink-muted: #64748B;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--background); color: var(--ink); line-height: 1.6; }
+    header { background: var(--primary-deep); color: white; padding: 20px; border-bottom: 3px solid var(--accent); }
+    .container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+    nav a { color: #E2E8F0; text-decoration: none; font-weight: 600; margin-left: 16px; }
+    nav a:hover { color: var(--accent); }
+    .card { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 32px; margin-bottom: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+    h1 { font-size: 28px; margin-bottom: 12px; color: var(--primary-deep); }
+    h2 { font-size: 20px; margin-top: 20px; margin-bottom: 8px; color: var(--primary-deep); }
+    p { margin-bottom: 14px; color: #334155; }
+    footer { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+      <a href="index.html" style="color: white; text-decoration: none; font-size: 20px; font-weight: 800;">🏠 Tenera</a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="releases.html">Changelog</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h1>🛡️ Privacy Policy & Terms of Use</h1>
+      <p style="color: var(--ink-muted); font-size: 14px; margin-bottom: 24px;">Effective Date: October 2026</p>
+
+      <h2>1. Offline-First Privacy Guarantee</h2>
+      <p>Tenera is built from the ground up as an offline-first application. By default, your property data, tenant personal information, rental ledgers, and cash handover photo attachments are stored locally on your device in a private SQLite database sandbox.</p>
+
+      <h2>2. Cloud Sync & Firebase</h2>
+      <p>Cloud synchronization is 100% opt-in. When initiated under <strong>More ➔ Cloud & Database Sync</strong>, data is transferred securely using industry-standard TLS encryption to Google Firebase Firestore servers under a private, anonymous device identifier. We never sell, rent, or monetize your property records.</p>
+
+      <h2>3. Device Permissions</h2>
+      <p><strong>Camera / Storage:</strong> Used only when you choose to take or attach a photo proof of cash rent handover. Photos stay in local storage.<br>
+      <strong>Network:</strong> Used solely to check for APK updates via the public GitHub Releases API and to synchronize with Firebase when manually triggered.</p>
+
+      <h2>4. Compliance</h2>
+      <p>Tenera complies with the provisions of the <strong>Philippine Data Privacy Act of 2012 (RA 10173)</strong> and the European General Data Protection Regulation (GDPR).</p>
+
+      <h2>5. Questions & Feedback</h2>
+      <p>If you have any questions or feedback, please open an issue on the <a href="https://github.com/Watot12345/Tenera" style="color: var(--primary-deep); font-weight: 700;">Tenera GitHub Repository</a>.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 Tenera Property Manager · Open Source on GitHub</p>
+  </footer>
+</body>
+</html>

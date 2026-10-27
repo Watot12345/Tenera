@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenera - Release Notes & Changelog</title>
+  <style>
+    :root {
+      --primary-deep: #1D3557;
+      --accent: #E9C46A;
+      --background: #F8F9FA;
+      --surface: #FFFFFF;
+      --ink: #1B2430;
+      --ink-muted: #64748B;
+      --border: #E2E8F0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--background); color: var(--ink); line-height: 1.6; }
+    header { background: var(--primary-deep); color: white; padding: 20px; border-bottom: 3px solid var(--accent); }
+    .container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+    nav a { color: #E2E8F0; text-decoration: none; font-weight: 600; margin-left: 16px; }
+    nav a:hover { color: var(--accent); }
+    .card { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 30px; margin-bottom: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+    h1 { font-size: 28px; margin-bottom: 12px; color: var(--primary-deep); }
+    h2 { font-size: 22px; margin-top: 10px; margin-bottom: 14px; color: var(--primary-deep); }
+    h3 { font-size: 16px; margin-top: 16px; margin-bottom: 8px; color: var(--ink); }
+    ul { margin-left: 20px; margin-bottom: 16px; }
+    li { margin-bottom: 6px; }
+    .tag { display: inline-block; background: #D8F3DC; color: #1B4332; font-weight: 800; font-size: 12px; padding: 4px 12px; border-radius: 8px; margin-bottom: 12px; }
+    .btn { display: inline-block; background: var(--primary-deep); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; margin-top: 10px; }
+    footer { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div style="max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+      <a href="index.html" style="color: white; text-decoration: none; font-size: 20px; font-weight: 800;">🏠 Tenera</a>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="releases.html">Changelog</a>
+        <a href="privacy-policy.html">Privacy Policy</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container">
+    <h1>📋 Release Notes & Changelog</h1>
+    <p style="color: var(--ink-muted); margin-bottom: 24px;">Track all official builds and updates published to the GitHub Releases repository.</p>
+
+    <div class="card">
+      <span class="tag">✓ LATEST STABLE RELEASE</span>
+      <h2>Version v1.0 (Initial Public Release)</h2>
+      <p style="color: var(--ink-muted); font-size: 14px; margin-bottom: 14px;">Release Date: October 2026 · Target: Android 7.0+ (API 24 to 34+)</p>
+      
+      <h3>🚀 Architecture & Features</h3>
+      <ul>
+        <li><strong>SQLite SSOT:</strong> Removed all static lists. All properties, rooms, tenants, and payment logs query and write to local SQLite.</li>
+        <li><strong>Dynamic Ledger Math:</strong> Live calculation of collected amount, expected amount, vacant units, and overdue counts.</li>
+        <li><strong>In-App Updates:</strong> Automated update checker using GitHub Releases API with changelog prompt and direct APK download.</li>
+        <li><strong>Firebase Cloud Sync:</strong> Optional SQLite-to-Firestore hybrid sync engine with device-partitioned landlord storage.</li>
+        <li><strong>Payment Logging:</strong> Live tenant candidate search, optional cash photo proof, and digital reference numbers for GCash / Bank Transfer.</li>
+        <li><strong>Room Matrix:</strong> Color-coded visual room status grid with tenant long-press vacate action.</li>
+      </ul>
+
+      <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn">⬇️ Download Tenera APK (v1.0)</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 Tenera Property Manager · <a href="https://github.com/Watot12345/Tenera" style="color: var(--primary-deep);">GitHub Repository</a></p>
+  </footer>
+</body>
+</html>
