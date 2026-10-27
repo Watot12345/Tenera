@@ -1,3 +1,8 @@
+---
+layout: default
+title: Release Notes & Changelog
+---
+
 # 📋 Tenera Release Notes & Changelog
 
 All official releases of Tenera are published to the [GitHub Releases](https://github.com/Watot12345/Tenera/releases) repository.

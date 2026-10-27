@@ -1,3 +1,8 @@
+---
+layout: default
+title: Tenera Property Manager
+---
+
 # Tenera Property Manager
 
 > **Senior-Friendly, Offline-First Property & Tenant Management**  

@@ -1,3 +1,8 @@
+---
+layout: default
+title: Privacy Policy & Terms
+---
+
 # 🛡️ Tenera Privacy Policy & Terms of Use
 
 *Effective Date: October 2026*

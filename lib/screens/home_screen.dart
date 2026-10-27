@@ -1382,7 +1382,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       actions: [
-        ?actionButton,
+        if (actionButton != null) actionButton,
         IconButton(
           icon: const Icon(Icons.help_outline_rounded, color: AppTheme.inkMuted),
           tooltip: 'Welcome Guide',
