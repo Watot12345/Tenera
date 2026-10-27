@@ -118,6 +118,25 @@ The output APK is generated at `build/app/outputs/flutter-apk/app-release.apk`.
 
 ---
 
+## 📚 Project Documentation & Specifications
+
+All core architectural, design, and product specifications are organized in the [`docs/`](docs/) directory:
+
+| Document | Description |
+| :--- | :--- |
+| **[Product Requirements (PRD)](docs/prd.md)** | System requirements, landlord personas, offline principles, and user journeys |
+| **[System Architecture](docs/architecture.md)** | Local-first SQLite schema, SSOT design, and Firebase sync engine |
+| **[Theme & Design Tokens](docs/theme.md)** | Roof Ledger color tokens, typography scales, shape parameters, and contrast |
+| **[UI/UX Structure](docs/ui-ux-structure.md)** | Screen-by-screen UX hierarchy, components, and responsive interaction patterns |
+| **[Home Screen Design Plan](docs/home-screen-design-plan.md)** | Concept C Roof Ledger dashboard design and layout plan |
+| **[Infrastructure & Tooling](docs/infrastructure.md)** | Recommended packages, Gradle setup, and permission configurations |
+| **[Product & Dev Workflows](docs/workflow.md)** | Payment logging, tenant lifecycle, and CI/CD release automation |
+| **[Project Context](docs/context.md)** | Problem statement, target landlords, and project vision |
+| **[Release Notes](docs/releases.md)** | Version changelog and roadmap |
+| **[Privacy Policy & Terms](docs/privacy-policy.md)** | Legal compliance (RA 10173 & GDPR) and data handling disclosures |
+
+---
+
 ## 📄 License
 
 This project is open source and available under the terms of the [MIT License](LICENSE).
