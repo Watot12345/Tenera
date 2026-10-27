@@ -446,6 +446,7 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
 
           // Property Dropdown
           DropdownButtonFormField<String>(
+            isExpanded: true,
             initialValue: _selectedPropertyFilter,
             decoration: InputDecoration(
               labelText: 'Property Selection',
@@ -456,12 +457,12 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
             items: [
               const DropdownMenuItem(
                 value: 'ALL',
-                child: Text('All Properties (Consolidated)'),
+                child: Text('All Properties (Consolidated)', overflow: TextOverflow.ellipsis),
               ),
               ..._properties.map(
                 (p) => DropdownMenuItem(
                   value: p.id,
-                  child: Text(p.name),
+                  child: Text(p.name, overflow: TextOverflow.ellipsis),
                 ),
               ),
             ],
@@ -475,6 +476,7 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
 
           // BIR Tax Regime Selector
           DropdownButtonFormField<BirTaxRegime>(
+            isExpanded: true,
             initialValue: _selectedRegime,
             decoration: InputDecoration(
               labelText: 'BIR Tax Regime Schedule',
@@ -488,6 +490,7 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
                 child: Text(
                   regime.label,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
                 ),
               );
             }).toList(),
