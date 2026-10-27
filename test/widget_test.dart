@@ -572,5 +572,54 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Vacant units'), findsOneWidget);
   });
+
+  testWidgets('1-Tap SMS Reminder: opens reminder modal, switches tones, and launches SMS',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Tap quick action: Remind Tenants
+    final remindAction = find.byKey(const Key('quick_action_remind'));
+    expect(remindAction, findsOneWidget);
+    await tester.tap(remindAction);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify reminder dialog opens
+    expect(find.textContaining('Remind'), findsOneWidget);
+    expect(find.text('Message Tone:'), findsOneWidget);
+    expect(find.text('Polite'), findsOneWidget);
+    expect(find.text('Due Soon'), findsOneWidget);
+    expect(find.text('Overdue'), findsWidgets);
+
+    // Switch tone to "Due Soon"
+    await tester.tap(find.text('Due Soon'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('due soon'), findsOneWidget);
+
+    // Enter a phone number
+    final phoneField = find.byType(TextField).last;
+    await tester.enterText(phoneField, '09171234567');
+    await tester.pumpAndSettle();
+
+    // Tap "Send SMS"
+    final sendSmsBtn = find.byKey(const Key('btn_send_sms_native'));
+    expect(sendSmsBtn, findsOneWidget);
+    await tester.tap(sendSmsBtn);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify confirmation feedback
+    expect(find.textContaining('Opening Messages'), findsOneWidget);
+  });
 }
 

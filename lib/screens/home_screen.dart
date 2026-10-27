@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/payment.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
@@ -994,74 +997,208 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _sendFriendlyReminder(TenantBill tenant) {
+  Future<void> _launchSms(String phone, String body) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final Uri smsUri = Uri(
+      scheme: 'sms',
+      path: cleanPhone,
+      queryParameters: <String, String>{
+        'body': body,
+      },
+    );
+
+    try {
+      if (await canLaunchUrl(smsUri)) {
+        await launchUrl(smsUri, mode: LaunchMode.externalApplication);
+      } else {
+        await Clipboard.setData(ClipboardData(text: body));
+      }
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: body));
+    }
+  }
+
+  Widget _buildToneChip(String label, int tone, int selectedTone, ValueChanged<int> onSelect) {
+    final isSelected = tone == selectedTone;
+    return Expanded(
+      child: InkWell(
+        onTap: () => onSelect(tone),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primary : AppTheme.background,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: isSelected ? AppTheme.primary : AppTheme.border),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: isSelected ? Colors.white : AppTheme.ink,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _sendFriendlyReminder(TenantBill tenant) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPhone = prefs.getString('tenant_phone_${tenant.id}') ?? '';
+    final phoneController = TextEditingController(text: savedPhone);
+    int selectedTone = tenant.isOverdue ? 2 : 0; // 0: Polite, 1: Due Soon, 2: Overdue
+
+    String composeMessage(int tone) {
+      final formattedAmount = NumberFormat('#,###').format(tenant.amount);
+      final roomDisplay = tenant.location.split('·')[0].trim();
+      switch (tone) {
+        case 1:
+          return 'Hi ${tenant.name}, gentle reminder that your rent of ₱$formattedAmount for $roomDisplay is due soon (${tenant.statusText}). Thank you! - Landlord';
+        case 2:
+          return 'Hello ${tenant.name}, gentle follow-up regarding your overdue rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Kindly settle via cash or GCash when possible. Thank you!';
+        case 0:
+        default:
+          return 'Hello ${tenant.name}, this is a gentle reminder regarding your rent of ₱$formattedAmount for $roomDisplay (${tenant.statusText}). Thank you!';
+      }
+    }
+
+    if (!mounted) return;
+
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.chat_bubble_outline_rounded,
-                  color: AppTheme.primary),
-              const SizedBox(width: 10),
-              Text('Remind ${tenant.name}'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Pre-composed reminder message:',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.inkMuted,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.background,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.border),
-                ),
-                child: Text(
-                  'Hello ${tenant.name}, this is a gentle reminder regarding your rent of ₱${NumberFormat('#,###').format(tenant.amount)} for ${tenant.location.split('·')[0].trim()} (${tenant.statusText}). Thank you!',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.ink,
-                    height: 1.4,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (modalCtx, setDialogState) {
+            final messageText = composeMessage(selectedTone);
+
+            return AlertDialog(
+              backgroundColor: AppTheme.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.primary, size: 20),
                   ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppTheme.primaryDeep,
-                    content: Text(
-                      'Reminder copied for ${tenant.name} to send via SMS / Chat!',
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Remind ${tenant.name}',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                     ),
                   ),
-                );
-              },
-              icon: const Icon(Icons.share_rounded, size: 18),
-              label: const Text('Share Reminder'),
-            ),
-          ],
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Message Tone:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkMuted)),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        _buildToneChip('Polite', 0, selectedTone, (val) => setDialogState(() => selectedTone = val)),
+                        const SizedBox(width: 6),
+                        _buildToneChip('Due Soon', 1, selectedTone, (val) => setDialogState(() => selectedTone = val)),
+                        const SizedBox(width: 6),
+                        _buildToneChip('Overdue', 2, selectedTone, (val) => setDialogState(() => selectedTone = val)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.border),
+                      ),
+                      child: Text(
+                        messageText,
+                        style: const TextStyle(fontSize: 13, color: AppTheme.ink, height: 1.4),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Tenant Mobile Number (Optional):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.inkMuted)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 0917 123 4567',
+                        hintStyle: const TextStyle(fontSize: 13, color: AppTheme.inkMuted),
+                        prefixIcon: const Icon(Icons.phone_android_rounded, size: 18, color: AppTheme.primary),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              actions: [
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: messageText));
+                        Navigator.pop(dialogCtx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppTheme.primaryDeep,
+                            content: Text('Reminder copied for ${tenant.name} to send via SMS / Chat!'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 16),
+                      label: const Text('Copy Text'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        key: const Key('btn_send_sms_native'),
+                        onPressed: () async {
+                          final phone = phoneController.text.trim();
+                          Navigator.pop(dialogCtx);
+                          if (phone.isNotEmpty) {
+                            await prefs.setString('tenant_phone_${tenant.id}', phone);
+                          }
+                          await Clipboard.setData(ClipboardData(text: messageText));
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppTheme.primaryDeep,
+                              content: Text('📱 Opening Messages for ${tenant.name}! (Text also copied to clipboard)'),
+                            ),
+                          );
+                          _launchSms(phone, messageText);
+                        },
+                        icon: const Icon(Icons.sms_rounded, size: 16),
+                        label: const Text('Send SMS', style: TextStyle(fontWeight: FontWeight.w700)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         );
       },
     );
