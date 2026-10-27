@@ -3,9 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tenera/main.dart';
+import 'package:tenera/models/payment.dart';
+import 'package:tenera/models/property.dart';
+import 'package:tenera/models/tenant.dart';
 import 'package:tenera/screens/privacy_policy_screen.dart';
-
+import 'package:tenera/screens/reports_export_screen.dart';
+import 'package:tenera/screens/subscription_plans_screen.dart';
 import 'package:tenera/services/database_helper.dart';
+import 'package:tenera/services/plan_guard_service.dart';
+import 'package:tenera/theme/app_theme.dart';
 
 void main() {
   setUp(() async {
@@ -620,6 +626,135 @@ void main() {
 
     // Verify confirmation feedback
     expect(find.textContaining('Opening Messages'), findsOneWidget);
+  });
+
+  testWidgets('Revenue & BIR Tax Report: computes tax regimes, displays metrics, and exports CSV',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+
+    late List<PaymentRecord> payments;
+    late List<PropertyItem> props;
+    late List<TenantBill> tenants;
+    await tester.runAsync(() async {
+      payments = await DatabaseHelper.instance.getPayments();
+      props = await DatabaseHelper.instance.getProperties();
+      tenants = await DatabaseHelper.instance.getTenants();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: ReportsExportScreen(
+          initialPayments: payments,
+          initialProperties: props,
+          initialTenants: tenants,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Reports Screen UI loaded
+    expect(find.text('BIR Tax & Revenue Reports'), findsOneWidget);
+    expect(find.text('Report Filters & BIR Profile'), findsOneWidget);
+    expect(find.text('Gross Collections'), findsOneWidget);
+    expect(find.text('Estimated Tax Due'), findsOneWidget);
+    expect(find.text('Net Revenue'), findsOneWidget);
+    expect(find.text('Active Arrears'), findsOneWidget);
+
+    // Verify Collections Ledger contains seeded payment entries
+    expect(find.textContaining('Collections Ledger'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Juan Carlos'), 100);
+    expect(find.text('Juan Carlos'), findsOneWidget);
+
+    // Test CSV Preview Modal
+    final previewBtn = find.byKey(const Key('btn_preview_csv'));
+    expect(previewBtn, findsOneWidget);
+    await tester.tap(previewBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('CSV Export Preview'), findsOneWidget);
+    expect(find.textContaining('TENERA PROPERTY MANAGER - REVENUE & BIR TAX REPORT'), findsOneWidget);
+    expect(find.textContaining('Gross Amount (PHP)'), findsOneWidget);
+
+    // Close preview modal
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+
+    // Test Copy CSV action
+    final copyBtn = find.byKey(const Key('btn_copy_csv_appbar'));
+    expect(copyBtn, findsOneWidget);
+    await tester.tap(copyBtn);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify SnackBar confirmation
+    expect(find.textContaining('copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('PlanGuardService: enforces 15-unit Starter limit and presents upgrade paywall',
+      (WidgetTester tester) async {
+    // Simulate Starter plan with expired trial (>14 days)
+    final pastDate = DateTime.now().subtract(const Duration(days: 30)).toIso8601String();
+    SharedPreferences.setMockInitialValues({
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'starter',
+      SubscriptionPlansScreen.prefKeyTrialStartDate: pastDate,
+    });
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(child: Text('Plan Test Scaffold')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.text('Plan Test Scaffold'));
+
+    // Under limit (10 units + 1 = 11 <= 15): allowed
+    final canAddUnder = await PlanGuardService.canAddUnits(
+      context: context,
+      currentTotalUnits: 10,
+      incomingUnits: 1,
+    );
+    expect(canAddUnder, isTrue);
+
+    // At limit (15 units + 1 = 16 > 15): triggers paywall dialog and returns false
+    final canAddOver = await PlanGuardService.canAddUnits(
+      context: context,
+      currentTotalUnits: 15,
+      incomingUnits: 1,
+    );
+    expect(canAddOver, isFalse);
+
+    await tester.pumpAndSettle();
+
+    // Verify upgrade paywall modal contents
+    expect(find.text('Starter Plan Limit Reached'), findsOneWidget);
+    expect(find.text('Current Units: 15 / 15 Max'), findsOneWidget);
+    expect(find.textContaining('The Starter Plan supports up to 15 rental units'), findsOneWidget);
+    expect(find.byKey(const Key('btn_upgrade_to_pro_modal')), findsOneWidget);
+
+    // Dismiss modal
+    await tester.tap(find.text('Maybe Later'));
+    await tester.pumpAndSettle();
+    expect(find.text('Starter Plan Limit Reached'), findsNothing);
+
+    // Verify that Pro subscribers are never blocked
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'pro');
+
+    final canAddPro = await PlanGuardService.canAddUnits(
+      context: context,
+      currentTotalUnits: 50,
+      incomingUnits: 10,
+    );
+    expect(canAddPro, isTrue);
   });
 }
 

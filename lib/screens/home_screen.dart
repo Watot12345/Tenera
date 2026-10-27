@@ -7,6 +7,7 @@ import '../models/payment.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
 import '../services/database_helper.dart';
+import '../services/plan_guard_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/roof_ledger_logo.dart';
 import 'privacy_policy_screen.dart';
@@ -955,6 +956,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (nameCtrl.text.trim().isEmpty) return;
                   final totalU = int.tryParse(unitsCtrl.text.trim()) ?? 6;
                   final avgR = int.tryParse(rentCtrl.text.trim()) ?? 3500;
+
+                  final canAdd = await PlanGuardService.canAddUnits(
+                    context: context,
+                    currentTotalUnits: _totalUnits,
+                    incomingUnits: totalU,
+                  );
+                  if (!canAdd || !mounted) return;
+
                   final List<RoomUnit> initialRooms = List.generate(
                     totalU,
                     (i) => RoomUnit(code: 'U${i + 1}', status: RoomStatus.vacant),
@@ -971,6 +980,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     rooms: initialRooms,
                   );
 
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                   setState(() {
                     _properties.add(newProp);

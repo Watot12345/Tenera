@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
+import '../services/plan_guard_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dashed_border_painter.dart';
 
@@ -49,13 +50,21 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     super.dispose();
   }
 
-  void _openAddRoomDialog() {
+  Future<void> _openAddRoomDialog() async {
     if (_properties.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add a property before adding rooms.')),
       );
       return;
     }
+
+    final totalCurrentUnits = _properties.fold(0, (sum, p) => sum + p.totalUnits);
+    final canAdd = await PlanGuardService.canAddUnits(
+      context: context,
+      currentTotalUnits: totalCurrentUnits,
+      incomingUnits: 1,
+    );
+    if (!canAdd || !mounted) return;
 
     final codeController = TextEditingController();
     final rentController = TextEditingController(text: '4000');

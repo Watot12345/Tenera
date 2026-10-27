@@ -45,6 +45,7 @@ dependencies:
   url_launcher: ^6.3.3
   package_info_plus: ^10.2.2
   cloud_firestore: ^7.1.0
+  sqflite_common_ffi_web: ^1.2.0
 
 dev_dependencies:
   flutter_test:

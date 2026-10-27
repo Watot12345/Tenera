@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import '../models/payment.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
@@ -35,14 +37,26 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    final Database db;
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+      db = await databaseFactory.openDatabase(
+        filePath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: _createDB,
+        ),
+      );
+    } else {
+      final dbPath = await getDatabasesPath();
+      final path = join(dbPath, filePath);
 
-    final db = await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+      db = await openDatabase(
+        path,
+        version: 1,
+        onCreate: _createDB,
+      );
+    }
 
     final tables = await db.rawQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='properties'");
     if (tables.isEmpty) {

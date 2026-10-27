@@ -5,6 +5,7 @@ import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
 import '../privacy_policy_screen.dart';
+import '../reports_export_screen.dart';
 import '../subscription_plans_screen.dart';
 import '../utility_calculator_screen.dart';
 import '../welcome_screen.dart';
@@ -260,6 +261,41 @@ class _MoreTabState extends State<MoreTab> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => const UtilityCalculatorScreen()),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 60),
+                  ListTile(
+                    key: const Key('more_reports_export'),
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.assessment_rounded, color: AppTheme.primaryDeep, size: 22),
+                    ),
+                    title: const Text('Revenue & BIR Tax Report', style: TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: const Text('Export Philippine BIR tax schedules & revenue CSV', style: TextStyle(fontSize: 12)),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'PRO',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.ink,
+                        ),
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ReportsExportScreen()),
                       );
                     },
                   ),
