@@ -3,11 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tenera/main.dart';
+import 'package:tenera/models/expense.dart';
 import 'package:tenera/models/lease_contract.dart';
 import 'package:tenera/models/payment.dart';
 import 'package:tenera/models/property.dart';
 import 'package:tenera/models/portfolio_analytics.dart';
 import 'package:tenera/models/tenant.dart';
+import 'package:tenera/screens/expenses_screen.dart';
 import 'package:tenera/screens/home_screen.dart';
 import 'package:tenera/screens/lease_contract_screen.dart';
 import 'package:tenera/screens/portfolio_analytics_screen.dart';
@@ -17,6 +19,7 @@ import 'package:tenera/screens/subscription_plans_screen.dart';
 import 'package:tenera/screens/trial_expired_screen.dart';
 import 'package:tenera/services/ad_service.dart';
 import 'package:tenera/services/database_helper.dart';
+import 'package:tenera/services/landlord_profile_service.dart';
 import 'package:tenera/services/plan_guard_service.dart';
 import 'package:tenera/services/theme_service.dart';
 import 'package:tenera/services/trial_service.dart';
@@ -1475,6 +1478,506 @@ void main() {
     // Verify subscription is now paid and trial is no longer expired
     expect(await TrialService.isPaidSubscriber(), isTrue);
     expect(await TrialService.isTrialExpired(), isFalse);
+  });
+
+  testWidgets('Properties & Rooms: Edit property, edit room, and delete vacant room',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // 1. Navigate to Properties Tab
+    await tester.tap(find.byKey(const Key('nav_properties')));
+    await tester.pumpAndSettle();
+
+    // 2. Open property options via options button
+    expect(find.byKey(const Key('btn_property_options_p1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_property_options_p1')));
+    await tester.pumpAndSettle();
+
+    // Verify action sheet
+    expect(find.byKey(const Key('btn_edit_property_p1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_edit_property_p1')));
+    await tester.pumpAndSettle();
+
+    // Edit Property Name
+    expect(find.byKey(const Key('input_edit_property_name')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('input_edit_property_name')), 'Mabini Premier');
+    await tester.tap(find.byKey(const Key('btn_save_edit_property')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mabini Premier'), findsWidgets);
+
+    // 3. View Rooms of Mabini Premier
+    final viewRoomsBtn = find.text('View Rooms').first;
+    await tester.tap(viewRoomsBtn);
+    await tester.pumpAndSettle();
+    expect(find.text('Mabini Premier'), findsWidgets);
+
+    // 4. Tap vacant room 2E to open details
+    final room2E = find.text('2E');
+    expect(room2E, findsOneWidget);
+    await tester.tap(room2E);
+    await tester.pumpAndSettle();
+
+    // Verify room details modal and tap edit button
+    expect(find.byKey(const Key('btn_edit_room_modal')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_edit_room_modal')));
+    await tester.pumpAndSettle();
+
+    // Edit Room Code and Rent
+    await tester.enterText(find.byKey(const Key('input_edit_room_code')), '2E-VIP');
+    await tester.enterText(find.byKey(const Key('input_edit_room_rent')), '6000');
+    await tester.tap(find.byKey(const Key('btn_save_edit_room')));
+    await tester.pumpAndSettle();
+
+    // Verify updated room code is in the grid
+    expect(find.text('2E-VIP'), findsOneWidget);
+
+    // 5. Open details of 2E-VIP and delete it
+    await tester.tap(find.text('2E-VIP'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('btn_delete_room_modal')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_delete_room_modal')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('btn_confirm_delete_room')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_confirm_delete_room')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pumpAndSettle();
+
+    // Verify room 2E-VIP is deleted from grid
+    expect(find.text('2E-VIP'), findsNothing);
+  });
+
+  testWidgets('Tenants Tab: Edit tenant details and delete tenant',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to Tenants Tab
+    await tester.tap(find.byKey(const Key('nav_tenants')));
+    await tester.pumpAndSettle();
+
+    // Open options for tenant t1
+    final optionsBtn = find.byKey(const Key('btn_tenant_options_t1'));
+    expect(optionsBtn, findsOneWidget);
+    await tester.tap(optionsBtn);
+    await tester.pumpAndSettle();
+
+    // Tap Edit Tenant in action sheet
+    expect(find.byKey(const Key('action_edit_tenant_t1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('action_edit_tenant_t1')));
+    await tester.pumpAndSettle();
+
+    // Edit Tenant
+    expect(find.byKey(const Key('input_edit_tenant_name')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('input_edit_tenant_name')), 'Maria S. Renamed');
+    await tester.tap(find.byKey(const Key('btn_save_edit_tenant')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maria S. Renamed'), findsOneWidget);
+
+    // Dismiss snackbar
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    // Delete Tenant via options action sheet
+    await tester.tap(find.byKey(const Key('btn_tenant_options_t1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('action_delete_tenant_t1')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('action_delete_tenant_t1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('btn_confirm_delete_tenant')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_confirm_delete_tenant')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Maria S. Renamed'), findsNothing);
+  });
+
+  testWidgets('Payments Tab & Receipt Sharing: Share receipt copies formatted digital receipt',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to Payments Tab
+    await tester.tap(find.byKey(const Key('nav_payments')));
+    await tester.pumpAndSettle();
+
+    // Tap receipt button
+    final receiptBtn = find.byKey(const Key('btn_receipt_pay1'));
+    expect(receiptBtn, findsOneWidget);
+    await tester.tap(receiptBtn);
+    await tester.pumpAndSettle();
+
+    // Verify receipt modal
+    expect(find.text('Rent Payment Receipt'), findsOneWidget);
+    expect(find.byKey(const Key('btn_share_receipt_action')), findsOneWidget);
+
+    // Tap Share Receipt
+    await tester.tap(find.byKey(const Key('btn_share_receipt_action')));
+    await tester.pumpAndSettle();
+
+    // Verify copy confirmation
+    expect(find.textContaining('copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('More Tab: Backup and Restore Data modals open and function',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to More Tab
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    // Tap Backup Data
+    final backupTile = find.byKey(const Key('tile_backup_data'));
+    expect(backupTile, findsOneWidget);
+    await tester.ensureVisible(backupTile);
+    await tester.pumpAndSettle();
+    await tester.tap(backupTile);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Offline JSON Backup'), findsOneWidget);
+    expect(find.byKey(const Key('btn_copy_backup_json')), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+
+    // Tap Restore Data
+    final restoreTile = find.byKey(const Key('tile_restore_data'));
+    expect(restoreTile, findsOneWidget);
+    await tester.ensureVisible(restoreTile);
+    await tester.pumpAndSettle();
+    await tester.tap(restoreTile);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Restore from Backup'), findsWidgets);
+    expect(find.byKey(const Key('input_restore_json')), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('Utility Sub-Meter Splitter: Post charges directly to tenant bills in SQLite and updates ledger',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Tap bolt icon in Home header
+    final utilityBtn = find.byKey(const Key('home_action_utility_splitter'));
+    expect(utilityBtn, findsOneWidget);
+    await tester.tap(utilityBtn);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 400));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Utility Sub-Meter Splitter'), findsOneWidget);
+    expect(find.byKey(const Key('btn_post_utility_to_bills')), findsOneWidget);
+
+    // Switch to Equal Split so total bill is allocated across all rooms
+    await tester.tap(find.text('Equal Split'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('btn_post_utility_to_bills')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Post Utility Charges'), findsOneWidget);
+    expect(find.byKey(const Key('btn_confirm_post_utility_charges')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('btn_confirm_post_utility_charges')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Posted Electricity charges to'), findsOneWidget);
+  });
+
+  testWidgets('More Tab: Landlord Profile & Receipt settings modal saves custom branding and updates digital receipts',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    final profileTile = find.byKey(const Key('tile_landlord_profile'));
+    expect(profileTile, findsOneWidget);
+    await tester.ensureVisible(profileTile);
+    await tester.pumpAndSettle();
+    await tester.tap(profileTile);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Landlord Profile'), findsOneWidget);
+    expect(find.byKey(const Key('input_profile_business_name')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('input_profile_business_name')), 'Emerald Heights');
+    await tester.enterText(find.byKey(const Key('input_profile_phone')), '0917 999 1234');
+    await tester.enterText(find.byKey(const Key('input_profile_receipt_footer')), 'Official Digital Receipt');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('btn_save_landlord_profile')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('✓ Landlord profile and receipt settings saved!'), findsOneWidget);
+    ScaffoldMessenger.of(tester.element(find.byType(HomeScreen))).clearSnackBars();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('nav_payments')));
+    await tester.pumpAndSettle();
+
+    final receiptBtn = find.byKey(const Key('btn_receipt_pay1'));
+    await tester.tap(receiptBtn);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('btn_share_receipt_action')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('copied to clipboard'), findsOneWidget);
+    expect(LandlordProfileService.currentProfile.businessName, 'Emerald Heights');
+    expect(LandlordProfileService.currentProfile.receiptFooter, 'Official Digital Receipt');
+  });
+
+  testWidgets('Move-out settlement persistence: Settle tenant move-out deposit and vacate room',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    await tester.tap(find.byKey(const Key('nav_properties')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('View Rooms').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('R1'));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.byKey(const Key('tenant_assign_row')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Move-Out & Deposit Settlement'), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Remove Tenant'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Move-out settled for Elena Santos'), findsOneWidget);
+  });
+
+  testWidgets('Partial payments & running balance: Logs partial payment and maintains remaining balance in unpaid ledger',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Initial collected amount
+    expect(find.text('₱42,000'), findsOneWidget);
+
+    // Tap quick action for Record payment
+    await tester.tap(find.byKey(const Key('quick_action_record_payment')));
+    await tester.pumpAndSettle();
+
+    // Verify modal is open
+    expect(find.text('Record Rent Payment'), findsOneWidget);
+    expect(find.text('Confirm & Log Payment'), findsOneWidget);
+
+    final amountInput = find.byKey(const Key('input_payment_amount'));
+    expect(amountInput, findsOneWidget);
+    await tester.enterText(amountInput, '1500');
+    await tester.pumpAndSettle();
+
+    final confirmBtn = find.text('Confirm & Log Payment');
+    await tester.ensureVisible(confirmBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(confirmBtn);
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Partial payment of ₱1,500 from Maria S. logged. Remaining balance: ₱2,000.'), findsOneWidget);
+
+    // Navigate to Home tab to view updated overdue card with remaining balance
+    await tester.tap(find.byKey(const Key('nav_home')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('₱2,000'), findsWidgets);
+  });
+
+  testWidgets('Tenant Statement of Account (SOA): Opens ledger transactions and shares statement',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    await tester.tap(find.byKey(const Key('nav_tenants')));
+    await tester.pumpAndSettle();
+
+    // Tap on tenant card for Maria S. (id: t1)
+    final tenantCard = find.byKey(const Key('tenant_card_t1'));
+    expect(tenantCard, findsOneWidget);
+    await tester.tap(tenantCard);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Statement of Account'), findsOneWidget);
+    expect(find.text('CURRENT BALANCE DUE'), findsOneWidget);
+    expect(find.text('PAYMENT & BILLING HISTORY'), findsOneWidget);
+
+    final shareBtn = find.byKey(const Key('btn_share_soa'));
+    expect(shareBtn, findsOneWidget);
+    await tester.tap(shareBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Statement of Account for Maria S. copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('Property Expense Tracker & Net Profit: Logs operational expense and calculates net rental profit',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+
+    late List<PropertyItem> props;
+    late List<ExpenseRecord> expenses;
+    late List<PaymentRecord> payments;
+    await tester.runAsync(() async {
+      props = await DatabaseHelper.instance.getProperties();
+      expenses = await DatabaseHelper.instance.getExpenses();
+      payments = await DatabaseHelper.instance.getPayments();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: ExpensesScreen(
+          initialProperties: props,
+          initialExpenses: expenses,
+          initialPayments: payments,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Expenses & Net Profit'), findsOneWidget);
+    expect(find.text('NET RENTAL PROFIT'), findsOneWidget);
+    expect(find.text('Gross Collections'), findsOneWidget);
+    expect(find.text('Operating Expenses'), findsOneWidget);
+
+    final logExpenseBtn = find.byKey(const Key('fab_log_expense'));
+    expect(logExpenseBtn, findsOneWidget);
+    await tester.tap(logExpenseBtn);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('input_expense_description')), 'Emergency plumbing pipe fix');
+    await tester.enterText(find.byKey(const Key('input_expense_amount')), '1200');
+    await tester.tap(find.byKey(const Key('btn_confirm_log_expense')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Emergency plumbing pipe fix'), findsOneWidget);
+    expect(find.text('-₱1,200'), findsOneWidget);
+  });
+
+  testWidgets('Security Deposit Liability Escrow Report: Displays total held liabilities and room-by-room deposit breakdown',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+
+    late List<PaymentRecord> payments;
+    late List<PropertyItem> props;
+    late List<TenantBill> tenants;
+    await tester.runAsync(() async {
+      payments = await DatabaseHelper.instance.getPayments();
+      props = await DatabaseHelper.instance.getProperties();
+      tenants = await DatabaseHelper.instance.getTenants();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: ReportsExportScreen(
+          initialPayments: payments,
+          initialProperties: props,
+          initialTenants: tenants,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final depositBtn = find.byKey(const Key('btn_deposit_liability_report'));
+    expect(depositBtn, findsOneWidget);
+    await tester.tap(depositBtn);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Deposit Liability & Escrow'), findsOneWidget);
+    expect(find.text('TOTAL SECURITY DEPOSIT LIABILITIES HELD'), findsOneWidget);
+    expect(find.textContaining('BR-4 Rule:'), findsOneWidget);
+    expect(find.text('ROOM-BY-ROOM DEPOSIT HELD'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('btn_share_deposit_report')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Deposit Liability & Escrow Report copied to clipboard'), findsOneWidget);
   });
 }
 

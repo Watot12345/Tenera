@@ -63,9 +63,9 @@ class _PaymentsTabState extends State<PaymentsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Total Collections (October)',
-                  style: TextStyle(
+                Text(
+                  'Total Collections (${DateFormat('MMMM').format(DateTime.now())})',
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -180,6 +180,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 for (int index = 0; index < filtered.length; index++) ...[
                   if (index > 0) const SizedBox(height: 10),
                   InkWell(
+                    key: Key('btn_receipt_${filtered[index].id}'),
                     onTap: () => widget.onShowReceipt(filtered[index]),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(

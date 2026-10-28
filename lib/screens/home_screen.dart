@@ -8,6 +8,7 @@ import '../models/property.dart';
 import '../models/tenant.dart';
 import '../services/database_helper.dart';
 import '../services/direct_sms_service.dart';
+import '../services/landlord_profile_service.dart';
 import '../services/plan_guard_service.dart';
 import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
@@ -75,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
         StaffModeService.isStaffMode(),
         PlanGuardService.isPro(),
         PlanGuardService.isBusiness(),
+        LandlordProfileService.getProfile(),
       ]);
 
       final props = results[0] as List<PropertyItem>;
@@ -83,12 +85,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final isStaff = results[3] as bool;
       final isPro = results[4] as bool;
       final isBusiness = results[5] as bool;
+      final profile = results[6] as LandlordProfile;
 
       if (mounted) {
         setState(() {
           _isStaffMode = isStaff;
           _isPro = isPro;
           _isBusiness = isBusiness;
+          _landlordProfile = profile;
           _properties = props;
           _overdueTenants = tenants.where((t) => t.isOverdue && !t.isPaid).toList();
           _dueSoonTenants = tenants.where((t) => !t.isOverdue && !t.isPaid).toList();
@@ -151,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isStaffMode = false;
   bool _isPro = false;
   bool _isBusiness = false;
+  LandlordProfile _landlordProfile = const LandlordProfile();
 
   // Real database-backed lists (no static hardcoded data)
   List<PropertyItem> _properties = [];
@@ -482,6 +487,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 6),
                     TextField(
+                      key: const Key('input_payment_amount'),
                       controller: amountController,
                       keyboardType: TextInputType.number,
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
@@ -729,19 +735,41 @@ class _HomeScreenState extends State<HomeScreen> {
                           cashImageName: selectedMethod == 'Cash' ? cashImageName : null,
                         );
 
-                        final updatedTenant = selected.copyWith(
-                          isPaid: true,
-                          isOverdue: false,
-                          statusText: 'Paid ${DateFormat('MMM d').format(DateTime.now())}',
-                        );
+                        final isPartial = enteredAmount < selected.amount;
+                        final remainingAmount = isPartial ? selected.amount - enteredAmount : 0;
+
+                        final updatedTenant = isPartial
+                            ? selected.copyWith(
+                                amount: remainingAmount,
+                                isPaid: false,
+                                isOverdue: selected.isOverdue,
+                                statusText: 'Partial · ₱${NumberFormat('#,###').format(remainingAmount)} due',
+                              )
+                            : selected.copyWith(
+                                isPaid: true,
+                                isOverdue: false,
+                                statusText: 'Paid ${DateFormat('MMM d').format(DateTime.now())}',
+                              );
 
                         Navigator.pop(context);
 
                         setState(() {
                           _paymentRecords.insert(0, newPay);
-                          _overdueTenants.removeWhere((t) => t.id == selected.id);
-                          _dueSoonTenants.removeWhere((t) => t.id == selected.id);
-                          _paidTenants.insert(0, updatedTenant);
+                          if (isPartial) {
+                            final overdueIdx = _overdueTenants.indexWhere((t) => t.id == selected.id);
+                            if (overdueIdx != -1) {
+                              _overdueTenants[overdueIdx] = updatedTenant;
+                            } else {
+                              final dueIdx = _dueSoonTenants.indexWhere((t) => t.id == selected.id);
+                              if (dueIdx != -1) {
+                                _dueSoonTenants[dueIdx] = updatedTenant;
+                              }
+                            }
+                          } else {
+                            _overdueTenants.removeWhere((t) => t.id == selected.id);
+                            _dueSoonTenants.removeWhere((t) => t.id == selected.id);
+                            _paidTenants.insert(0, updatedTenant);
+                          }
                           _recomputeLedger();
                         });
 
@@ -749,6 +777,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           payment: newPay,
                           updatedTenant: updatedTenant,
                         );
+
+                        final snackMessage = isPartial
+                            ? 'Partial payment of ₱${NumberFormat('#,###').format(enteredAmount)} from ${selected.name} logged. Remaining balance: ₱${NumberFormat('#,###').format(remainingAmount)}.'
+                            : 'Payment of ₱${NumberFormat('#,###').format(enteredAmount)} from ${selected.name} logged ($selectedMethod${refNo != null ? " · Ref: $refNo" : ""}${cashImageName != null ? " · Photo attached" : ""}).';
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -759,7 +791,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Payment of ₱${NumberFormat('#,###').format(enteredAmount)} from ${selected.name} logged ($selectedMethod${refNo != null ? " · Ref: $refNo" : ""}${cashImageName != null ? " · Photo attached" : ""}).',
+                                    snackMessage,
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                 ),
@@ -1529,6 +1561,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   void _showReceiptDialog(PaymentRecord rec) {
+    final profile = _landlordProfile;
+
     showDialog(
       context: context,
       builder: (context) {
@@ -1722,14 +1756,53 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton.icon(
+                        key: const Key('btn_share_receipt_action'),
                         onPressed: () {
+                          final refStr = (rec.referenceNo != null && rec.referenceNo!.isNotEmpty)
+                              ? 'Reference No: ${rec.referenceNo}\n'
+                              : '';
+                          final header = profile.businessName.isNotEmpty
+                              ? profile.businessName.toUpperCase()
+                              : 'TENERA RENT RECEIPT';
+                          final contactLine = profile.phone.isNotEmpty
+                              ? 'Landlord Contact: ${profile.phone}\n'
+                              : '';
+                          final footer = profile.receiptFooter.isNotEmpty
+                              ? profile.receiptFooter
+                              : 'Thank you for your payment!\nIssued via Tenera Property Manager';
+
+                          final receiptText = '''
+========================================
+           $header
+========================================
+Receipt ID: #${rec.id.toUpperCase()}
+Date & Time: ${rec.dateFormatted}
+Status: ${rec.isVoided ? 'VOIDED' : 'OFFICIAL PAYMENT'}
+
+Tenant: ${rec.tenantName}
+Unit / Room: ${rec.location}
+Payment Method: ${rec.method}
+$refStr$contactLine----------------------------------------
+AMOUNT PAID: ₱${NumberFormat('#,###').format(rec.amount)}
+----------------------------------------
+$footer
+========================================'''
+                              .trim();
+
+                          final messenger = ScaffoldMessenger.of(context);
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          Clipboard.setData(ClipboardData(text: receiptText));
+                          messenger.showSnackBar(
                             SnackBar(
                               backgroundColor: AppTheme.primaryDeep,
-                              content: Text('Receipt shared for ${rec.tenantName}!'),
+                              content: Text('Receipt for ${rec.tenantName} copied to clipboard!'),
                             ),
                           );
+
+                          try {
+                            final smsUri = Uri.parse('sms:?body=${Uri.encodeComponent(receiptText)}');
+                            launchUrl(smsUri);
+                          } catch (_) {}
                         },
                         icon: const Icon(Icons.share_rounded, size: 16),
                         label: const Text('Share Receipt'),
@@ -2129,6 +2202,24 @@ class _HomeScreenState extends State<HomeScreen> {
           properties: _properties,
           onAddProperty: _openAddPropertyDialog,
           onDeleteProperty: _handleDeleteProperty,
+          onEditProperty: (prop, newName, newAddress) async {
+            setState(() {
+              final idx = _properties.indexWhere((p) => p.id == prop.id);
+              if (idx != -1) {
+                _properties[idx] = _properties[idx].copyWith(name: newName, address: newAddress);
+              }
+            });
+            await DatabaseHelper.instance.editPropertyDetails(prop.id, newName, newAddress);
+            await _loadFromDatabase();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AppTheme.primaryDeep,
+                  content: Text('Property "$newName" updated successfully!'),
+                ),
+              );
+            }
+          },
           isStaffMode: _isStaffMode,
           isBusiness: _isBusiness,
           onViewRooms: (prop) async {
@@ -2143,8 +2234,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   onRoomAdded: (p, room) async {
                     await DatabaseHelper.instance.insertRoom(p.id, room);
                   },
-                  onTenantRemoved: (p, roomCode) async {
-                    await DatabaseHelper.instance.vacateRoom(p.id, roomCode);
+                  onRoomUpdated: (p, oldCode, room) async {
+                    await DatabaseHelper.instance.updateRoom(p.id, oldCode, room);
+                  },
+                  onRoomDeleted: (p, roomCode) async {
+                    await DatabaseHelper.instance.deleteRoom(p.id, roomCode);
+                  },
+                  onTenantRemoved: (p, roomCode, {netRefund, deductions, notes, tenantName}) async {
+                    if (netRefund != null && deductions != null) {
+                      await DatabaseHelper.instance.settleTenantMoveOut(
+                        propertyId: p.id,
+                        roomCode: roomCode,
+                        netRefund: netRefund,
+                        deductions: deductions,
+                        notes: notes,
+                        tenantName: tenantName,
+                      );
+                    } else {
+                      await DatabaseHelper.instance.vacateRoom(p.id, roomCode);
+                    }
                   },
                 ),
               ),
@@ -2171,6 +2279,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
             _showReceiptDialog(existingRec);
+          },
+          onEditTenant: (updated) async {
+            setState(() {
+              final oIdx = _overdueTenants.indexWhere((t) => t.id == updated.id);
+              if (oIdx != -1) _overdueTenants[oIdx] = updated;
+              final dIdx = _dueSoonTenants.indexWhere((t) => t.id == updated.id);
+              if (dIdx != -1) _dueSoonTenants[dIdx] = updated;
+              final pIdx = _paidTenants.indexWhere((t) => t.id == updated.id);
+              if (pIdx != -1) _paidTenants[pIdx] = updated;
+              _recomputeLedger();
+            });
+            await DatabaseHelper.instance.updateTenant(updated);
+          },
+          onDeleteTenant: (tenant) async {
+            setState(() {
+              _overdueTenants.removeWhere((t) => t.id == tenant.id);
+              _dueSoonTenants.removeWhere((t) => t.id == tenant.id);
+              _paidTenants.removeWhere((t) => t.id == tenant.id);
+              _recomputeLedger();
+            });
+            await DatabaseHelper.instance.deleteTenant(tenant.id);
           },
         );
       case 3:

@@ -321,6 +321,272 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
     );
   }
 
+  Future<void> _showDepositLiabilityDialog() async {
+    final summary = await DatabaseHelper.instance.getDepositLiabilitySummary();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.getSurfaceElevatedColor(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.getBorderColor(ctx),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryDeep.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.shield_outlined, color: AppTheme.primaryDeep, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Deposit Liability & Escrow',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 17,
+                                  color: AppTheme.getInkColor(ctx),
+                                ),
+                              ),
+                              Text(
+                                'PRD BR-4 & FR-H7 Compliance',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.getInkMutedColor(ctx),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryDeep,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'TOTAL SECURITY DEPOSIT LIABILITIES HELD',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '₱${NumberFormat('#,###').format(summary.totalDepositLiability)}',
+                              key: const Key('text_total_deposit_liability'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Held in escrow across ${summary.totalOccupiedUnits} active rented rooms.',
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 20),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'BR-4 Rule: Under Philippine Tenancy Law and BIR rules, security deposits are fiduciary liabilities held in escrow. They are NEVER counted as rental income and are exempt from gross revenue tax until settlement.',
+                                style: TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.3),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'ROOM-BY-ROOM DEPOSIT HELD',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                          color: AppTheme.getInkMutedColor(ctx),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (summary.depositItems.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          alignment: Alignment.center,
+                          child: const Text('No active occupied units with deposits.'),
+                        )
+                      else
+                        ...summary.depositItems.map((item) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getSurfaceColor(ctx),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.getBorderColor(ctx)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.vpn_key_rounded, size: 18, color: AppTheme.primary),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Unit ${item.roomCode} · ${item.propertyName}',
+                                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(ctx)),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        item.tenantName ?? 'Occupied Tenant',
+                                        style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(ctx)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  '₱${NumberFormat('#,###').format(item.depositHeld)}',
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.primaryDeep),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: ElevatedButton.icon(
+                    key: const Key('btn_share_deposit_report'),
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: const Text('Share / Copy Escrow Report'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryDeep,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () {
+                      final buffer = StringBuffer();
+                      buffer.writeln('========================================');
+                      buffer.writeln('SECURITY DEPOSIT LIABILITY & ESCROW REPORT');
+                      buffer.writeln('Date: ${DateFormat('MMMM d, y').format(DateTime.now())}');
+                      buffer.writeln('========================================');
+                      buffer.writeln('Total Deposit Liability: ₱${NumberFormat('#,###').format(summary.totalDepositLiability)}');
+                      buffer.writeln('Active Occupied Units: ${summary.totalOccupiedUnits}');
+                      buffer.writeln('Status: Held in Escrow (BR-4 Non-Taxable Liability)');
+                      buffer.writeln('----------------------------------------');
+                      buffer.writeln('DEPOSITS HELD BY UNIT:');
+                      for (final item in summary.depositItems) {
+                        buffer.writeln('• Unit ${item.roomCode} (${item.propertyName}) - ${item.tenantName ?? "Occupied"}: ₱${NumberFormat('#,###').format(item.depositHeld)}');
+                      }
+                      buffer.writeln('========================================');
+                      buffer.writeln('Compliant with PRD BR-4 Security Deposit Separation rules.');
+
+                      Clipboard.setData(ClipboardData(text: buffer.toString()));
+                      Navigator.pop(sheetCtx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: AppTheme.primaryDeep,
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: AppTheme.accent),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '✓ Deposit Liability & Escrow Report copied to clipboard!',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -334,6 +600,12 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
         foregroundColor: AppTheme.ink,
         elevation: 0,
         actions: [
+          IconButton(
+            key: const Key('btn_deposit_liability_report'),
+            icon: const Icon(Icons.shield_outlined, color: AppTheme.primaryDeep),
+            tooltip: 'Security Deposit Escrow Report',
+            onPressed: _showDepositLiabilityDialog,
+          ),
           IconButton(
             key: const Key('btn_preview_csv'),
             icon: const Icon(Icons.remove_red_eye_rounded, color: AppTheme.primaryDeep),

@@ -41,7 +41,7 @@ class AppUpdateInfo {
 class UpdateService {
   static const String repoOwner = 'Watot12345';
   static const String repoName = 'Tenera';
-  static const String fallbackVersion = '1.0.0';
+  static const String fallbackVersion = '1.0.1';
 
   static final UpdateService instance = UpdateService._();
   UpdateService._();

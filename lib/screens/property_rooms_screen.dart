@@ -13,7 +13,9 @@ class PropertyRoomsScreen extends StatefulWidget {
   final PropertyItem? initialProperty;
   final Function(PropertyItem, RoomUnit)? onRoomTap;
   final Function(PropertyItem, RoomUnit)? onRoomAdded;
-  final Function(PropertyItem, String roomCode)? onTenantRemoved;
+  final Function(PropertyItem, String roomCode, {int? netRefund, int? deductions, String? notes, String? tenantName})? onTenantRemoved;
+  final Function(PropertyItem, String oldCode, RoomUnit updatedRoom)? onRoomUpdated;
+  final Function(PropertyItem, String roomCode)? onRoomDeleted;
   final Function(TenantBill)? onRecordPayment;
   final Function(TenantBill)? onSendReminder;
   final Function(String location)? onAssignTenant;
@@ -25,6 +27,8 @@ class PropertyRoomsScreen extends StatefulWidget {
     this.onRoomTap,
     this.onRoomAdded,
     this.onTenantRemoved,
+    this.onRoomUpdated,
+    this.onRoomDeleted,
     this.onRecordPayment,
     this.onSendReminder,
     this.onAssignTenant,
@@ -364,6 +368,264 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     );
   }
 
+  void _showEditRoomDialog(PropertyItem prop, RoomUnit room) {
+    final codeCtrl = TextEditingController(text: room.code);
+    final rentCtrl = TextEditingController(text: (room.rentAmount ?? 4000).toString());
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.edit_rounded, color: AppTheme.primary, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text('Edit Unit ${room.code}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Update rental unit code and monthly rent:', style: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(dialogCtx))),
+            const SizedBox(height: 14),
+            TextField(
+              key: const Key('input_edit_room_code'),
+              controller: codeCtrl,
+              decoration: InputDecoration(
+                labelText: 'Unit / Room Code',
+                hintText: 'e.g. R1, 101, A2',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('input_edit_room_rent'),
+              controller: rentCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Monthly Rent (₱)',
+                hintText: 'e.g. 4500',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            key: const Key('btn_save_edit_room'),
+            onPressed: () {
+              final newCode = codeCtrl.text.trim();
+              final newRent = int.tryParse(rentCtrl.text.trim()) ?? (room.rentAmount ?? 4000);
+              if (newCode.isEmpty) return;
+
+              final updatedRoom = RoomUnit(
+                code: newCode,
+                status: room.status,
+                tenantName: room.tenantName,
+                rentAmount: newRent,
+                statusText: room.statusText,
+              );
+
+              setState(() {
+                final pIdx = _properties.indexWhere((p) => p.id == prop.id);
+                if (pIdx != -1) {
+                  final updatedRooms = _properties[pIdx].rooms.map((r) => r.code == room.code ? updatedRoom : r).toList();
+                  final newOccupied = updatedRooms.where((r) => r.status != RoomStatus.vacant).length;
+                  final newRev = updatedRooms.where((r) => r.status != RoomStatus.vacant).fold(0, (sum, r) => sum + (r.rentAmount ?? 0));
+                  _properties[pIdx] = _properties[pIdx].copyWith(
+                    rooms: updatedRooms,
+                    occupiedUnits: newOccupied,
+                    monthlyRevenue: newRev,
+                  );
+                }
+              });
+
+              widget.onRoomUpdated?.call(prop, room.code, updatedRoom);
+              Navigator.pop(dialogCtx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: AppTheme.primaryDeep,
+                  content: Text('Unit $newCode updated successfully!'),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteRoom(BuildContext? modalCtx, PropertyItem prop, RoomUnit room) {
+    if (room.status != RoomStatus.vacant) {
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFC92A2A)),
+              const SizedBox(width: 8),
+              Text('Unit Occupied', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx))),
+            ],
+          ),
+          content: Text(
+            'Cannot delete Unit ${room.code} while it is occupied by ${room.tenantName ?? "a tenant"}. Please vacate or move-out the tenant before deleting this unit.',
+            style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(dialogCtx)),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Understood'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFECEB),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFC92A2A), size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text('Delete Unit ${room.code}?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx))),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete Unit ${room.code} from ${prop.name}?',
+          style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(dialogCtx)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            key: const Key('btn_confirm_delete_room'),
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              if (modalCtx != null && Navigator.canPop(modalCtx)) {
+                Navigator.pop(modalCtx);
+              }
+
+              setState(() {
+                final pIdx = _properties.indexWhere((p) => p.id == prop.id);
+                if (pIdx != -1) {
+                  final updatedRooms = _properties[pIdx].rooms.where((r) => r.code != room.code).toList();
+                  final newOccupied = updatedRooms.where((r) => r.status != RoomStatus.vacant).length;
+                  final newRev = updatedRooms.where((r) => r.status != RoomStatus.vacant).fold(0, (sum, r) => sum + (r.rentAmount ?? 0));
+                  _properties[pIdx] = _properties[pIdx].copyWith(
+                    rooms: updatedRooms,
+                    totalUnits: updatedRooms.length,
+                    occupiedUnits: newOccupied,
+                    monthlyRevenue: newRev,
+                  );
+                }
+              });
+
+              widget.onRoomDeleted?.call(prop, room.code);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: const Color(0xFFC92A2A),
+                  content: Text('Unit ${room.code} deleted from ${prop.name}.'),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC92A2A),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete Unit'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRoomActionSheet(PropertyItem prop, RoomUnit room) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.getSurfaceElevatedColor(context),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppTheme.getBorderColor(ctx),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Unit ${room.code} · ${prop.name}',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.getInkColor(ctx)),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              key: const Key('action_edit_room'),
+              leading: const Icon(Icons.edit_rounded, color: AppTheme.primary),
+              title: const Text('Edit Unit Details', style: TextStyle(fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showEditRoomDialog(prop, room);
+              },
+            ),
+            ListTile(
+              key: const Key('action_delete_room'),
+              leading: const Icon(Icons.delete_outline_rounded, color: Color(0xFFC92A2A)),
+              title: const Text('Delete Unit', style: TextStyle(color: Color(0xFFC92A2A), fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _confirmDeleteRoom(null, prop, room);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _confirmRemoveTenant(BuildContext modalCtx, PropertyItem prop, RoomUnit room) {
     if (room.status == RoomStatus.overdue) {
       showDialog(
@@ -591,6 +853,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                       room,
                       netRefund: netRefund,
                       deductions: deductions,
+                      notes: notesCtrl.text.trim(),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -613,6 +876,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     RoomUnit room, {
     int? netRefund,
     int? deductions,
+    String? notes,
   }) {
     final currencyFormat = NumberFormat('#,###');
     setState(() {
@@ -644,7 +908,14 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
       }
     });
 
-    widget.onTenantRemoved?.call(prop, room.code);
+    widget.onTenantRemoved?.call(
+      prop,
+      room.code,
+      netRefund: netRefund,
+      deductions: deductions,
+      notes: notes,
+      tenantName: room.tenantName,
+    );
 
     final refundMsg = netRefund != null
         ? (netRefund >= 0
@@ -746,6 +1017,23 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    key: const Key('btn_edit_room_modal'),
+                    tooltip: 'Edit Unit',
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showEditRoomDialog(prop, room);
+                    },
+                  ),
+                  IconButton(
+                    key: const Key('btn_delete_room_modal'),
+                    tooltip: 'Delete Unit',
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFFC92A2A)),
+                    onPressed: () {
+                      _confirmDeleteRoom(ctx, prop, room);
+                    },
                   ),
                   IconButton(
                     icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(ctx)),
@@ -1466,7 +1754,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
       onTap: () => _showRoomDetails(prop, room),
       onLongPress: room.status != RoomStatus.vacant
           ? () => _confirmRemoveTenant(context, prop, room)
-          : null,
+          : () => _showRoomActionSheet(prop, room),
       borderRadius: BorderRadius.circular(12),
       child: content,
     );

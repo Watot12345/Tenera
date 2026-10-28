@@ -232,7 +232,7 @@ class _UtilityCalculatorScreenState extends State<UtilityCalculatorScreen> {
     return val.toStringAsFixed(1);
   }
 
-  Future<void> _saveReadings() async {
+  Future<void> _saveReadings({bool quiet = false}) async {
     if (_selectedProperty == null) return;
 
     final prefs = await SharedPreferences.getInstance();
@@ -250,7 +250,7 @@ class _UtilityCalculatorScreenState extends State<UtilityCalculatorScreen> {
 
     await prefs.setString(savedKey, jsonEncode(toSave));
 
-    if (!mounted) return;
+    if (!mounted || quiet) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppTheme.primaryDeep,
@@ -258,6 +258,185 @@ class _UtilityCalculatorScreenState extends State<UtilityCalculatorScreen> {
           '✓ Saved readings for ${_selectedProperty!.name}! These will automatically become next month\'s Previous Readings.',
         ),
       ),
+    );
+  }
+
+  Future<void> _postChargesToTenants() async {
+    if (_selectedProperty == null) return;
+
+    final typeLabel = _utilityType == UtilityType.electricity ? 'Electricity' : 'Water';
+    final Map<String, double> roomCharges = {};
+    for (final r in _roomReadings) {
+      if (r.isIncluded && r.isOccupied) {
+        final charge = _calculateRoomCharge(r);
+        if (charge > 0) {
+          roomCharges[r.roomCode] = charge;
+        }
+      }
+    }
+
+    if (roomCharges.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFFC0392B),
+          content: Text('No active room utility charges to post.'),
+        ),
+      );
+      return;
+    }
+
+    final postedCount = await DatabaseHelper.instance.postUtilityCharges(
+      propertyId: _selectedProperty!.id,
+      utilityType: typeLabel,
+      roomCharges: roomCharges,
+    );
+
+    await _saveReadings(quiet: true);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppTheme.primaryDeep,
+        content: Text(
+          '✓ Posted $typeLabel charges to $postedCount tenant bill${postedCount == 1 ? '' : 's'}! Total: ₱${_currencyFormat.format(_totalAllocatedAmount)}',
+        ),
+      ),
+    );
+  }
+
+  void _showPostChargesConfirmationDialog() {
+    if (_selectedProperty == null) return;
+    if (_totalAllocatedAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFFC0392B),
+          content: Text('Please enter readings to calculate utility charges first.'),
+        ),
+      );
+      return;
+    }
+
+    final typeLabel = _utilityType == UtilityType.electricity ? 'Electricity' : 'Water';
+    final eligibleReadings = _roomReadings
+        .where((r) => r.isIncluded && r.isOccupied && _calculateRoomCharge(r) > 0)
+        .toList();
+
+    if (eligibleReadings.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFFC0392B),
+          content: Text('No occupied rooms with calculated charges to post.'),
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryDeep.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primaryDeep, size: 22),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Post Utility Charges', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                    Text(
+                      'Apply to ${_selectedProperty!.name} Bills',
+                      style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'The following $typeLabel amounts will be added to each tenant\'s monthly ledger in SQLite:',
+                    style: const TextStyle(fontSize: 13, color: AppTheme.ink),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.border),
+                    ),
+                    child: Column(
+                      children: [
+                        for (final r in eligibleReadings) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Unit ${r.roomCode} (${r.tenantName ?? "Tenant"})',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                '₱${_currencyFormat.format(_calculateRoomCharge(r))}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.primaryDeep),
+                              ),
+                            ],
+                          ),
+                          if (r != eligibleReadings.last) const Divider(height: 12, color: AppTheme.border),
+                        ],
+                        const Divider(height: 16, thickness: 1.5, color: AppTheme.border),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total to Post', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                            Text(
+                              '₱${_currencyFormat.format(_totalAllocatedAmount)}',
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppTheme.statusPaid),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              key: const Key('btn_confirm_post_utility_charges'),
+              onPressed: () {
+                Navigator.pop(dialogCtx);
+                _postChargesToTenants();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryDeep,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Confirm & Post'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -797,6 +976,22 @@ class _UtilityCalculatorScreenState extends State<UtilityCalculatorScreen> {
                 ],
               ),
               const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  key: const Key('btn_post_utility_to_bills'),
+                  onPressed: _showPostChargesConfirmationDialog,
+                  icon: const Icon(Icons.receipt_long_rounded, size: 16),
+                  label: const Text('Post Charges to Tenant Bills', style: TextStyle(fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryDeep,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(

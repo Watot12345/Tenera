@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/database_helper.dart';
 import '../../services/direct_sms_service.dart';
+import '../../services/landlord_profile_service.dart';
 import '../../services/plan_guard_service.dart';
 import '../../services/staff_mode_service.dart';
 import '../../services/sync_service.dart';
@@ -10,6 +12,7 @@ import '../../services/theme_service.dart';
 import '../../services/update_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
+import '../expenses_screen.dart';
 import '../lease_contract_screen.dart';
 import '../portfolio_analytics_screen.dart';
 import '../privacy_policy_screen.dart';
@@ -20,12 +23,14 @@ import '../welcome_screen.dart';
 
 class MoreTab extends StatefulWidget {
   final FutureOr<void> Function()? onStaffModeToggled;
+  final FutureOr<void> Function()? onProfileUpdated;
   final bool isPro;
   final bool isBusiness;
 
   const MoreTab({
     super.key,
     this.onStaffModeToggled,
+    this.onProfileUpdated,
     this.isPro = false,
     this.isBusiness = false,
   });
@@ -41,7 +46,8 @@ class _MoreTabState extends State<MoreTab> {
   bool _isStaffMode = false;
   late bool _isPro;
   late bool _isBusiness;
-  String _currentVersion = '1.0.0';
+  String _currentVersion = '1.0.1';
+  LandlordProfile _landlordProfile = const LandlordProfile();
 
   @override
   void initState() {
@@ -68,6 +74,7 @@ class _MoreTabState extends State<MoreTab> {
     final staff = await StaffModeService.isStaffMode();
     final pro = await PlanGuardService.isPro();
     final business = await PlanGuardService.isBusiness();
+    final profile = await LandlordProfileService.getProfile();
     if (mounted) {
       setState(() {
         _pendingSyncCount = count;
@@ -75,6 +82,7 @@ class _MoreTabState extends State<MoreTab> {
         _isStaffMode = staff;
         _isPro = pro;
         _isBusiness = business;
+        _landlordProfile = profile;
       });
     }
   }
@@ -172,6 +180,311 @@ class _MoreTabState extends State<MoreTab> {
             child: const Text('Clear Everything'),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showBackupDialog() async {
+    final jsonStr = await DatabaseHelper.instance.exportBackupJson();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: AppTheme.getSurfaceElevatedColor(ctx),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.save_alt_rounded, color: AppTheme.primaryDeep, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Offline JSON Backup', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(ctx))),
+                        Text('Complete ledger, properties, rooms & tenants', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(ctx))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxHeight: 220),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.getBackgroundColor(ctx),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.getBorderColor(ctx)),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    jsonStr,
+                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      key: const Key('btn_copy_backup_json'),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: jsonStr));
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: AppTheme.primaryDeep,
+                            content: Text('✅ Backup copied to clipboard! Save it to your notes or cloud drive.'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 16),
+                      label: const Text('Copy JSON'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRestoreDialog() {
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.settings_backup_restore_rounded, color: AppTheme.primary, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text('Restore from Backup', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Paste your previously exported Tenera JSON backup below to restore your properties, rooms, tenants, and payment records.',
+              style: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(dialogCtx)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('input_restore_json'),
+              controller: controller,
+              maxLines: 6,
+              style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+              decoration: InputDecoration(
+                hintText: 'Paste backup JSON here...',
+                filled: true,
+                fillColor: AppTheme.getBackgroundColor(dialogCtx),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final text = controller.text.trim();
+              if (text.isEmpty) return;
+              final navigator = Navigator.of(dialogCtx);
+              final messenger = ScaffoldMessenger.of(context);
+              final success = await DatabaseHelper.instance.restoreBackupJson(text);
+              navigator.pop();
+              if (success) {
+                await _refreshStatus();
+                messenger.showSnackBar(
+                  const SnackBar(
+                    backgroundColor: AppTheme.primaryDeep,
+                    content: Text('🎉 Backup restored successfully! All records imported.'),
+                  ),
+                );
+              } else {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Color(0xFFC92A2A),
+                    content: Text('❌ Invalid backup format. Please verify your JSON string.'),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Restore Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLandlordProfileDialog() {
+    final profile = _landlordProfile;
+
+    final bizCtrl = TextEditingController(text: profile.businessName);
+    final nameCtrl = TextEditingController(text: profile.landlordName);
+    final phoneCtrl = TextEditingController(text: profile.phone);
+    final footerCtrl = TextEditingController(text: profile.receiptFooter);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.badge_rounded, color: AppTheme.primary, size: 22),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Landlord Profile', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+                    Text('Digital receipt & branding headers', style: TextStyle(fontSize: 11, color: AppTheme.inkMuted)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  key: const Key('input_profile_business_name'),
+                  controller: bizCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Business / Apartment Name',
+                    hintText: 'e.g. Sunrise Residences',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('input_profile_landlord_name'),
+                  controller: nameCtrl,
+                  decoration: InputDecoration(
+                    labelText: 'Landlord / Manager Name',
+                    hintText: 'e.g. Juan Dela Cruz',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('input_profile_phone'),
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Contact / GCash Number',
+                    hintText: 'e.g. 0917 123 4567',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const Key('input_profile_receipt_footer'),
+                  controller: footerCtrl,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Receipt Notes / Footer',
+                    hintText: 'e.g. Thank you for paying on time!',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              key: const Key('btn_save_landlord_profile'),
+              onPressed: () async {
+                await LandlordProfileService.saveProfile(
+                  businessName: bizCtrl.text,
+                  landlordName: nameCtrl.text,
+                  phone: phoneCtrl.text,
+                  receiptFooter: footerCtrl.text,
+                );
+                if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: AppTheme.primaryDeep,
+                      content: Text('✓ Landlord profile and receipt settings saved!'),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Save Profile'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -385,6 +698,33 @@ class _MoreTabState extends State<MoreTab> {
                           Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsExportScreen()));
                         },
                       ),
+                      if (!_isStaffMode) ...[
+                        Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                        ListTile(
+                          key: const Key('tile_expense_tracker'),
+                          dense: true,
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFC92A2A).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.receipt_long_rounded, color: Color(0xFFC92A2A), size: 20),
+                          ),
+                          title: Text('Expenses & Net Rental Profit', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                          subtitle: Text('Track maintenance, utilities & net profit', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                          trailing: _buildPillBadge('PRO'),
+                          onTap: () async {
+                            final canAccess = await PlanGuardService.requirePro(
+                              context: context,
+                              featureName: 'Expenses & Net Profit',
+                              featureBenefit: 'Track operational property expenses, repairs, and view real-time net rental profit margins.',
+                            );
+                            if (!canAccess || !context.mounted) return;
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen()));
+                          },
+                        ),
+                      ],
                     ],
                     if (_isBusiness) ...[
                       if (_isPro) Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
@@ -633,19 +973,33 @@ class _MoreTabState extends State<MoreTab> {
                   ),
                   Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(
+                    key: const Key('tile_backup_data'),
                     dense: true,
                     leading: const Icon(Icons.save_alt_rounded, color: AppTheme.primary, size: 22),
                     title: Text('Backup Data to Device', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('Create offline JSON backup file', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    subtitle: Text('Export offline JSON backup file', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
                     trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          backgroundColor: AppTheme.primaryDeep,
-                          content: Text('Backup saved successfully to device storage!'),
-                        ),
-                      );
-                    },
+                    onTap: _showBackupDialog,
+                  ),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                  ListTile(
+                    key: const Key('tile_restore_data'),
+                    dense: true,
+                    leading: const Icon(Icons.settings_backup_restore_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Restore from Backup', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Import properties, tenants & records from JSON', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: _showRestoreDialog,
+                  ),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                  ListTile(
+                    key: const Key('tile_landlord_profile'),
+                    dense: true,
+                    leading: const Icon(Icons.badge_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Landlord & Receipt Profile', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Custom business name, phone & receipt footer', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: _showLandlordProfileDialog,
                   ),
                   Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(

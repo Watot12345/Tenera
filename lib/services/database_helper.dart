@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import '../models/deposit_liability.dart';
+import '../models/expense.dart';
 import '../models/payment.dart';
 import '../models/portfolio_analytics.dart';
 import '../models/property.dart';
@@ -95,6 +99,22 @@ class DatabaseHelper {
     try {
       await db.execute('ALTER TABLE payments ADD COLUMN void_reason TEXT');
     } catch (_) {}
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS expenses (
+          id TEXT PRIMARY KEY,
+          property_id TEXT,
+          property_name TEXT NOT NULL,
+          category TEXT NOT NULL,
+          description TEXT NOT NULL,
+          amount INTEGER NOT NULL,
+          date_formatted TEXT NOT NULL,
+          receipt_ref TEXT,
+          created_at INTEGER NOT NULL,
+          is_synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+    } catch (_) {}
 
     return db;
   }
@@ -158,6 +178,21 @@ class DatabaseHelper {
         cash_image_name TEXT,
         is_voided INTEGER NOT NULL DEFAULT 0,
         void_reason TEXT,
+        created_at INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE expenses (
+        id TEXT PRIMARY KEY,
+        property_id TEXT,
+        property_name TEXT NOT NULL,
+        category TEXT NOT NULL,
+        description TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        date_formatted TEXT NOT NULL,
+        receipt_ref TEXT,
         created_at INTEGER NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 0
       )
@@ -435,6 +470,48 @@ class DatabaseHelper {
         'is_synced': 1,
       });
     }
+
+    // Seed Initial Expenses
+    final expenses = [
+      {
+        'id': 'exp1',
+        'property_id': 'p1',
+        'property_name': 'Mabini Apts',
+        'category': 'Repairs & Maintenance',
+        'description': 'Plumbing repair & PVC pipe replacement (Unit 2A)',
+        'amount': 1500,
+        'date_formatted': 'Oct 19, 2026',
+        'receipt_ref': 'OR-4182',
+      },
+      {
+        'id': 'exp2',
+        'property_id': 'p1',
+        'property_name': 'Mabini Apts',
+        'category': 'Utilities',
+        'description': 'Common hallway & staircase Meralco electric bill',
+        'amount': 2800,
+        'date_formatted': 'Oct 15, 2026',
+        'receipt_ref': 'MRL-9012',
+      },
+      {
+        'id': 'exp3',
+        'property_id': 'p2',
+        'property_name': 'Rizal House',
+        'category': 'Caretaker & Staff',
+        'description': 'Caretaker semi-monthly allowance & cleaning supplies',
+        'amount': 3500,
+        'date_formatted': 'Oct 15, 2026',
+        'receipt_ref': 'PAY-1015',
+      },
+    ];
+
+    for (final exp in expenses) {
+      await db.insert('expenses', {
+        ...exp,
+        'created_at': now,
+        'is_synced': 1,
+      });
+    }
   }
 
   // ----------------------------------------------------
@@ -685,6 +762,34 @@ class DatabaseHelper {
     notifyChanges();
   }
 
+  Future<void> editPropertyDetails(String propertyId, String newName, String newAddress) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final oldProps = await db.query('properties', where: 'id = ?', whereArgs: [propertyId]);
+    final oldName = oldProps.isNotEmpty ? (oldProps.first['name'] as String) : '';
+
+    await db.update(
+      'properties',
+      {
+        'name': newName,
+        'address': newAddress,
+        'updated_at': now,
+        'is_synced': 0,
+      },
+      where: 'id = ?',
+      whereArgs: [propertyId],
+    );
+
+    if (oldName.isNotEmpty && oldName != newName) {
+      final tenants = await db.query('tenants', where: 'location LIKE ?', whereArgs: ['%$oldName%']);
+      for (final t in tenants) {
+        final loc = (t['location'] as String).replaceAll(oldName, newName);
+        await db.update('tenants', {'location': loc, 'updated_at': now, 'is_synced': 0}, where: 'id = ?', whereArgs: [t['id']]);
+      }
+    }
+    notifyChanges();
+  }
+
   // ----------------------------------------------------
   // ROOMS CRUD
   // ----------------------------------------------------
@@ -752,6 +857,146 @@ class DatabaseHelper {
     );
 
     await _recalculateProperty(propertyId);
+    notifyChanges();
+  }
+
+  Future<void> settleTenantMoveOut({
+    required String propertyId,
+    required String roomCode,
+    required int netRefund,
+    required int deductions,
+    String? notes,
+    String? tenantName,
+  }) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.transaction((txn) async {
+      // 1. Vacate the room
+      await txn.update(
+        'rooms',
+        {
+          'status': 'vacant',
+          'tenant_name': null,
+          'status_text': null,
+          'updated_at': now,
+          'is_synced': 0,
+        },
+        where: 'property_id = ? AND code = ?',
+        whereArgs: [propertyId, roomCode],
+      );
+
+      // 2. Recalculate property
+      final rooms = await txn.query('rooms', where: 'property_id = ?', whereArgs: [propertyId]);
+      final total = rooms.length;
+      final occupied = rooms.where((r) => r['status'] != 'vacant').length;
+      final rev = rooms
+          .where((r) => r['status'] != 'vacant')
+          .fold(0, (sum, r) => sum + ((r['rent_amount'] as int?) ?? 0));
+
+      await txn.update(
+        'properties',
+        {
+          'total_units': total,
+          'occupied_units': occupied,
+          'monthly_revenue': rev,
+          'updated_at': now,
+          'is_synced': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [propertyId],
+      );
+
+      // 3. Property details for receipt
+      final propMaps = await txn.query('properties', where: 'id = ?', whereArgs: [propertyId]);
+      final propName = propMaps.isNotEmpty ? (propMaps.first['name'] as String) : 'Property';
+
+      // 4. Record move-out financial settlement
+      final effectiveTenantName = tenantName ?? 'Tenant';
+      final settlementMethod = netRefund >= 0 ? 'Security Deposit Refund' : 'Move-Out Balance Due';
+      final settlementReason = (notes != null && notes.isNotEmpty)
+          ? 'Deductions: ₱$deductions ($notes)'
+          : 'Deductions: ₱$deductions';
+
+      final paymentId = 'settle_${now}_$roomCode';
+      await txn.insert('payments', {
+        'id': paymentId,
+        'tenant_name': effectiveTenantName,
+        'location': 'Unit $roomCode · $propName',
+        'amount': netRefund.abs(),
+        'method': settlementMethod,
+        'date_formatted': DateFormat('MMM d, h:mm a').format(DateTime.now()),
+        'reference_no': 'SETTLE-$roomCode',
+        'cash_image_name': null,
+        'is_voided': 0,
+        'void_reason': settlementReason,
+        'created_at': now,
+        'is_synced': 0,
+      });
+
+      // 5. Remove tenant from active tenants
+      if (tenantName != null && tenantName.isNotEmpty) {
+        await txn.delete('tenants', where: 'name = ?', whereArgs: [tenantName]);
+      } else {
+        await txn.delete('tenants', where: 'location LIKE ?', whereArgs: ['%$roomCode%']);
+      }
+    });
+
+    notifyChanges();
+  }
+
+  Future<void> updateRoom(String propertyId, String oldCode, RoomUnit updatedRoom) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.update(
+      'rooms',
+      {
+        'id': '${propertyId}_${updatedRoom.code}',
+        'code': updatedRoom.code,
+        'status': updatedRoom.status.name,
+        'tenant_name': updatedRoom.tenantName,
+        'rent_amount': updatedRoom.rentAmount,
+        'status_text': updatedRoom.statusText,
+        'updated_at': now,
+        'is_synced': 0,
+      },
+      where: 'property_id = ? AND code = ?',
+      whereArgs: [propertyId, oldCode],
+    );
+
+    await _recalculateProperty(propertyId);
+    notifyChanges();
+  }
+
+  Future<void> deleteRoom(String propertyId, String roomCode) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'rooms',
+        where: 'property_id = ? AND code = ?',
+        whereArgs: [propertyId, roomCode],
+      );
+      final rooms = await txn.query('rooms', where: 'property_id = ?', whereArgs: [propertyId]);
+      final total = rooms.length;
+      final occupied = rooms.where((r) => r['status'] != 'vacant').length;
+      final rev = rooms
+          .where((r) => r['status'] != 'vacant')
+          .fold(0, (sum, r) => sum + ((r['rent_amount'] as int?) ?? 0));
+
+      await txn.update(
+        'properties',
+        {
+          'total_units': total,
+          'occupied_units': occupied,
+          'monthly_revenue': rev,
+          'updated_at': DateTime.now().millisecondsSinceEpoch,
+          'is_synced': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [propertyId],
+      );
+    });
     notifyChanges();
   }
 
@@ -859,6 +1104,78 @@ class DatabaseHelper {
     final db = await database;
     await db.delete('tenants', where: 'id = ?', whereArgs: [id]);
     notifyChanges();
+  }
+
+  Future<int> postUtilityCharges({
+    required String propertyId,
+    required String utilityType,
+    required Map<String, double> roomCharges,
+  }) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    int postedCount = 0;
+
+    await db.transaction((txn) async {
+      final propMaps = await txn.query('properties', where: 'id = ?', whereArgs: [propertyId]);
+      final propName = propMaps.isNotEmpty ? (propMaps.first['name'] as String) : '';
+
+      final rooms = await txn.query('rooms', where: 'property_id = ?', whereArgs: [propertyId]);
+      final tenants = await txn.query('tenants');
+
+      for (final entry in roomCharges.entries) {
+        final roomCode = entry.key;
+        final charge = entry.value.round();
+        if (charge <= 0) continue;
+
+        // Find room in property
+        final roomMatch = rooms.where((r) => r['code'] == roomCode).toList();
+        String? tenantName = roomMatch.isNotEmpty ? roomMatch.first['tenant_name'] as String? : null;
+
+        // Find tenant in tenants table
+        Map<String, Object?>? tenantMatch;
+        if (tenantName != null && tenantName.isNotEmpty) {
+          final matches = tenants.where((t) => (t['name'] as String).toLowerCase() == tenantName.toLowerCase()).toList();
+          if (matches.isNotEmpty) tenantMatch = matches.first;
+        }
+
+        if (tenantMatch == null) {
+          final matches = tenants.where((t) {
+            final loc = t['location'] as String;
+            return loc.contains(roomCode) && (propName.isEmpty || loc.contains(propName));
+          }).toList();
+          if (matches.isNotEmpty) tenantMatch = matches.first;
+        }
+
+        if (tenantMatch != null) {
+          final tenantId = tenantMatch['id'] as String;
+          final currentAmount = tenantMatch['amount'] as int;
+          final isPaid = (tenantMatch['is_paid'] as int) == 1;
+
+          final newAmount = isPaid ? charge : currentAmount + charge;
+          final newIsPaid = 0;
+          final newStatusText = '$utilityType Due: ₱$charge';
+
+          await txn.update(
+            'tenants',
+            {
+              'amount': newAmount,
+              'is_paid': newIsPaid,
+              'status_text': newStatusText,
+              'updated_at': now,
+              'is_synced': 0,
+            },
+            where: 'id = ?',
+            whereArgs: [tenantId],
+          );
+          postedCount++;
+        }
+      }
+    });
+
+    if (postedCount > 0) {
+      notifyChanges();
+    }
+    return postedCount;
   }
 
   // ----------------------------------------------------
@@ -1014,5 +1331,158 @@ class DatabaseHelper {
       await txn.delete('properties');
     });
     notifyChanges();
+  }
+
+  // ----------------------------------------------------
+  // EXPENSES CRUD
+  // ----------------------------------------------------
+  Future<List<ExpenseRecord>> getExpenses({String? propertyId}) async {
+    final db = await database;
+    List<Map<String, Object?>> maps;
+    if (propertyId != null && propertyId.isNotEmpty && propertyId != 'ALL') {
+      maps = await db.query(
+        'expenses',
+        where: 'property_id = ?',
+        whereArgs: [propertyId],
+        orderBy: 'created_at DESC',
+      );
+    } else {
+      maps = await db.query('expenses', orderBy: 'created_at DESC');
+    }
+    return maps.map((m) => ExpenseRecord.fromMap(m)).toList();
+  }
+
+  Future<void> insertExpense(ExpenseRecord expense) async {
+    final db = await database;
+    await db.insert('expenses', expense.toMap());
+    notifyChanges();
+  }
+
+  Future<void> deleteExpense(String id) async {
+    final db = await database;
+    await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
+    notifyChanges();
+  }
+
+  Future<int> getTotalExpenses({String? propertyId}) async {
+    final expenses = await getExpenses(propertyId: propertyId);
+    return expenses.fold<int>(0, (sum, exp) => sum + exp.amount);
+  }
+
+  // ----------------------------------------------------
+  // DEPOSIT LIABILITY & ESCROW REPORT (PRD BR-4, FR-E8, FR-H7)
+  // ----------------------------------------------------
+  Future<DepositLiabilitySummary> getDepositLiabilitySummary() async {
+    final properties = await getProperties();
+    int totalDeposit = 0;
+    int occupiedCount = 0;
+    final List<DepositLiabilityItem> items = [];
+
+    for (final p in properties) {
+      for (final r in p.rooms) {
+        if (r.status != RoomStatus.vacant) {
+          occupiedCount++;
+          final deposit = r.rentAmount ?? 0;
+          totalDeposit += deposit;
+          items.add(DepositLiabilityItem(
+            roomCode: r.code,
+            propertyName: p.name,
+            tenantName: r.tenantName,
+            depositHeld: deposit,
+            status: r.status.name,
+          ));
+        }
+      }
+    }
+
+    return DepositLiabilitySummary(
+      totalDepositLiability: totalDeposit,
+      totalOccupiedUnits: occupiedCount,
+      depositItems: items,
+    );
+  }
+
+  // ----------------------------------------------------
+  // BACKUP & RESTORE
+  // ----------------------------------------------------
+  Future<String> exportBackupJson() async {
+    final db = await database;
+    final properties = await db.query('properties');
+    final rooms = await db.query('rooms');
+    final tenants = await db.query('tenants');
+    final payments = await db.query('payments');
+    final expenses = await db.query('expenses');
+
+    final backupData = {
+      'app': 'Tenera',
+      'version': 1,
+      'tenera_backup_version': 1,
+      'exported_at': DateTime.now().toIso8601String(),
+      'properties': properties,
+      'rooms': rooms,
+      'tenants': tenants,
+      'payments': payments,
+      'expenses': expenses,
+    };
+
+    return const JsonEncoder.withIndent('  ').convert(backupData);
+  }
+
+  Future<bool> restoreBackupJson(String jsonString) async {
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! Map<String, dynamic>) return false;
+      if (!decoded.containsKey('properties') || !decoded.containsKey('rooms')) return false;
+
+      final db = await database;
+      await db.transaction((txn) async {
+        await txn.delete('expenses');
+        await txn.delete('payments');
+        await txn.delete('rooms');
+        await txn.delete('tenants');
+        await txn.delete('properties');
+
+        final props = decoded['properties'] as List<dynamic>? ?? [];
+        for (final p in props) {
+          if (p is Map) {
+            await txn.insert('properties', Map<String, dynamic>.from(p));
+          }
+        }
+
+        final rms = decoded['rooms'] as List<dynamic>? ?? [];
+        for (final r in rms) {
+          if (r is Map) {
+            await txn.insert('rooms', Map<String, dynamic>.from(r));
+          }
+        }
+
+        final tnts = decoded['tenants'] as List<dynamic>? ?? [];
+        for (final t in tnts) {
+          if (t is Map) {
+            await txn.insert('tenants', Map<String, dynamic>.from(t));
+          }
+        }
+
+        final pays = decoded['payments'] as List<dynamic>? ?? [];
+        for (final pay in pays) {
+          if (pay is Map) {
+            await txn.insert('payments', Map<String, dynamic>.from(pay));
+          }
+        }
+
+        final exps = decoded['expenses'] as List<dynamic>? ?? [];
+        for (final exp in exps) {
+          if (exp is Map) {
+            await txn.insert('expenses', Map<String, dynamic>.from(exp));
+          }
+        }
+      });
+
+      notifyChanges();
+      return true;
+    } catch (e) {
+      debugPrint('restoreBackupJson error: $e');
+      return false;
+    }
   }
 }

@@ -10,6 +10,7 @@ class PropertiesTab extends StatelessWidget {
   final VoidCallback onAddProperty;
   final Function(PropertyItem?) onViewRooms;
   final Future<void> Function(PropertyItem)? onDeleteProperty;
+  final Future<void> Function(PropertyItem prop, String newName, String newAddress)? onEditProperty;
   final bool isStaffMode;
   final bool isBusiness;
 
@@ -19,6 +20,7 @@ class PropertiesTab extends StatelessWidget {
     required this.onAddProperty,
     required this.onViewRooms,
     this.onDeleteProperty,
+    this.onEditProperty,
     this.isStaffMode = false,
     this.isBusiness = false,
   });
@@ -323,111 +325,326 @@ class PropertiesTab extends StatelessWidget {
     );
   }
 
-  Widget _buildPropertyCard(BuildContext context, PropertyItem prop, NumberFormat currencyFormat) {
-    final overdueCount = prop.rooms.where((r) => r.status == RoomStatus.overdue).length;
+  void _showEditPropertyDialog(BuildContext context, PropertyItem prop) {
+    final nameCtrl = TextEditingController(text: prop.name);
+    final addressCtrl = TextEditingController(text: prop.address);
 
-    return Material(
-      color: AppTheme.getSurfaceColor(context),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        key: Key('property_card_${prop.id}'),
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => onViewRooms(prop),
-        onLongPress: () => _confirmDeleteProperty(context, prop),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.edit_rounded, color: AppTheme.primary, size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text('Edit Property', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx))),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Update building or property details:', style: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(dialogCtx))),
+            const SizedBox(height: 14),
+            TextField(
+              key: const Key('input_edit_property_name'),
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                labelText: 'Property Name',
+                hintText: 'e.g. Mabini Apartments',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              key: const Key('input_edit_property_address'),
+              controller: addressCtrl,
+              decoration: InputDecoration(
+                labelText: 'Address',
+                hintText: 'e.g. 124 Mabini St, Manila',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          ElevatedButton(
+            key: const Key('btn_save_edit_property'),
+            onPressed: () {
+              final newName = nameCtrl.text.trim();
+              final newAddr = addressCtrl.text.trim();
+              if (newName.isEmpty) return;
+              Navigator.pop(dialogCtx);
+              onEditProperty?.call(prop, newName, newAddr);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPropertyActionSheet(BuildContext context, PropertyItem prop) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppTheme.getSurfaceElevatedColor(ctx),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.getBorderColor(ctx),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
                     radius: 20,
                     backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
-                    child: const Icon(
-                      Icons.domain_rounded,
-                      color: AppTheme.primary,
-                      size: 22,
-                    ),
+                    child: const Icon(Icons.domain_rounded, color: AppTheme.primary, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(prop.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.getInkColor(ctx))),
+                        Text(prop.address, style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(ctx))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                key: Key('btn_edit_property_${prop.id}'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.edit_rounded, color: AppTheme.primaryDeep, size: 20),
+                ),
+                title: Text('Edit Property', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(ctx))),
+                subtitle: Text('Change name or address', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(ctx))),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showEditPropertyDialog(context, prop);
+                },
+              ),
+              ListTile(
+                key: Key('btn_delete_property_${prop.id}'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFECEB),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFC92A2A), size: 20),
+                ),
+                title: const Text('Delete Property', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFFC92A2A))),
+                subtitle: Text('Permanently remove this building and rooms', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(ctx))),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDeleteProperty(context, prop);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+    );
+  }
+
+  Widget _buildPropertyCard(BuildContext context, PropertyItem prop, NumberFormat currencyFormat) {
+    final overdueCount = prop.rooms.where((r) => r.status == RoomStatus.overdue).length;
+
+    return Dismissible(
+      key: ValueKey('dismiss_prop_${prop.id}'),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          _showEditPropertyDialog(context, prop);
+          return false;
+        } else {
+          _confirmDeleteProperty(context, prop);
+          return false;
+        }
+      },
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 20),
+        decoration: BoxDecoration(
+          color: AppTheme.primary,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.edit_rounded, color: Colors.white, size: 22),
+            SizedBox(width: 8),
+            Text('Edit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ),
+      secondaryBackground: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFC92A2A),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            SizedBox(width: 8),
+            Icon(Icons.delete_forever_rounded, color: Colors.white, size: 22),
+          ],
+        ),
+      ),
+      child: Material(
+        color: AppTheme.getSurfaceColor(context),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          key: Key('property_card_${prop.id}'),
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => onViewRooms(prop),
+          onLongPress: () => _confirmDeleteProperty(context, prop),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
+                      child: const Icon(
+                        Icons.domain_rounded,
+                        color: AppTheme.primary,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            prop.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.getInkColor(context),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            prop.address,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.getInkMutedColor(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: overdueCount > 0 ? AppTheme.getStatusOverdueBg(context) : AppTheme.getStatusPaidBg(context),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${prop.occupiedUnits}/${prop.totalUnits} Units',
+                        style: TextStyle(
+                          color: overdueCount > 0 ? AppTheme.getStatusOverdueText(context) : AppTheme.getStatusPaidText(context),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      key: Key('btn_property_options_${prop.id}'),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      icon: const Icon(Icons.more_vert_rounded, size: 20, color: AppTheme.inkMuted),
+                      tooltip: 'Slide or hold to edit or delete',
+                      onPressed: () => _showPropertyActionSheet(context, prop),
+                    ),
+                  ],
+                ),
+                Divider(height: 24, color: AppTheme.getBorderColor(context)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          prop.name,
+                          'Expected / Month',
                           style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.getInkColor(context),
+                            fontSize: 11,
+                            color: AppTheme.getInkMutedColor(context),
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
-                          prop.address,
+                          isStaffMode ? '••••••' : '₱${currencyFormat.format(prop.monthlyRevenue)}',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.getInkMutedColor(context),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.getPrimaryColor(context),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: overdueCount > 0 ? AppTheme.getStatusOverdueBg(context) : AppTheme.getStatusPaidBg(context),
-                      borderRadius: BorderRadius.circular(10),
+                    OutlinedButton.icon(
+                      onPressed: () => onViewRooms(prop),
+                      icon: const Icon(Icons.meeting_room_outlined, size: 16),
+                      label: const Text('View Rooms'),
                     ),
-                    child: Text(
-                      '${prop.occupiedUnits}/${prop.totalUnits} Units',
-                      style: TextStyle(
-                        color: overdueCount > 0 ? AppTheme.getStatusOverdueText(context) : AppTheme.getStatusPaidText(context),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Divider(height: 24, color: AppTheme.getBorderColor(context)),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Expected / Month',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.getInkMutedColor(context),
-                        ),
-                      ),
-                      Text(
-                        isStaffMode ? '••••••' : '₱${currencyFormat.format(prop.monthlyRevenue)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.getPrimaryColor(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => onViewRooms(prop),
-                    icon: const Icon(Icons.meeting_room_outlined, size: 16),
-                    label: const Text('View Rooms'),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
