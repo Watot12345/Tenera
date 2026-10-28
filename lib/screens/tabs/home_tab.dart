@@ -51,7 +51,7 @@ class HomeTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Hero Card ("Collected in October")
-          _buildHeroCard(),
+          _buildHeroCard(context),
 
           const SizedBox(height: 12),
 
@@ -83,18 +83,18 @@ class HomeTab extends StatelessWidget {
     );
   }
 
-  Widget _buildHeroCard() {
+  Widget _buildHeroCard(BuildContext context) {
     final currencyFormat = NumberFormat('#,###');
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
       decoration: BoxDecoration(
-        color: AppTheme.primary,
+        color: AppTheme.getHeroCardColor(context),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.28),
+            color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.28),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -167,9 +167,9 @@ class HomeTab extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.error_outline_rounded,
-                color: AppTheme.statusOverdue,
+                color: AppTheme.getStatusOverdueText(context),
                 size: 18,
               ),
               const SizedBox(width: 6),
@@ -186,8 +186,8 @@ class HomeTab extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             isStaffMode ? '••••••' : '₱${currencyFormat.format(overdueTotal)}',
-            style: const TextStyle(
-              color: AppTheme.statusOverdue,
+            style: TextStyle(
+              color: AppTheme.getStatusOverdueText(context),
               fontSize: 22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
@@ -369,8 +369,8 @@ class HomeTab extends StatelessWidget {
               ),
               child: Text(
                 '$overdueCount tenants',
-                style: const TextStyle(
-                  color: AppTheme.statusOverdue,
+                style: TextStyle(
+                  color: AppTheme.getStatusOverdueText(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -429,8 +429,8 @@ class HomeTab extends StatelessWidget {
               ),
               child: Text(
                 '${unpaidDueSoon.length} this week',
-                style: const TextStyle(
-                  color: AppTheme.statusDueSoon,
+                style: TextStyle(
+                  color: AppTheme.getStatusDueSoonText(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -560,16 +560,16 @@ class HomeTab extends StatelessWidget {
                                 : Icons.access_time_rounded,
                             size: 12,
                             color: tenant.isOverdue
-                                ? AppTheme.statusOverdue
-                                : AppTheme.statusDueSoon,
+                                ? AppTheme.getStatusOverdueText(context)
+                                : AppTheme.getStatusDueSoonText(context),
                           ),
                           const SizedBox(width: 4),
                           Text(
                             tenant.statusText,
                             style: TextStyle(
                               color: tenant.isOverdue
-                                  ? AppTheme.statusOverdue
-                                  : AppTheme.statusDueSoon,
+                                  ? AppTheme.getStatusOverdueText(context)
+                                  : AppTheme.getStatusDueSoonText(context),
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),

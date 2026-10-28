@@ -44,15 +44,17 @@ class _PaymentsTabState extends State<PaymentsTab> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.primary, AppTheme.primaryDeep],
+              gradient: LinearGradient(
+                colors: AppTheme.isDark(context)
+                    ? [const Color(0xFF1E524B), const Color(0xFF133833)]
+                    : [AppTheme.primary, AppTheme.primaryDeep],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.28),
+                  color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.28),
                   blurRadius: 14,
                   offset: const Offset(0, 5),
                 ),
@@ -119,7 +121,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                     selectedColor: AppTheme.primary,
                     checkmarkColor: Colors.white,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppTheme.ink,
+                      color: isSelected ? Colors.white : AppTheme.getInkColor(context),
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
@@ -132,18 +134,18 @@ class _PaymentsTabState extends State<PaymentsTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Payment Receipts',
                 style: TextStyle(
-                  color: AppTheme.ink,
+                  color: AppTheme.getInkColor(context),
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               Text(
                 '${filtered.length} entries',
-                style: const TextStyle(
-                  color: AppTheme.inkMuted,
+                style: TextStyle(
+                  color: AppTheme.getInkMutedColor(context),
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -161,11 +163,11 @@ class _PaymentsTabState extends State<PaymentsTab> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   'No payment records matching this filter.',
                   style: TextStyle(
-                    color: AppTheme.inkMuted,
+                    color: AppTheme.getInkMutedColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -192,7 +194,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppTheme.statusPaidBg,
+                              color: AppTheme.getStatusPaidBg(context),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -201,7 +203,7 @@ class _PaymentsTabState extends State<PaymentsTab> {
                                   : (filtered[index].method == 'Cash'
                                       ? Icons.payments_outlined
                                       : Icons.account_balance_outlined),
-                              color: AppTheme.statusPaid,
+                              color: AppTheme.getStatusPaidText(context),
                               size: 20,
                             ),
                           ),
@@ -212,18 +214,18 @@ class _PaymentsTabState extends State<PaymentsTab> {
                               children: [
                                 Text(
                                   filtered[index].tenantName,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: AppTheme.ink,
+                                    color: AppTheme.getInkColor(context),
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${filtered[index].location} · ${filtered[index].dateFormatted}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: AppTheme.inkMuted,
+                                    color: AppTheme.getInkMutedColor(context),
                                   ),
                                 ),
                               ],
@@ -234,24 +236,24 @@ class _PaymentsTabState extends State<PaymentsTab> {
                             children: [
                               Text(
                                 '+₱${currencyFormat.format(filtered[index].amount)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: AppTheme.statusPaid,
+                                  color: AppTheme.getStatusPaidText(context),
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.background,
+                                  color: AppTheme.getBackgroundColor(context),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   filtered[index].method,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: AppTheme.inkMuted,
+                                    color: AppTheme.getInkMutedColor(context),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

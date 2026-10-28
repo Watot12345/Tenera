@@ -11,7 +11,7 @@ class AppTheme {
   static const Color surface = Color(0xFFFFFFFF);
   static const Color border = Color(0xFFDDE6E4);
 
-  // Status Colors (Light & Dark compatible)
+  // Status Colors (Light)
   static const Color statusPaid = Color(0xFF1E7A46);
   static const Color statusPaidBg = Color(0xFFE3F4EA);
   static const Color statusDueSoon = Color(0xFF7A4F00);
@@ -19,31 +19,38 @@ class AppTheme {
   static const Color statusOverdue = Color(0xFFB3261E);
   static const Color statusOverdueBg = Color(0xFFFBE5E3);
 
-  // Dark Theme Palette (Refined Slate-Emerald)
-  static const Color darkBackground = Color(0xFF0E1716);
-  static const Color darkSurface = Color(0xFF162422);
-  static const Color darkSurfaceElevated = Color(0xFF1D312E);
-  static const Color darkBorder = Color(0xFF253E3A);
-  static const Color darkInk = Color(0xFFEBF4F2);
-  static const Color darkInkMuted = Color(0xFF8EA9A4);
-  static const Color darkPrimary = Color(0xFF1BA69A);
-  static const Color darkPrimaryDeep = Color(0xFF10635C);
-  static const Color darkAccent = Color(0xFFF6B557);
+  // Dark Theme Palette (Warm Slate-Teal — No Plain Black)
+  static const Color darkBackground = Color(0xFF141E1C);        // Warm, deep slate canvas (Never plain black)
+  static const Color darkSurface = Color(0xFF1D2C29);           // Elevation 1: Card & container surface
+  static const Color darkSurfaceElevated = Color(0xFF243633);   // Elevation 2: Modals, dialogs, popups
+  static const Color darkBorder = Color(0xFF304642);            // Clean, soft structural borders
+  static const Color darkInk = Color(0xFFEDF5F3);               // Primary high-contrast readable text
+  static const Color darkInkMuted = Color(0xFFA0B7B3);          // Secondary descriptive text
+  static const Color darkPrimary = Color(0xFF26B3A4);           // Perfectly saturated sage-emerald accent
+  static const Color darkPrimaryDeep = Color(0xFF1B4E48);       // Supporting deep teal
+  static const Color darkAccent = Color(0xFFF3AF47);            // Warm golden honey accent
 
-  // Dark Status Backgrounds
-  static const Color darkStatusPaidBg = Color(0xFF133623);
-  static const Color darkStatusDueSoonBg = Color(0xFF3B2D0E);
-  static const Color darkStatusOverdueBg = Color(0xFF3D1714);
+  // Dark Status Colors (Tuned for readability and high aesthetic contrast)
+  static const Color darkStatusPaidText = Color(0xFF4ADE80);
+  static const Color darkStatusPaidBg = Color(0xFF193B28);
+  static const Color darkStatusDueSoonText = Color(0xFFFBBF24);
+  static const Color darkStatusDueSoonBg = Color(0xFF3B2C13);
+  static const Color darkStatusOverdueText = Color(0xFFF87171);
+  static const Color darkStatusOverdueBg = Color(0xFF3D1C1B);
 
   /// Helper to determine if current context is resolving in Dark Mode
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
-  /// Dynamic Surface Color (white in light mode, deep slate-teal in dark mode)
+  /// Dynamic Surface Color (white in light mode, slate-teal in dark mode)
   static Color getSurfaceColor(BuildContext context) =>
       isDark(context) ? darkSurface : surface;
 
-  /// Dynamic Background Color
+  /// Dynamic Elevated Surface Color (for dialogs, sheets, popups)
+  static Color getSurfaceElevatedColor(BuildContext context) =>
+      isDark(context) ? darkSurfaceElevated : surface;
+
+  /// Dynamic Canvas / Background Color
   static Color getBackgroundColor(BuildContext context) =>
       isDark(context) ? darkBackground : background;
 
@@ -59,17 +66,33 @@ class AppTheme {
   static Color getBorderColor(BuildContext context) =>
       isDark(context) ? darkBorder : border;
 
-  /// Dynamic Status Paid Badge Background
+  /// Dynamic Primary Brand Accent
+  static Color getPrimaryColor(BuildContext context) =>
+      isDark(context) ? darkPrimary : primary;
+
+  /// Dynamic Hero Banner Card Color
+  static Color getHeroCardColor(BuildContext context) =>
+      isDark(context) ? const Color(0xFF1A4741) : primary;
+
+  /// Dynamic Status Badge Backgrounds
   static Color getStatusPaidBg(BuildContext context) =>
       isDark(context) ? darkStatusPaidBg : statusPaidBg;
 
-  /// Dynamic Status Due Soon Badge Background
   static Color getStatusDueSoonBg(BuildContext context) =>
       isDark(context) ? darkStatusDueSoonBg : statusDueSoonBg;
 
-  /// Dynamic Status Overdue Badge Background
   static Color getStatusOverdueBg(BuildContext context) =>
       isDark(context) ? darkStatusOverdueBg : statusOverdueBg;
+
+  /// Dynamic Status Badge Text Colors
+  static Color getStatusPaidText(BuildContext context) =>
+      isDark(context) ? darkStatusPaidText : statusPaid;
+
+  static Color getStatusDueSoonText(BuildContext context) =>
+      isDark(context) ? darkStatusDueSoonText : statusDueSoon;
+
+  static Color getStatusOverdueText(BuildContext context) =>
+      isDark(context) ? darkStatusOverdueText : statusOverdue;
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -137,10 +160,10 @@ class AppTheme {
       colorScheme: const ColorScheme(
         brightness: Brightness.dark,
         primary: darkPrimary,
-        onPrimary: Colors.white,
+        onPrimary: Color(0xFF0F2623),
         secondary: darkAccent,
-        onSecondary: Colors.black,
-        error: Color(0xFFEF5350),
+        onSecondary: Color(0xFF2C1E0A),
+        error: darkStatusOverdueText,
         onError: Colors.white,
         surface: darkSurface,
         onSurface: darkInk,
@@ -161,26 +184,26 @@ class AppTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: darkSurface,
+        backgroundColor: darkSurfaceElevated,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: darkSurface,
+        backgroundColor: darkSurfaceElevated,
         surfaceTintColor: Colors.transparent,
       ),
       dividerColor: darkBorder,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: darkPrimary,
-          foregroundColor: Colors.white,
+          foregroundColor: const Color(0xFF0F2623),
           minimumSize: const Size(64, 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
           textStyle: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

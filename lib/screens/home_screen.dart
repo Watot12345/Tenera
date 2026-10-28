@@ -189,9 +189,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 20,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              decoration: BoxDecoration(
+                color: AppTheme.getSurfaceElevatedColor(context),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -207,25 +207,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: AppTheme.accent.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.payments_rounded,
-                            color: AppTheme.primaryDeep,
+                            color: AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep,
                             size: 24,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Record Rent Payment',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.ink,
+                              color: AppTheme.getInkColor(context),
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded),
+                          icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(context)),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -236,12 +236,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Select Tenant',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppTheme.inkMuted,
+                            color: AppTheme.getInkMutedColor(context),
                           ),
                         ),
                         TextButton.icon(
@@ -267,13 +267,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Search Input Field
                     Container(
                       decoration: BoxDecoration(
-                        color: AppTheme.background,
+                        color: AppTheme.getBackgroundColor(context),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(color: AppTheme.getBorderColor(context)),
                       ),
                       child: TextField(
                         key: const Key('record_tenant_search_field'),
                         controller: searchTenantController,
+                        style: TextStyle(color: AppTheme.getInkColor(context), fontSize: 13),
                         onChanged: (val) {
                           setSheetState(() {
                             isSearchingTenant = true;
@@ -281,11 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                         decoration: InputDecoration(
                           hintText: 'Type name or unit (e.g. Maria, R3)...',
-                          hintStyle: const TextStyle(fontSize: 13, color: AppTheme.inkMuted),
-                          prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppTheme.primary),
+                          hintStyle: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(context)),
+                          prefixIcon: Icon(Icons.search_rounded, size: 20, color: AppTheme.getPrimaryColor(context)),
                           suffixIcon: searchTenantController.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 16, color: AppTheme.inkMuted),
+                                  icon: Icon(Icons.clear_rounded, size: 16, color: AppTheme.getInkMutedColor(context)),
                                   onPressed: () {
                                     searchTenantController.clear();
                                     setSheetState(() {});
@@ -302,14 +303,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (isSearchingTenant || searchTenantController.text.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Material(
-                        color: AppTheme.surface,
+                        color: AppTheme.getSurfaceElevatedColor(context),
                         borderRadius: BorderRadius.circular(12),
                         clipBehavior: Clip.antiAlias,
                         child: Container(
                           constraints: const BoxConstraints(maxHeight: 140),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.border),
+                            border: Border.all(color: AppTheme.getBorderColor(context)),
                           ),
                           child: matchingTenants.isEmpty
                               ? Padding(
@@ -317,14 +318,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Center(
                                     child: Text(
                                       'No tenants found matching "${searchTenantController.text}"',
-                                      style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
                                     ),
                                   ),
                                 )
                               : ListView.separated(
                                   shrinkWrap: true,
                                   itemCount: matchingTenants.length,
-                                  separatorBuilder: (context, index) => const Divider(height: 1, color: AppTheme.border),
+                                  separatorBuilder: (context, index) => Divider(height: 1, color: AppTheme.getBorderColor(context)),
                                   itemBuilder: (context, idx) {
                                     final t = matchingTenants[idx];
                                     final isCurrent = t.id == selected.id;
@@ -333,34 +334,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                       visualDensity: VisualDensity.compact,
                                       leading: CircleAvatar(
                                         radius: 13,
-                                        backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
+                                        backgroundColor: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                                         child: Text(
                                           t.initials,
-                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.primary),
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.getPrimaryColor(context)),
                                         ),
                                       ),
                                       title: Text(
                                         t.name,
                                         style: TextStyle(
                                           fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
-                                          color: isCurrent ? AppTheme.primary : AppTheme.ink,
+                                          color: isCurrent ? AppTheme.getPrimaryColor(context) : AppTheme.getInkColor(context),
                                           fontSize: 13,
                                         ),
                                       ),
                                       subtitle: Text(
                                         t.location,
-                                        style: const TextStyle(fontSize: 11, color: AppTheme.inkMuted),
+                                        style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context)),
                                       ),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Text(
                                             '₱${NumberFormat('#,###').format(t.amount)}',
-                                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.ink),
+                                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppTheme.getInkColor(context)),
                                           ),
                                           if (isCurrent) ...[
                                             const SizedBox(width: 6),
-                                            const Icon(Icons.check_circle_rounded, size: 16, color: AppTheme.statusPaid),
+                                            Icon(Icons.check_circle_rounded, size: 16, color: AppTheme.getStatusPaidText(context)),
                                           ],
                                         ],
                                       ),
@@ -384,18 +385,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: AppTheme.background,
+                        color: AppTheme.getBackgroundColor(context),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(color: AppTheme.getBorderColor(context)),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 14,
-                            backgroundColor: AppTheme.primary.withValues(alpha: 0.15),
+                            backgroundColor: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                             child: Text(
                               selected.initials,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.getPrimaryColor(context)),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -405,11 +406,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Text(
                                   selected.name,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
                                 ),
                                 Text(
                                   selected.location,
-                                  style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                                  style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
                                 ),
                               ],
                             ),
@@ -417,7 +418,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: selected.isPaid ? AppTheme.statusPaidBg : (selected.isOverdue ? const Color(0xFFFFECEB) : AppTheme.statusDueSoonBg),
+                              color: selected.isPaid
+                                  ? AppTheme.getStatusPaidBg(context)
+                                  : (selected.isOverdue
+                                      ? AppTheme.getStatusOverdueBg(context)
+                                      : AppTheme.getStatusDueSoonBg(context)),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -425,7 +430,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: selected.isPaid ? AppTheme.statusPaid : (selected.isOverdue ? AppTheme.statusOverdue : AppTheme.statusDueSoon),
+                                color: selected.isPaid
+                                    ? AppTheme.getStatusPaidText(context)
+                                    : (selected.isOverdue
+                                        ? AppTheme.getStatusOverdueText(context)
+                                        : AppTheme.getStatusDueSoonText(context)),
                               ),
                             ),
                           ),
@@ -435,26 +444,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 14),
 
                     // Amount
-                    const Text(
+                    Text(
                       'Amount Paid (₱)',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.inkMuted),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getInkMutedColor(context)),
                     ),
                     const SizedBox(height: 6),
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
                       decoration: InputDecoration(
                         prefixText: '₱ ',
                         filled: true,
-                        fillColor: AppTheme.background,
+                        fillColor: AppTheme.getBackgroundColor(context),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.border),
+                          borderSide: BorderSide(color: AppTheme.getBorderColor(context)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppTheme.border),
+                          borderSide: BorderSide(color: AppTheme.getBorderColor(context)),
                         ),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
@@ -462,9 +471,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 14),
 
                     // Payment Method Selection
-                    const Text(
+                    Text(
                       'Payment Method',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.inkMuted),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getInkMutedColor(context)),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -482,17 +491,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               margin: const EdgeInsets.only(right: 6),
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppTheme.primary : AppTheme.background,
+                                color: isSelected
+                                    ? AppTheme.getPrimaryColor(context)
+                                    : AppTheme.getBackgroundColor(context),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: isSelected ? AppTheme.primary : AppTheme.border),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppTheme.getPrimaryColor(context)
+                                      : AppTheme.getBorderColor(context),
+                                ),
                               ),
                               child: Text(
                                 method,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected ? Colors.white : AppTheme.ink,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected
+                                      ? (AppTheme.isDark(context) ? const Color(0xFF0F2623) : Colors.white)
+                                      : AppTheme.getInkColor(context),
                                 ),
                               ),
                             ),
@@ -508,30 +525,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppTheme.background,
+                          color: AppTheme.getBackgroundColor(context),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.border),
+                          border: Border.all(color: AppTheme.getBorderColor(context)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.photo_camera_rounded, size: 18, color: AppTheme.primary),
+                                Icon(Icons.photo_camera_rounded, size: 18, color: AppTheme.getPrimaryColor(context)),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   'Cash Photo Proof (Optional)',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
                                 ),
                                 const Spacer(),
                                 if (cashImageName != null)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: AppTheme.statusPaidBg,
+                                      color: AppTheme.getStatusPaidBg(context),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
-                                    child: const Text('Attached', style: TextStyle(color: AppTheme.statusPaid, fontSize: 11, fontWeight: FontWeight.w700)),
+                                    child: Text(
+                                      'Attached',
+                                      style: TextStyle(color: AppTheme.getStatusPaidText(context), fontSize: 11, fontWeight: FontWeight.w700),
+                                    ),
                                   ),
                               ],
                             ),
@@ -549,18 +569,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                   width: double.infinity,
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.surface,
+                                    color: AppTheme.getSurfaceElevatedColor(context),
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                                    border: Border.all(color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.3)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.add_a_photo_outlined, size: 18, color: AppTheme.primary),
-                                      SizedBox(width: 8),
+                                      Icon(Icons.add_a_photo_outlined, size: 18, color: AppTheme.getPrimaryColor(context)),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Tap to Take or Attach Cash Photo',
-                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getPrimaryColor(context)),
                                       ),
                                     ],
                                   ),
@@ -570,19 +590,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.surface,
+                                  color: AppTheme.getSurfaceElevatedColor(context),
                                   borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppTheme.statusPaid.withValues(alpha: 0.4)),
+                                  border: Border.all(color: AppTheme.getStatusPaidText(context).withValues(alpha: 0.4)),
                                 ),
                                 child: Row(
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: AppTheme.statusPaidBg,
+                                        color: AppTheme.getStatusPaidBg(context),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: const Icon(Icons.image_rounded, size: 18, color: AppTheme.statusPaid),
+                                      child: Icon(Icons.image_rounded, size: 18, color: AppTheme.getStatusPaidText(context)),
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -591,15 +611,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                         children: [
                                           Text(
                                             cashImageName!,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          const Text('Proof of cash handed over', style: TextStyle(fontSize: 11, color: AppTheme.inkMuted)),
+                                          Text('Proof of cash handed over', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
                                         ],
                                       ),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFFC92A2A)),
+                                      icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Color(0xFFEF5350)),
                                       tooltip: 'Remove photo',
                                       onPressed: () {
                                         setSheetState(() {
@@ -623,11 +643,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               Text(
                                 selectedMethod == 'GCash' ? 'GCash Reference Number' : 'Bank Reference / Txn ID',
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
                               ),
-                              const Text(
+                              Text(
                                 'Digital Trace',
-                                style: TextStyle(fontSize: 11, color: AppTheme.primary, fontWeight: FontWeight.w600),
+                                style: TextStyle(fontSize: 11, color: AppTheme.getPrimaryColor(context), fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -635,19 +655,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           TextField(
                             key: const Key('payment_reference_field'),
                             controller: referenceNoController,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.ink),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context)),
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.tag_rounded, size: 18, color: AppTheme.primary),
+                              prefixIcon: Icon(Icons.tag_rounded, size: 18, color: AppTheme.getPrimaryColor(context)),
                               hintText: selectedMethod == 'GCash' ? 'e.g. 1002 9384 1283' : 'e.g. BPI-REF-89412',
                               filled: true,
-                              fillColor: AppTheme.background,
+                              fillColor: AppTheme.getBackgroundColor(context),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: AppTheme.border),
+                                borderSide: BorderSide(color: AppTheme.getBorderColor(context)),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: AppTheme.border),
+                                borderSide: BorderSide(color: AppTheme.getBorderColor(context)),
                               ),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                             ),
@@ -804,9 +824,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 top: 24,
                 bottom: MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              decoration: BoxDecoration(
+                color: AppTheme.getSurfaceElevatedColor(context),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -818,28 +838,28 @@ class _HomeScreenState extends State<HomeScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppTheme.primary.withValues(alpha: 0.12),
+                            color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.person_add_alt_1_rounded,
-                            color: AppTheme.primary,
+                            color: AppTheme.getPrimaryColor(context),
                             size: 24,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             'Add New Tenant',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.ink,
+                              color: AppTheme.getInkColor(context),
                             ),
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close_rounded),
+                          icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(context)),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
@@ -919,18 +939,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppTheme.background,
+                              color: AppTheme.getBackgroundColor(context),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppTheme.border),
+                              border: Border.all(color: AppTheme.getBorderColor(context)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.inkMuted),
+                                Icon(Icons.info_outline_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     'All units in ${selectedProperty!.name} are occupied. Specifying a unit code below.',
-                                    style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                                    style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
                                   ),
                                 ),
                               ],
@@ -982,32 +1002,32 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppTheme.background,
+                        color: AppTheme.getBackgroundColor(context),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.border),
+                        border: Border.all(color: AppTheme.getBorderColor(context)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppTheme.primary.withValues(alpha: 0.1),
+                              color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.mark_chat_unread_rounded, size: 20, color: AppTheme.primary),
+                            child: Icon(Icons.mark_chat_unread_rounded, size: 20, color: AppTheme.getPrimaryColor(context)),
                           ),
                           const SizedBox(width: 12),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Automated Reminders',
-                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink),
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
                                 ),
                                 Text(
                                   'Auto-compose friendly SMS & FB Messenger notices',
-                                  style: TextStyle(fontSize: 11, color: AppTheme.inkMuted),
+                                  style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context)),
                                 ),
                               ],
                             ),
@@ -1118,9 +1138,9 @@ class _HomeScreenState extends State<HomeScreen> {
             top: 24,
             bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: AppTheme.getSurfaceElevatedColor(context),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1131,28 +1151,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.12),
+                      color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.domain_add_rounded,
-                      color: AppTheme.primary,
+                      color: AppTheme.getPrimaryColor(context),
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Add New Property',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.ink,
+                        color: AppTheme.getInkColor(context),
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded),
+                    icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(context)),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -1271,7 +1291,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (dialogCtx) {
         return AlertDialog(
-          backgroundColor: AppTheme.surface,
+          backgroundColor: AppTheme.getSurfaceElevatedColor(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -1280,12 +1300,12 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: AppTheme.primary,
+                  color: AppTheme.getPrimaryColor(context),
                   size: 20,
                 ),
               ),
@@ -1293,7 +1313,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Expanded(
                 child: Text(
                   'Remind ${tenant.name}',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppTheme.getInkColor(context)),
                 ),
               ),
             ],
@@ -1307,13 +1327,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: AppTheme.background,
+                    color: AppTheme.getBackgroundColor(context),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.send_rounded, size: 14, color: AppTheme.primary),
+                      Icon(Icons.send_rounded, size: 14, color: AppTheme.getPrimaryColor(context)),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -1321,19 +1341,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (hasPhone) '📱 ${tenant.phone}',
                             if (hasMessenger) '💬 m.me/${tenant.messenger!.replaceAll('https://m.me/', '').replaceAll('m.me/', '')}',
                           ].join('   ·   '),
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.ink),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context)),
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-              const Text(
+              Text(
                 'Pre-composed reminder message:',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.inkMuted,
+                  color: AppTheme.getInkMutedColor(context),
                 ),
               ),
               const SizedBox(height: 10),
@@ -1341,15 +1361,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.background,
+                  color: AppTheme.getBackgroundColor(context),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
                 ),
                 child: Text(
                   reminderText,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppTheme.ink,
+                    color: AppTheme.getInkColor(context),
                     height: 1.4,
                   ),
                 ),
@@ -1359,7 +1379,7 @@ class _HomeScreenState extends State<HomeScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.inkMuted)),
+              child: Text('Cancel', style: TextStyle(color: AppTheme.getInkMutedColor(context))),
             ),
             if (hasMessenger)
               OutlinedButton.icon(
@@ -1440,6 +1460,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) {
         return Dialog(
+          backgroundColor: AppTheme.getSurfaceElevatedColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.all(22),
@@ -1448,73 +1469,73 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.statusPaidBg,
+                  decoration: BoxDecoration(
+                    color: AppTheme.getStatusPaidBg(context),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.check_circle_rounded,
-                    color: AppTheme.statusPaid,
+                    color: AppTheme.getStatusPaidText(context),
                     size: 34,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Rent Payment Receipt',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: AppTheme.ink,
+                    color: AppTheme.getInkColor(context),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Ref: ${rec.id.toUpperCase()}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.inkMuted,
+                    color: AppTheme.getInkMutedColor(context),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.background,
+                    color: AppTheme.getBackgroundColor(context),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: AppTheme.getBorderColor(context)),
                   ),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Tenant', style: TextStyle(color: AppTheme.inkMuted, fontSize: 13)),
-                          Text(rec.tenantName, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.ink, fontSize: 14)),
+                          Text('Tenant', style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 13)),
+                          Text(rec.tenantName, style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context), fontSize: 14)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Unit / Room', style: TextStyle(color: AppTheme.inkMuted, fontSize: 13)),
-                          Text(rec.location, style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.ink, fontSize: 13)),
+                          Text('Unit / Room', style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 13)),
+                          Text(rec.location, style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context), fontSize: 13)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Payment Method', style: TextStyle(color: AppTheme.inkMuted, fontSize: 13)),
-                          Text(rec.method, style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary, fontSize: 13)),
+                          Text('Payment Method', style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 13)),
+                          Text(rec.method, style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getPrimaryColor(context), fontSize: 13)),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Date & Time', style: TextStyle(color: AppTheme.inkMuted, fontSize: 13)),
-                          Text(rec.dateFormatted, style: const TextStyle(color: AppTheme.ink, fontSize: 13)),
+                          Text('Date & Time', style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 13)),
+                          Text(rec.dateFormatted, style: TextStyle(color: AppTheme.getInkColor(context), fontSize: 13)),
                         ],
                       ),
                       if (rec.referenceNo != null && rec.referenceNo!.isNotEmpty) ...[
@@ -1522,10 +1543,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Reference / Txn No.', style: TextStyle(color: AppTheme.inkMuted, fontSize: 13)),
+                            Text('Reference / Txn No.', style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 13)),
                             Text(
                               rec.referenceNo!,
-                              style: const TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primaryDeep, fontSize: 13),
+                              style: TextStyle(fontWeight: FontWeight.w800, color: AppTheme.getPrimaryColor(context), fontSize: 13),
                             ),
                           ],
                         ),
@@ -1535,31 +1556,31 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Cash Photo Proof', style: TextStyle(color: AppTheme.inkMuted, fontSize: 13)),
+                            Text('Cash Photo Proof', style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 13)),
                             Row(
                               children: [
-                                const Icon(Icons.photo_camera_rounded, size: 14, color: AppTheme.statusPaid),
+                                Icon(Icons.photo_camera_rounded, size: 14, color: AppTheme.getStatusPaidText(context)),
                                 const SizedBox(width: 4),
                                 Text(
                                   rec.cashImageName!,
-                                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppTheme.ink, fontSize: 12),
+                                  style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context), fontSize: 12),
                                 ),
                               ],
                             ),
                           ],
                         ),
                       ],
-                      const Divider(height: 20, color: AppTheme.border),
+                      Divider(height: 20, color: AppTheme.getBorderColor(context)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Amount Paid', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.ink)),
+                          Text('Amount Paid', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
                           Text(
                             '₱${NumberFormat('#,###').format(rec.amount)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 20,
-                              color: AppTheme.statusPaid,
+                              color: AppTheme.getStatusPaidText(context),
                             ),
                           ),
                         ],

@@ -37,7 +37,7 @@ class PropertiesTab extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: AppTheme.primaryDeep,
+              color: AppTheme.isDark(context) ? AppTheme.getHeroCardColor(context) : AppTheme.primaryDeep,
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
@@ -158,10 +158,10 @@ class PropertiesTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Your Properties',
                 style: TextStyle(
-                  color: AppTheme.ink,
+                  color: AppTheme.getInkColor(context),
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
@@ -196,23 +196,23 @@ class PropertiesTab extends StatelessWidget {
                       Icon(
                         Icons.apartment_rounded,
                         size: 48,
-                        color: AppTheme.inkMuted.withValues(alpha: 0.4),
+                        color: AppTheme.getInkMutedColor(context).withValues(alpha: 0.4),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                         'No properties added yet',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.ink,
+                          color: AppTheme.getInkColor(context),
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
+                      Text(
                         'Tap the + button above to add your first rental building.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.inkMuted,
+                          color: AppTheme.getInkMutedColor(context),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -263,18 +263,18 @@ class PropertiesTab extends StatelessWidget {
                   children: [
                     Text(
                       prop.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.ink,
+                        color: AppTheme.getInkColor(context),
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       prop.address,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.inkMuted,
+                        color: AppTheme.getInkMutedColor(context),
                       ),
                     ),
                   ],
@@ -283,13 +283,13 @@ class PropertiesTab extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: overdueCount > 0 ? const Color(0xFFFFECEB) : AppTheme.statusPaidBg,
+                  color: overdueCount > 0 ? AppTheme.getStatusOverdueBg(context) : AppTheme.getStatusPaidBg(context),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   '${prop.occupiedUnits}/${prop.totalUnits} Units',
                   style: TextStyle(
-                    color: overdueCount > 0 ? const Color(0xFFC92A2A) : AppTheme.statusPaid,
+                    color: overdueCount > 0 ? AppTheme.getStatusOverdueText(context) : AppTheme.getStatusPaidText(context),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -297,26 +297,26 @@ class PropertiesTab extends StatelessWidget {
               ),
             ],
           ),
-          const Divider(height: 24, color: AppTheme.border),
+          Divider(height: 24, color: AppTheme.getBorderColor(context)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Expected / Month',
                     style: TextStyle(
                       fontSize: 11,
-                      color: AppTheme.inkMuted,
+                      color: AppTheme.getInkMutedColor(context),
                     ),
                   ),
                   Text(
                     isStaffMode ? '••••••' : '₱${currencyFormat.format(prop.monthlyRevenue)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.primary,
+                      color: AppTheme.getPrimaryColor(context),
                     ),
                   ),
                 ],

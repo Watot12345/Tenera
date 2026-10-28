@@ -250,17 +250,17 @@ class _TenantsTabState extends State<TenantsTab> {
                   Icon(
                     query.isNotEmpty ? Icons.search_off_rounded : Icons.people_outline_rounded,
                     size: 48,
-                    color: AppTheme.inkMuted,
+                    color: AppTheme.getInkMutedColor(context),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     query.isNotEmpty
                         ? 'No tenants found for "$query"'
                         : 'No ${_tenantFilter.toLowerCase()} tenants',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.ink,
+                      color: AppTheme.getInkColor(context),
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -268,9 +268,9 @@ class _TenantsTabState extends State<TenantsTab> {
                     query.isNotEmpty
                         ? 'Try searching by a different name, room, or location.'
                         : 'Tenants in this category will appear here.',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.inkMuted,
+                      color: AppTheme.getInkMutedColor(context),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -399,10 +399,10 @@ class _TenantsTabState extends State<TenantsTab> {
                                     tenant.isPaid ? 'Paid' : tenant.statusText,
                                     style: TextStyle(
                                       color: tenant.isPaid
-                                          ? AppTheme.statusPaid
+                                          ? AppTheme.getStatusPaidText(context)
                                           : (tenant.isOverdue
-                                              ? AppTheme.statusOverdue
-                                              : AppTheme.statusDueSoon),
+                                              ? AppTheme.getStatusOverdueText(context)
+                                              : AppTheme.getStatusDueSoonText(context)),
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -411,7 +411,7 @@ class _TenantsTabState extends State<TenantsTab> {
                               ),
                             ],
                           ),
-                          const Divider(height: 20, color: AppTheme.border),
+                          Divider(height: 20, color: AppTheme.getBorderColor(context)),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
