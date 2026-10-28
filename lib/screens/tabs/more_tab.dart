@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/database_helper.dart';
 import '../../services/direct_sms_service.dart';
-import '../../services/firebase_service.dart';
 import '../../services/plan_guard_service.dart';
 import '../../services/staff_mode_service.dart';
 import '../../services/sync_service.dart';
@@ -106,6 +105,77 @@ class _MoreTabState extends State<MoreTab> {
     }
   }
 
+  Widget _buildPillBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.accent,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+          color: AppTheme.ink,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  void _showClearDataDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.getSurfaceElevatedColor(ctx),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFECEB),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFC92A2A), size: 22),
+            ),
+            const SizedBox(width: 10),
+            Text('Clear All Data?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(ctx))),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to permanently delete all properties, rooms, tenants, and payment records from this device? You can then start entering your real properties fresh.',
+          style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(ctx)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.pop(ctx);
+              await DatabaseHelper.instance.clearAllData();
+              messenger.showSnackBar(
+                const SnackBar(
+                  backgroundColor: AppTheme.primaryDeep,
+                  content: Text('All data cleared. Starting fresh!'),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFC92A2A),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Clear Everything'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -113,54 +183,7 @@ class _MoreTabState extends State<MoreTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // App Header Card
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppTheme.getSurfaceColor(context),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppTheme.getBorderColor(context)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryDeep,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const RoofLedgerLogo(size: 32, isLight: true),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tenera Property Manager',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.getInkColor(context),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Offline First · v$_currentVersion',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.getInkMutedColor(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Subscription & Plans Upgrade Banner Card
+          // 1. Consolidated App & Plan Header Card
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -180,552 +203,324 @@ class _MoreTabState extends State<MoreTab> {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accent,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(
-                    Icons.workspace_premium_rounded,
-                    color: AppTheme.ink,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const RoofLedgerLogo(size: 28, isLight: true),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Tenera Pro & Plans',
+                          const Text(
+                            'Tenera Property Manager',
                             style: TextStyle(
-                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
+                              color: Colors.white,
                             ),
                           ),
-                          SizedBox(width: 6),
-                          Icon(Icons.stars_rounded, color: AppTheme.accent, size: 16),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Offline First · v$_currentVersion',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Unlock unlimited units, utility math & reports',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _isBusiness ? 'BUSINESS' : (_isPro ? 'PRO' : 'STARTER'),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.ink,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.workspace_premium_rounded, color: AppTheme.accent, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Tenera Pro & Plans',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SubscriptionPlansScreen(),
+                            ),
+                          );
+                          await _refreshStatus();
+                          if (widget.onStaffModeToggled != null) {
+                            await widget.onStaffModeToggled!();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accent,
+                          foregroundColor: AppTheme.ink,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          minimumSize: const Size(0, 32),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'View Plans',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
                         ),
                       ),
                     ],
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const SubscriptionPlansScreen(),
-                      ),
-                    );
-                    await _refreshStatus();
-                    if (widget.onStaffModeToggled != null) {
-                      await widget.onStaffModeToggled!();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accent,
-                    foregroundColor: AppTheme.ink,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text(
-                    'View Plans',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                  ),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // Pro Landlord Tools Section - only shown when Pro or Business plan is availed
-          if (_isPro) ...[
+          // 2. Landlord Tools Section (Compiled into 1 card, only shown for Pro/Business)
+          if (_isPro || _isBusiness) ...[
             Text(
-              'Pro Landlord Tools',
+              'Landlord Tools',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.getInkMutedColor(context),
               ),
             ),
-            const SizedBox(height: 8),
-
-          Material(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.getBorderColor(context)),
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    key: const Key('more_utility_calculator'),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.bolt_rounded,
-                        color: AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primaryDeep,
-                        size: 22,
-                      ),
-                    ),
-                    title: Text(
-                      'Utility Sub-Meter Splitter',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
-                    ),
-                    subtitle: Text(
-                      'Split Meralco electric & water sub-meter bills per room',
-                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accent,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'PRO',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.ink,
-                        ),
-                      ),
-                    ),
-                    onTap: () async {
-                      final canAccess = await PlanGuardService.requirePro(
-                        context: context,
-                        featureName: 'Utility Sub-Meter Splitter',
-                        featureBenefit: 'Split electric & water sub-meter bills accurately per room with zero math errors.',
-                      );
-                      if (!canAccess || !context.mounted) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const UtilityCalculatorScreen()),
-                      );
-                    },
-                  ),
-                  Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
-                  ListTile(
-                    key: const Key('more_reports_export'),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accent.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.assessment_rounded,
-                        color: AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primaryDeep,
-                        size: 22,
-                      ),
-                    ),
-                    title: Text(
-                      'Revenue & BIR Tax Report',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
-                    ),
-                    subtitle: Text(
-                      'Export Philippine BIR tax schedules & revenue CSV',
-                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accent,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        'PRO',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.ink,
-                        ),
-                      ),
-                    ),
-                    onTap: () async {
-                      final canAccess = await PlanGuardService.requirePro(
-                        context: context,
-                        featureName: 'Revenue & BIR Tax Report',
-                        featureBenefit: 'Generate Philippine BIR tax schedules and 1-click export rental revenue to CSV.',
-                      );
-                      if (!canAccess || !context.mounted) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ReportsExportScreen()),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-
-        // Business Tier Tools Section - only shown when Business plan is availed
-        if (_isBusiness) ...[
-          Text(
-            'Business Tier Tools',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.getInkMutedColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          Material(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.getBorderColor(context)),
-              ),
-              child: Column(
-                children: [
-                  if (!_isStaffMode) ...[
-                    ListTile(
-                      key: const Key('more_portfolio_analytics'),
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.domain_rounded, color: AppTheme.getPrimaryColor(context), size: 22),
-                      ),
-                      title: Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
-                      subtitle: Text('Cross-property performance, occupancy % & delinquency reports', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'BUSINESS',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.ink,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      onTap: () async {
-                        final canAccess = await PlanGuardService.requireBusiness(
-                          context: context,
-                          featureName: 'Portfolio Analytics',
-                          featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
-                        );
-                        if (!canAccess || !context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()),
-                        );
-                      },
-                    ),
-                    Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
-                  ],
-                  ListTile(
-                    key: const Key('more_caretaker_mode'),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _isStaffMode ? AppTheme.accent.withValues(alpha: 0.25) : AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        _isStaffMode ? Icons.shield_rounded : Icons.shield_outlined,
-                        color: _isStaffMode ? (AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep) : AppTheme.getPrimaryColor(context),
-                        size: 22,
-                      ),
-                    ),
-                    title: Text('Caretaker / Staff Mode', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
-                    subtitle: Text(
-                      _isStaffMode ? 'Active (Financials hidden) · Tap to exit' : 'Hide gross revenues and protect with 4-digit PIN',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _isStaffMode ? (AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep) : AppTheme.getInkMutedColor(context),
-                        fontWeight: _isStaffMode ? FontWeight.w700 : FontWeight.normal,
-                      ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_isStaffMode) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            margin: const EdgeInsets.only(right: 6),
-                            decoration: BoxDecoration(
-                              color: AppTheme.getPrimaryColor(context),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              'LOCKED',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppTheme.isDark(context) ? const Color(0xFF0F2623) : Colors.white),
-                            ),
-                          ),
-                        ],
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            const SizedBox(height: 6),
+            Material(
+              color: AppTheme.getSurfaceColor(context),
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                ),
+                child: Column(
+                  children: [
+                    if (_isPro) ...[
+                      ListTile(
+                        key: const Key('more_utility_calculator'),
+                        dense: true,
+                        leading: Container(
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: AppTheme.accent,
-                            borderRadius: BorderRadius.circular(6),
+                            color: AppTheme.accent.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
-                            'BUSINESS',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.ink,
-                              letterSpacing: 0.5,
+                          child: Icon(Icons.bolt_rounded, color: AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primaryDeep, size: 20),
+                        ),
+                        title: Text('Utility Sub-Meter Splitter', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                        subtitle: Text('Split Meralco electric & water per room', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                        trailing: _buildPillBadge('PRO'),
+                        onTap: () async {
+                          final canAccess = await PlanGuardService.requirePro(
+                            context: context,
+                            featureName: 'Utility Sub-Meter Splitter',
+                            featureBenefit: 'Split electric & water sub-meter bills accurately per room with zero math errors.',
+                          );
+                          if (!canAccess || !context.mounted) return;
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const UtilityCalculatorScreen()));
+                        },
+                      ),
+                      Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                      ListTile(
+                        key: const Key('more_reports_export'),
+                        dense: true,
+                        leading: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.assessment_rounded, color: AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primaryDeep, size: 20),
+                        ),
+                        title: Text('Revenue & BIR Tax Report', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                        subtitle: Text('Export Philippine BIR tax schedules & CSV', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                        trailing: _buildPillBadge('PRO'),
+                        onTap: () async {
+                          final canAccess = await PlanGuardService.requirePro(
+                            context: context,
+                            featureName: 'Revenue & BIR Tax Report',
+                            featureBenefit: 'Generate Philippine BIR tax schedules and 1-click export rental revenue to CSV.',
+                          );
+                          if (!canAccess || !context.mounted) return;
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsExportScreen()));
+                        },
+                      ),
+                    ],
+                    if (_isBusiness) ...[
+                      if (_isPro) Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                      if (!_isStaffMode) ...[
+                        ListTile(
+                          key: const Key('more_portfolio_analytics'),
+                          dense: true,
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            child: Icon(Icons.domain_rounded, color: AppTheme.getPrimaryColor(context), size: 20),
                           ),
+                          title: Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                          subtitle: Text('Cross-property performance & occupancy', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                          trailing: _buildPillBadge('BIZ'),
+                          onTap: () async {
+                            final canAccess = await PlanGuardService.requireBusiness(
+                              context: context,
+                              featureName: 'Portfolio Analytics',
+                              featureBenefit: 'Unlock cross-property yield comparisons, collection efficiency metrics, and portfolio CSV exports.',
+                            );
+                            if (!canAccess || !context.mounted) return;
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const PortfolioAnalyticsScreen()));
+                          },
+                        ),
+                        Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                      ],
+                      ListTile(
+                        key: const Key('more_caretaker_mode'),
+                        dense: true,
+                        leading: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: _isStaffMode ? AppTheme.accent.withValues(alpha: 0.25) : AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            _isStaffMode ? Icons.shield_rounded : Icons.shield_outlined,
+                            color: _isStaffMode ? (AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep) : AppTheme.getPrimaryColor(context),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text('Caretaker / Staff Mode', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                        subtitle: Text(
+                          _isStaffMode ? 'Active (Financials hidden) · Tap to exit' : 'Protect with 4-digit PIN',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _isStaffMode ? (AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep) : AppTheme.getInkMutedColor(context),
+                            fontWeight: _isStaffMode ? FontWeight.w700 : FontWeight.normal,
+                          ),
+                        ),
+                        trailing: _buildPillBadge(_isStaffMode ? 'LOCKED' : 'BIZ'),
+                        onTap: () async {
+                          await StaffModeService.toggleStaffMode(
+                            context,
+                            onModeChanged: () async {
+                              final staff = await StaffModeService.isStaffMode();
+                              if (mounted) setState(() => _isStaffMode = staff);
+                              if (widget.onStaffModeToggled != null) await widget.onStaffModeToggled!();
+                            },
+                          );
+                        },
+                      ),
+                      if (!_isStaffMode) ...[
+                        Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                        ListTile(
+                          key: const Key('more_lease_contracts'),
+                          dense: true,
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(Icons.assignment_turned_in_rounded, color: AppTheme.getPrimaryColor(context), size: 20),
+                          ),
+                          title: Text('Philippine Lease Agreement Contracts', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                          subtitle: Text('Residential contract generator & autofill', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                          trailing: _buildPillBadge('BIZ'),
+                          onTap: () async {
+                            final canAccess = await PlanGuardService.requireBusiness(
+                              context: context,
+                              featureName: 'Lease Agreement Contracts',
+                              featureBenefit: 'Generate legally formatted Philippine residential lease contracts with auto-filled tenant details and 1-click clipboard export.',
+                            );
+                            if (!canAccess || !context.mounted) return;
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaseContractScreen()));
+                          },
+                        ),
+                        Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                        ListTile(
+                          key: const Key('more_vip_support'),
+                          dense: true,
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.support_agent_rounded, color: Color(0xFF128C7E), size: 20),
+                          ),
+                          title: Text('VIP Priority Support', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                          subtitle: Text('Dedicated landlord concierge via WhatsApp', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                          trailing: _buildPillBadge('BIZ'),
+                          onTap: () async {
+                            final canAccess = await PlanGuardService.requireBusiness(
+                              context: context,
+                              featureName: 'VIP Priority Support',
+                              featureBenefit: 'Connect directly with a dedicated Tenera account manager via WhatsApp or direct Philippine phone line.',
+                            );
+                            if (!canAccess || !context.mounted) return;
+                            _showVipSupportModal();
+                          },
                         ),
                       ],
-                    ),
-                    onTap: () async {
-                      await StaffModeService.toggleStaffMode(
-                        context,
-                        onModeChanged: () async {
-                          final staff = await StaffModeService.isStaffMode();
-                          if (mounted) {
-                            setState(() => _isStaffMode = staff);
-                          }
-                          if (widget.onStaffModeToggled != null) {
-                            await widget.onStaffModeToggled!();
-                          }
-                        },
-                      );
-                    },
-                  ),
-                  if (!_isStaffMode) ...[
-                    Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
-                    ListTile(
-                      key: const Key('more_lease_contracts'),
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.assignment_turned_in_rounded, color: AppTheme.getPrimaryColor(context), size: 22),
-                      ),
-                      title: Text('Philippine Lease Agreement Contracts', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
-                      subtitle: Text('Residential contract generator with tenant autofill & 1-tap copy', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'BUSINESS',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.ink,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      onTap: () async {
-                        final canAccess = await PlanGuardService.requireBusiness(
-                          context: context,
-                          featureName: 'Lease Agreement Contracts',
-                          featureBenefit: 'Generate legally formatted Philippine residential lease contracts with auto-filled tenant details and 1-click clipboard export.',
-                        );
-                        if (!canAccess || !context.mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const LeaseContractScreen()),
-                        );
-                      },
-                    ),
-                    Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
-                    ListTile(
-                      key: const Key('more_vip_support'),
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF25D366).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.support_agent_rounded, color: Color(0xFF128C7E), size: 22),
-                      ),
-                      title: Text('VIP Priority Support', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
-                      subtitle: Text('Direct WhatsApp, phone & dedicated landlord concierge', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'BUSINESS',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.ink,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      onTap: () async {
-                        final canAccess = await PlanGuardService.requireBusiness(
-                          context: context,
-                          featureName: 'VIP Priority Support',
-                          featureBenefit: 'Connect directly with a dedicated Tenera account manager via WhatsApp or direct Philippine phone line.',
-                        );
-                        if (!canAccess || !context.mounted) return;
-                        _showVipSupportModal();
-                      },
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 18),
+          ],
 
-          // Appearance & Display (Dark Mode) Section
+          // 3. Cloud Sync & Messaging (Compiled Card)
           Text(
-            'Appearance & Display',
+            'Cloud & Messaging',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppTheme.getInkMutedColor(context),
             ),
           ),
-          const SizedBox(height: 8),
-
-          ValueListenableBuilder<ThemeMode>(
-            valueListenable: ThemeService.themeModeNotifier,
-            builder: (context, themeMode, _) {
-              return Material(
-                color: AppTheme.getSurfaceColor(context),
-                borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAlias,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.getBorderColor(context)),
-                  ),
-                  child: ListTile(
-                    key: const Key('tile_theme_mode'),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        themeMode == ThemeMode.dark
-                            ? Icons.dark_mode_rounded
-                            : (themeMode == ThemeMode.light
-                                ? Icons.light_mode_rounded
-                                : Icons.brightness_auto_rounded),
-                        color: AppTheme.primary,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      'Theme & Appearance',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.getInkColor(context),
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Tap icon to toggle',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.getInkMutedColor(context),
-                      ),
-                    ),
-                    trailing: Container(
-                      decoration: BoxDecoration(
-                        color: AppTheme.isDark(context)
-                            ? const Color(0xFF1E2D2A)
-                            : const Color(0xFFF0F4F4),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.getBorderColor(context)),
-                      ),
-                      padding: const EdgeInsets.all(3),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildThemeModeIconButton(
-                            context: context,
-                            mode: ThemeMode.system,
-                            currentMode: themeMode,
-                            icon: Icons.brightness_auto_rounded,
-                            key: const Key('btn_theme_system'),
-                          ),
-                          const SizedBox(width: 2),
-                          _buildThemeModeIconButton(
-                            context: context,
-                            mode: ThemeMode.light,
-                            currentMode: themeMode,
-                            icon: Icons.light_mode_rounded,
-                            key: const Key('btn_theme_light'),
-                          ),
-                          const SizedBox(width: 2),
-                          _buildThemeModeIconButton(
-                            context: context,
-                            mode: ThemeMode.dark,
-                            currentMode: themeMode,
-                            icon: Icons.dark_mode_rounded,
-                            key: const Key('btn_theme_dark'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-
-          // Cloud Sync & Firebase Section
-          Text(
-            'Cloud & Database Sync',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.getInkMutedColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-
+          const SizedBox(height: 6),
           Material(
             color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
@@ -739,116 +534,58 @@ class _MoreTabState extends State<MoreTab> {
                 children: [
                   ListTile(
                     key: const Key('more_firebase_sync'),
+                    dense: true,
                     leading: _isSyncing
                         ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.cloud_sync_rounded, color: AppTheme.primary),
-                    title: Text('Sync with Firebase Cloud', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                        : const Icon(Icons.cloud_sync_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Sync with Firebase Cloud', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
                     subtitle: Text(
-                      FirebaseService.instance.isInitialized
-                          ? (_pendingSyncCount > 0
-                              ? '$_pendingSyncCount changes ready to upload'
-                              : 'All data synchronized with cloud')
-                          : 'Local SQLite active (Offline mode)',
-                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
+                      _pendingSyncCount > 0
+                          ? '$_pendingSyncCount changes ready to upload'
+                          : 'Realtime Database connected',
+                      style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context)),
                     ),
                     trailing: _isSyncing
                         ? null
                         : TextButton(
                             onPressed: _handleSync,
-                            child: const Text('Sync Now', style: TextStyle(fontWeight: FontWeight.w700)),
+                            child: const Text('Sync Now', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                           ),
                     onTap: _isSyncing ? null : _handleSync,
                   ),
-                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(
-                    leading: Icon(Icons.cloud_off_rounded, color: AppTheme.getInkMutedColor(context)),
-                    title: Text('Offline Storage Mode', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('SQLite Single Source of Truth on this device', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppTheme.getStatusPaidBg(context),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'ACTIVE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: AppTheme.getStatusPaidText(context),
-                        ),
-                      ),
+                    key: const Key('tile_direct_sms'),
+                    dense: true,
+                    leading: const Icon(Icons.sms_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Direct Phone SMS (SIM Card)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Sends via phone SIM promo (₱0 extra)', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: TextButton(
+                      key: const Key('btn_test_direct_sms'),
+                      onPressed: _showTestSmsDialog,
+                      child: const Text('Test SMS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // Tenant Reminders & Direct SMS Section
+          // 4. Appearance & System Settings (Compiled Card)
           Text(
-            'Tenant Reminders & Direct SMS',
+            'Appearance & Display',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppTheme.getInkMutedColor(context),
             ),
           ),
-          const SizedBox(height: 8),
-
-          Material(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.getBorderColor(context)),
-              ),
-              child: ListTile(
-                key: const Key('tile_direct_sms'),
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.sms_rounded, color: AppTheme.primary, size: 20),
-                ),
-                title: Text(
-                  'Direct Phone SMS (SIM Card)',
-                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context)),
-                ),
-                subtitle: Text(
-                  'Sends real SMS directly from your phone\'s SIM (uses your unli-text promo, ₱0 extra fee)',
-                  style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
-                ),
-                trailing: TextButton(
-                  key: const Key('btn_test_direct_sms'),
-                  onPressed: _showTestSmsDialog,
-                  child: const Text('Test SMS', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // App Updates & Releases Section
-          Text(
-            'Updates & Releases',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.getInkMutedColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-
+          const SizedBox(height: 6),
           Material(
             color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
@@ -860,63 +597,51 @@ class _MoreTabState extends State<MoreTab> {
               ),
               child: Column(
                 children: [
-                  ListTile(
-                    key: const Key('more_check_updates'),
-                    leading: _isCheckingUpdate
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          )
-                        : const Icon(Icons.system_update_rounded, color: AppTheme.primary),
-                    title: Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('Current version: v$_currentVersion (GitHub Release)', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
-                    onTap: _isCheckingUpdate ? null : _handleCheckUpdate,
-                  ),
-                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
-                  ListTile(
-                    leading: const Icon(Icons.open_in_browser_rounded, color: AppTheme.primary),
-                    title: Text('GitHub Releases Page', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('View changelog, APK releases & source code', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
-                    onTap: () {
-                      UpdateService.instance.launchDownload('https://github.com/Watot12345/Tenera/releases');
+                  ValueListenableBuilder<ThemeMode>(
+                    valueListenable: ThemeService.themeModeNotifier,
+                    builder: (context, themeMode, _) {
+                      return ListTile(
+                        key: const Key('tile_theme_mode'),
+                        dense: true,
+                        leading: Icon(
+                          themeMode == ThemeMode.dark
+                              ? Icons.dark_mode_rounded
+                              : (themeMode == ThemeMode.light
+                                  ? Icons.light_mode_rounded
+                                  : Icons.brightness_auto_rounded),
+                          color: AppTheme.primary,
+                          size: 22,
+                        ),
+                        title: Text('Theme & Appearance', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                        subtitle: Text('Tap icon to toggle', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                        trailing: Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.isDark(context) ? const Color(0xFF1E2D2A) : const Color(0xFFF0F4F4),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppTheme.getBorderColor(context)),
+                          ),
+                          padding: const EdgeInsets.all(2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _buildThemeModeIconButton(context: context, mode: ThemeMode.system, currentMode: themeMode, icon: Icons.brightness_auto_rounded, key: const Key('btn_theme_system')),
+                              const SizedBox(width: 2),
+                              _buildThemeModeIconButton(context: context, mode: ThemeMode.light, currentMode: themeMode, icon: Icons.light_mode_rounded, key: const Key('btn_theme_light')),
+                              const SizedBox(width: 2),
+                              _buildThemeModeIconButton(context: context, mode: ThemeMode.dark, currentMode: themeMode, icon: Icons.dark_mode_rounded, key: const Key('btn_theme_dark')),
+                            ],
+                          ),
+                        ),
+                      );
                     },
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Data & Backup Section
-          Text(
-            'Data & Backup',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.getInkMutedColor(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          Material(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(16),
-            clipBehavior: Clip.antiAlias,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.getBorderColor(context)),
-              ),
-              child: Column(
-                children: [
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(
-                    leading: const Icon(Icons.save_alt_rounded, color: AppTheme.primary),
-                    title: Text('Backup Data to Device', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('Create offline JSON backup file', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
+                    dense: true,
+                    leading: const Icon(Icons.save_alt_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Backup Data to Device', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Create offline JSON backup file', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -926,82 +651,43 @@ class _MoreTabState extends State<MoreTab> {
                       );
                     },
                   ),
-                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(
-                    leading: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFC92A2A)),
-                    title: const Text('Clear All Local Data', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFC92A2A))),
-                    subtitle: Text('Remove all sample properties, tenants & logs', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          backgroundColor: AppTheme.getSurfaceElevatedColor(ctx),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                          title: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFECEB),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFC92A2A), size: 22),
-                              ),
-                              const SizedBox(width: 10),
-                              Text('Clear All Data?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(ctx))),
-                            ],
-                          ),
-                          content: Text(
-                            'Are you sure you want to permanently delete all properties, rooms, tenants, and payment records from this device? You can then start entering your real properties fresh.',
-                            style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(ctx)),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: const Text('Cancel'),
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                Navigator.pop(ctx);
-                                await DatabaseHelper.instance.clearAllData();
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      backgroundColor: AppTheme.primaryDeep,
-                                      content: Text('All data cleared. Starting fresh!'),
-                                    ),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFC92A2A),
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text('Clear Everything'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                    key: const Key('more_check_updates'),
+                    dense: true,
+                    leading: _isCheckingUpdate
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.system_update_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Version v$_currentVersion (GitHub Release)', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: _isCheckingUpdate ? null : _handleCheckUpdate,
+                  ),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFC92A2A), size: 22),
+                    title: const Text('Clear All Local Data', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFFC92A2A))),
+                    subtitle: Text('Reset database & start fresh', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: _showClearDataDialog,
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
-          // Legal & Guidelines Section
+          // 5. Help & Legal (Compiled Card)
           Text(
-            'Legal & Guidelines',
+            'Help & Legal',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppTheme.getInkMutedColor(context),
             ),
           ),
-          const SizedBox(height: 8),
-
+          const SizedBox(height: 6),
           Material(
             color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
@@ -1014,29 +700,30 @@ class _MoreTabState extends State<MoreTab> {
               child: Column(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.help_outline_rounded, color: AppTheme.primary),
-                    title: Text('Welcome & App Guide', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('Step-by-step guide: how to use Tenera', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                      );
-                    },
+                    dense: true,
+                    leading: const Icon(Icons.help_outline_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Welcome & App Guide', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('How to manage properties and rooms', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WelcomeScreen())),
                   ),
-                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(
-                    leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.primary),
-                    title: Text('Privacy Policy & Terms', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
-                    subtitle: Text('RA 10173 & GDPR compliant', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
-                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const PrivacyPolicyScreen(isOnboarding: false),
-                        ),
-                      );
-                    },
+                    dense: true,
+                    leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.primary, size: 22),
+                    title: Text('Privacy Policy & Terms', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Philippine Data Privacy Act & GDPR', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen(isOnboarding: false))),
+                  ),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.open_in_browser_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('GitHub Releases Page', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('View changelog & releases', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: () => UpdateService.instance.launchDownload('https://github.com/Watot12345/Tenera/releases'),
                   ),
                 ],
               ),
