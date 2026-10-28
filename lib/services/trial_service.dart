@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -134,9 +135,9 @@ class TrialService {
       startDate = prefsStart ?? sqliteStart;
     }
 
-    // 4. Cloud Firestore cross-check (prevents uninstall/data-clear bypass)
+    // 4. Cloud Firestore cross-check (prevents uninstall/data-clear bypass on mobile)
     final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
-    if (!isTest) {
+    if (!isTest && !kIsWeb) {
       try {
         final cloudDate = await _fetchCloudTrialStartDate(deviceId);
         if (cloudDate != null) {
@@ -154,7 +155,7 @@ class TrialService {
     // If still null, this is genuinely the first launch on this device
     if (startDate == null) {
       startDate = now;
-      if (!isTest) {
+      if (!isTest && !kIsWeb) {
         _syncTrialToCloud(deviceId, startDate);
       }
     }
@@ -306,7 +307,7 @@ class TrialService {
 
     final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
     final deviceId = prefs.getString(prefKeyDeviceId);
-    if (!isTest && deviceId != null) {
+    if (!isTest && !kIsWeb && deviceId != null) {
       try {
         await FirebaseFirestore.instance.collection('app_trials').doc(deviceId).set({
           'isPaid': true,
@@ -319,6 +320,7 @@ class TrialService {
 
   /// Fast non-blocking HTTP HEAD request to obtain authoritative UTC server time
   static Future<DateTime?> _fetchNetworkUtcTime() async {
+    if (kIsWeb) return null; // Avoid CORS limitations in web browsers
     try {
       final response = await http
           .head(Uri.parse('https://www.google.com'))
@@ -333,6 +335,7 @@ class TrialService {
 
   /// Retrieve cloud trial start date to defeat reinstall / storage clear bypass
   static Future<DateTime?> _fetchCloudTrialStartDate(String deviceId) async {
+    if (kIsWeb) return null; // Client-side web extensions/adblockers block Firestore WebChannel
     try {
       final doc = await FirebaseFirestore.instance
           .collection('app_trials')
@@ -357,6 +360,7 @@ class TrialService {
 
   /// Sync trial start date to cloud
   static Future<void> _syncTrialToCloud(String deviceId, DateTime startDate) async {
+    if (kIsWeb) return;
     try {
       await FirebaseFirestore.instance.collection('app_trials').doc(deviceId).set({
         'deviceId': deviceId,
