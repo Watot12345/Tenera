@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../firebase_options.dart';
 
 class FirebaseService {
   static final FirebaseService instance = FirebaseService._();
@@ -13,8 +14,7 @@ class FirebaseService {
   bool get isInitialized => _isInitialized;
   String? get deviceId => _deviceId;
 
-  /// Safe initialization of Firebase with fallback for environments
-  /// where google-services.json / firebase_options.dart are not yet configured.
+  /// Safe initialization of Firebase with options from DefaultFirebaseOptions
   Future<bool> initialize() async {
     // 1. Ensure persistent Landlord / Device ID
     final prefs = await SharedPreferences.getInstance();
@@ -27,7 +27,9 @@ class FirebaseService {
     // 2. Safe Firebase initialization
     try {
       if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       }
       _isInitialized = true;
       return true;

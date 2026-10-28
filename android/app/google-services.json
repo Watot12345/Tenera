@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "221306847798",
+    "firebase_url": "https://test-9a579-default-rtdb.firebaseio.com",
+    "project_id": "test-9a579",
+    "storage_bucket": "test-9a579.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:221306847798:android:a7498b5009a5a276384e97",
+        "android_client_info": {
+          "package_name": "com.tenera.tenera"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8OSwyfbCjgobpiASCjgGjnjN__irRPpQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
