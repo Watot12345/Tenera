@@ -11,6 +11,7 @@ import '../services/direct_sms_service.dart';
 import '../services/plan_guard_service.dart';
 import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_banner_widget.dart';
 import '../widgets/roof_ledger_logo.dart';
 import 'property_rooms_screen.dart';
 import 'tabs/home_tab.dart';
@@ -1870,6 +1871,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: _buildBody(currentMonthStr, collectionProgress),
             ),
+            const AdBannerWidget(),
           ],
         ),
       ),

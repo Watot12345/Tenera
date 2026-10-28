@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'services/ad_service.dart';
 import 'services/firebase_service.dart';
 import 'services/theme_service.dart';
 import 'theme/app_theme.dart';
@@ -23,6 +24,7 @@ void main() async {
   );
   await ThemeService.initialize();
   FirebaseService.instance.initialize();
+  await AdService.initialize();
   runApp(const TeneraApp());
 }
 

@@ -22,6 +22,12 @@ class PlanGuardService {
     return plan == 'business';
   }
 
+  /// Returns true if the current subscription tier is completely Ad-Free (Pro or Business).
+  /// Starter plan users receive ad-supported service.
+  static Future<bool> isAdFree() async {
+    return await isPro();
+  }
+
   /// Returns true if the user can add another property under their active subscription tier.
   /// Starter: 1 property max.
   /// Pro: up to 3 properties max.

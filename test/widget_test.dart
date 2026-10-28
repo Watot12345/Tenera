@@ -14,11 +14,13 @@ import 'package:tenera/screens/portfolio_analytics_screen.dart';
 import 'package:tenera/screens/privacy_policy_screen.dart';
 import 'package:tenera/screens/reports_export_screen.dart';
 import 'package:tenera/screens/subscription_plans_screen.dart';
+import 'package:tenera/services/ad_service.dart';
 import 'package:tenera/services/database_helper.dart';
 import 'package:tenera/services/plan_guard_service.dart';
 import 'package:tenera/services/theme_service.dart';
 import 'package:intl/intl.dart';
 import 'package:tenera/theme/app_theme.dart';
+import 'package:tenera/widgets/ad_banner_widget.dart';
 import 'package:tenera/widgets/roof_ledger_logo.dart';
 
 void main() {
@@ -1377,6 +1379,47 @@ void main() {
 
     // Collected amount reduced from ₱42,000 by ₱4,000 to ₱38,000
     expect(find.text('₱38,000'), findsOneWidget);
+  });
+
+  testWidgets('AdMob Ad-Free subscription tier: Starter enables ads, Pro and Business disable all ads',
+      (WidgetTester tester) async {
+    // 1. Starter tier: ads are enabled, isAdFree is false
+    SharedPreferences.setMockInitialValues({
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'starter',
+    });
+    await AdService.refreshAdStatus();
+
+    expect(await PlanGuardService.isAdFree(), isFalse);
+    expect(AdService.isAdFreeNotifier.value, isFalse);
+
+    // 2. Pro tier: Ad-Free, ads are disabled
+    SharedPreferences.setMockInitialValues({
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await AdService.refreshAdStatus();
+
+    expect(await PlanGuardService.isAdFree(), isTrue);
+    expect(AdService.isAdFreeNotifier.value, isTrue);
+
+    // Verify AdBannerWidget renders empty SizedBox when ad-free
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AdBannerWidget(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('ad_banner_container')), findsNothing);
+
+    // 3. Business tier: Ad-Free, ads are disabled
+    SharedPreferences.setMockInitialValues({
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'business',
+    });
+    await AdService.refreshAdStatus();
+
+    expect(await PlanGuardService.isAdFree(), isTrue);
+    expect(AdService.isAdFreeNotifier.value, isTrue);
   });
 }
 

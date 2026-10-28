@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/ad_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/roof_ledger_logo.dart';
 
@@ -56,6 +57,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, planId);
     await prefs.setString(SubscriptionPlansScreen.prefKeyBillingCycle, isAnnual ? 'annual' : 'monthly');
+    await AdService.refreshAdStatus();
     setState(() {
       _currentPlan = planId;
       _isAnnual = isAnnual;
@@ -595,6 +597,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               isFeatured: true,
               badgeText: 'MOST POPULAR · LANDLORD CHOICE',
               features: const [
+                '100% Ad-Free Experience (No Advertisements)',
                 'Up to 3 Properties (Unlimited Units per Property)',
                 'Utility Sub-Meter Splitter (Electric & Water)',
                 '1-Tap Polite SMS & Messenger Reminders',
@@ -623,6 +626,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               isFeatured: false,
               badgeText: 'MULTI-PROPERTY',
               features: const [
+                '100% Ad-Free Experience (No Advertisements)',
                 'Unlimited Properties & Units',
                 'All Tenera Pro Features Included',
                 'Multi-Property Portfolio Analytics',
