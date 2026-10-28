@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'plan_guard_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Centralized service for Google AdMob in Tenera.
 /// - Starter plan: Ads are enabled (ad-supported free tier).
@@ -51,9 +51,14 @@ class AdService {
     }
   }
 
+  /// Key used across the app for persisting current subscription tier
+  static const String prefKeySubscriptionPlan = 'user_subscription_plan';
+
   /// Refreshes the ad-free state from the current subscription plan.
   static Future<void> refreshAdStatus() async {
-    final adFree = await PlanGuardService.isAdFree();
-    isAdFreeNotifier.value = adFree;
+    final prefs = await SharedPreferences.getInstance();
+    final plan = prefs.getString(prefKeySubscriptionPlan) ?? 'starter';
+    final isAdFree = (plan == 'pro' || plan == 'business');
+    isAdFreeNotifier.value = isAdFree;
   }
 }
