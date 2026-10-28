@@ -938,4 +938,15 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('payments');
+      await txn.delete('rooms');
+      await txn.delete('tenants');
+      await txn.delete('properties');
+    });
+    notifyChanges();
+  }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../services/database_helper.dart';
 import '../../services/firebase_service.dart';
 import '../../services/plan_guard_service.dart';
 import '../../services/staff_mode_service.dart';
@@ -887,6 +888,65 @@ class _MoreTabState extends State<MoreTab> {
                         const SnackBar(
                           backgroundColor: AppTheme.primaryDeep,
                           content: Text('Backup saved successfully to device storage!'),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
+                  ListTile(
+                    leading: const Icon(Icons.delete_sweep_rounded, color: Color(0xFFC92A2A)),
+                    title: const Text('Clear All Local Data', style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFFC92A2A))),
+                    subtitle: Text('Remove all sample properties, tenants & logs', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: AppTheme.getSurfaceElevatedColor(ctx),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          title: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFECEB),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.delete_forever_rounded, color: Color(0xFFC92A2A), size: 22),
+                              ),
+                              const SizedBox(width: 10),
+                              Text('Clear All Data?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(ctx))),
+                            ],
+                          ),
+                          content: Text(
+                            'Are you sure you want to permanently delete all properties, rooms, tenants, and payment records from this device? You can then start entering your real properties fresh.',
+                            style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(ctx)),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('Cancel'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () async {
+                                Navigator.pop(ctx);
+                                await DatabaseHelper.instance.clearAllData();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      backgroundColor: AppTheme.primaryDeep,
+                                      content: Text('All data cleared. Starting fresh!'),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFC92A2A),
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Clear Everything'),
+                            ),
+                          ],
                         ),
                       );
                     },

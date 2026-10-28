@@ -183,23 +183,20 @@ class _TenantsTabState extends State<TenantsTab> {
               const SizedBox(width: 8),
               SizedBox(
                 height: 48,
-                child: ElevatedButton.icon(
+                width: 48,
+                child: ElevatedButton(
                   key: const Key('btn_add_tenant_bar'),
                   onPressed: widget.onAddTenant,
-                  icon: const Icon(Icons.person_add_rounded, size: 18),
-                  label: const Text(
-                    'Add Tenant',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    padding: EdgeInsets.zero,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
+                  child: const Icon(Icons.person_add_rounded, size: 22, color: Colors.white),
                 ),
               ),
             ],
@@ -217,16 +214,25 @@ class _TenantsTabState extends State<TenantsTab> {
                   child: FilterChip(
                     label: Text(f),
                     selected: isSelected,
+                    backgroundColor: AppTheme.getSurfaceColor(context),
+                    selectedColor: AppTheme.primary,
+                    checkmarkColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: isSelected ? AppTheme.primary : AppTheme.getBorderColor(context),
+                        width: isSelected ? 1.5 : 1.0,
+                      ),
+                    ),
                     onSelected: (val) {
                       setState(() {
                         _tenantFilter = f;
                       });
                     },
-                    selectedColor: AppTheme.primary,
-                    checkmarkColor: Colors.white,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : AppTheme.ink,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? Colors.white : AppTheme.getInkColor(context),
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                      fontSize: 13,
                     ),
                   ),
                 );
