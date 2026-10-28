@@ -813,6 +813,52 @@ void main() {
       featureBenefit: 'Split electric & water bills accurately per room.',
     );
     expect(canAccessPro, isTrue);
+
+    // Test Property Limits per Tier:
+    // 1. Starter tier: 1 property max
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'starter');
+    final canAddPropStarterUnder = await PlanGuardService.canAddProperty(
+      context: context,
+      currentPropertyCount: 0,
+    );
+    expect(canAddPropStarterUnder, isTrue);
+
+    final canAddPropStarterOver = await PlanGuardService.canAddProperty(
+      context: context,
+      currentPropertyCount: 1,
+    );
+    expect(canAddPropStarterOver, isFalse);
+    await tester.pumpAndSettle();
+    expect(find.text('Current Properties: 1 / 1 Max'), findsOneWidget);
+    expect(find.byKey(const Key('btn_upgrade_to_pro_property_modal')), findsOneWidget);
+    await tester.tap(find.text('Maybe Later'));
+    await tester.pumpAndSettle();
+
+    // 2. Pro tier: up to 3 properties max
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'pro');
+    final canAddPropProUnder = await PlanGuardService.canAddProperty(
+      context: context,
+      currentPropertyCount: 2,
+    );
+    expect(canAddPropProUnder, isTrue);
+
+    final canAddPropProOver = await PlanGuardService.canAddProperty(
+      context: context,
+      currentPropertyCount: 3,
+    );
+    expect(canAddPropProOver, isFalse);
+    await tester.pumpAndSettle();
+    expect(find.text('Multi-Property Commercial Portfolio'), findsOneWidget);
+    await tester.tap(find.text('Maybe Later'));
+    await tester.pumpAndSettle();
+
+    // 3. Business tier: unlimited properties
+    await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, 'business');
+    final canAddPropBusiness = await PlanGuardService.canAddProperty(
+      context: context,
+      currentPropertyCount: 10,
+    );
+    expect(canAddPropBusiness, isTrue);
   });
 
   testWidgets('PlanGuardService: enforces Business tier requirement and presents Business upgrade paywall',

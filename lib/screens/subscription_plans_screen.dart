@@ -557,7 +557,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
             // Plan 1: Starter (₱49/mo with 14-day Free Trial)
             _buildPlanCard(
               title: 'Starter',
-              subtitle: 'Ideal for boarding houses & apartments (up to 15 units)',
+              subtitle: 'Ideal for single boarding houses & apartments (1 property, up to 15 units)',
               price: _isAnnual ? '₱399' : '₱49',
               periodText: _isAnnual ? 'per year (only ₱33/mo)' : 'per month (after 14-day trial)',
               planId: 'starter',
@@ -566,6 +566,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               badgeText: '14-DAY FREE TRIAL INCLUDED',
               features: const [
                 '14-Day Full Free Trial (All features unlocked)',
+                '1 Property (Single Building or Boarding House)',
                 'Up to 15 Units & Tenants',
                 '100% Offline Local Device Ledger (SQLite)',
                 'Visual 6-Column Squircle Room Grid',
@@ -586,7 +587,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
             // Plan 2: Pro (Landlord's Choice - Featured)
             _buildPlanCard(
               title: 'Tenera Pro',
-              subtitle: 'Best for boarding houses & apartments (10–40 rooms)',
+              subtitle: 'Best for growing landlords managing up to 3 properties',
               price: _isAnnual ? '₱1,499' : '₱199',
               periodText: _isAnnual ? 'per year (only ₱125/mo)' : 'per month',
               planId: 'pro',
@@ -594,7 +595,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               isFeatured: true,
               badgeText: 'MOST POPULAR · LANDLORD CHOICE',
               features: const [
-                'Unlimited Properties & Units',
+                'Up to 3 Properties (Unlimited Units per Property)',
                 'Utility Sub-Meter Splitter (Electric & Water)',
                 '1-Tap Polite SMS & Messenger Reminders',
                 'Branded Digital Receipts with PAID Stamp',
@@ -614,7 +615,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
             // Plan 3: Business
             _buildPlanCard(
               title: 'Business',
-              subtitle: 'For dorm chains & multi-property owners (50+ rooms)',
+              subtitle: 'For dorm chains & commercial portfolios (unlimited properties)',
               price: _isAnnual ? '₱3,999' : '₱499',
               periodText: _isAnnual ? 'per year (only ₱333/mo)' : 'per month',
               planId: 'business',
@@ -622,6 +623,7 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
               isFeatured: false,
               badgeText: 'MULTI-PROPERTY',
               features: const [
+                'Unlimited Properties & Units',
                 'All Tenera Pro Features Included',
                 'Multi-Property Portfolio Analytics',
                 'Caretaker / Staff Mode (hide landlord profits)',

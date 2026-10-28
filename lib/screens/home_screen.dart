@@ -1138,7 +1138,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openAddPropertyDialog() {
+  void _openAddPropertyDialog() async {
+    final canAddProp = await PlanGuardService.canAddProperty(
+      context: context,
+      currentPropertyCount: _properties.length,
+    );
+    if (!canAddProp || !mounted) return;
+
     final nameCtrl = TextEditingController();
     final addressCtrl = TextEditingController();
     final unitsCtrl = TextEditingController(text: '8');
@@ -1148,16 +1154,16 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (modalCtx) {
         return Container(
           padding: EdgeInsets.only(
             left: 20,
             right: 20,
             top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            bottom: MediaQuery.of(modalCtx).viewInsets.bottom + 24,
           ),
           decoration: BoxDecoration(
-            color: AppTheme.getSurfaceElevatedColor(context),
+            color: AppTheme.getSurfaceElevatedColor(modalCtx),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -1169,12 +1175,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
+                      color: AppTheme.getPrimaryColor(modalCtx).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       Icons.domain_add_rounded,
-                      color: AppTheme.getPrimaryColor(context),
+                      color: AppTheme.getPrimaryColor(modalCtx),
                       size: 24,
                     ),
                   ),
@@ -1185,13 +1191,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.getInkColor(context),
+                        color: AppTheme.getInkColor(modalCtx),
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(context)),
-                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(modalCtx)),
+                    onPressed: () => Navigator.pop(modalCtx),
                   ),
                 ],
               ),
@@ -1247,11 +1253,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   final avgR = int.tryParse(rentCtrl.text.trim()) ?? 3500;
 
                   final canAdd = await PlanGuardService.canAddUnits(
-                    context: context,
+                    context: modalCtx,
                     currentTotalUnits: _totalUnits,
                     incomingUnits: totalU,
                   );
-                  if (!canAdd || !mounted) return;
+                  if (!canAdd || !modalCtx.mounted) return;
 
                   final List<RoomUnit> initialRooms = List.generate(
                     totalU,
@@ -1269,8 +1275,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     rooms: initialRooms,
                   );
 
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
+                  Navigator.pop(modalCtx);
+                  if (!mounted) return;
                   setState(() {
                     _properties.add(newProp);
                     _recomputeLedger();
