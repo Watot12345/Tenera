@@ -1779,11 +1779,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         title = 'Tenants';
         subtitle = '${_allTenants.length} Total Tenants';
-        actionButton = IconButton(
-          icon: const Icon(Icons.person_add_rounded, color: AppTheme.primary),
-          tooltip: 'Add Tenant',
-          onPressed: () => _openAddTenantDialog(),
-        );
+        actionButton = null;
         break;
       case 3:
         title = 'Payment Ledger';
