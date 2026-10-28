@@ -365,6 +365,85 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
   }
 
   void _confirmRemoveTenant(BuildContext modalCtx, PropertyItem prop, RoomUnit room) {
+    if (room.status == RoomStatus.overdue) {
+      showDialog(
+        context: context,
+        builder: (dialogCtx) {
+          final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
+          final warningColor = isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A);
+
+          return AlertDialog(
+            backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: warningColor.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: warningColor,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Tenant Still Overdue',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      color: AppTheme.getInkColor(dialogCtx),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cannot remove ${room.tenantName ?? "tenant"} from Unit ${room.code}.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.getInkColor(dialogCtx),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This tenant still has an overdue rent balance (${room.statusText ?? "unpaid rent"}). You cannot vacate or remove an overdue tenant until their outstanding balance is recorded or settled.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.getInkMutedColor(dialogCtx),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                key: const Key('btn_overdue_notice_understood'),
+                onPressed: () => Navigator.pop(dialogCtx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryDeep,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Understood'),
+              ),
+            ],
+          );
+        },
+      );
+      return;
+    }
+
     final currencyFormat = NumberFormat('#,###');
     final int depositHeld = room.rentAmount ?? 3500;
     final deductionsCtrl = TextEditingController(text: '0');
@@ -762,30 +841,17 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                   'Tenant Assigned',
                                   style: TextStyle(color: AppTheme.getInkMutedColor(ctx), fontSize: 13, fontWeight: FontWeight.w500),
                                 ),
-                                if (room.status != RoomStatus.vacant)
-                                  Text(
-                                    'Press & hold to remove tenant',
-                                    style: TextStyle(color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A), fontSize: 11, fontWeight: FontWeight.w600),
-                                  ),
                               ],
                             ),
-                            Row(
-                              children: [
-                                Text(
-                                  room.status == RoomStatus.vacant
-                                      ? 'None (Vacant)'
-                                      : (room.tenantName ?? 'Active Tenant'),
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: room.status == RoomStatus.vacant ? AppTheme.getInkMutedColor(ctx) : AppTheme.getInkColor(ctx),
-                                  ),
-                                ),
-                                if (room.status != RoomStatus.vacant) ...[
-                                  const SizedBox(width: 6),
-                                  Icon(Icons.touch_app_rounded, size: 16, color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A)),
-                                ],
-                              ],
+                            Text(
+                              room.status == RoomStatus.vacant
+                                  ? 'None (Vacant)'
+                                  : (room.tenantName ?? 'Active Tenant'),
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: room.status == RoomStatus.vacant ? AppTheme.getInkMutedColor(ctx) : AppTheme.getInkColor(ctx),
+                              ),
                             ),
                           ],
                         ),

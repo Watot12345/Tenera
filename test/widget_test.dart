@@ -233,7 +233,7 @@ void main() {
     expect(find.text('Unit R1 · Mabini Apts'), findsOneWidget);
     expect(find.text('Elena Santos'), findsOneWidget);
     expect(find.text('STATUS: OCCUPIED (Paid)'), findsOneWidget);
-    expect(find.text('Press & hold to remove tenant'), findsOneWidget);
+    expect(find.text('Tenant Assigned'), findsOneWidget);
 
     // Test: Press and hold "Tenant Assigned" row to trigger removal confirmation
     await tester.longPress(find.byKey(const Key('tenant_assign_row')));
@@ -280,6 +280,26 @@ void main() {
     await tester.tapAt(const Offset(20, 20));
     await tester.pumpAndSettle();
 
+    // Test: Attempting to remove an overdue tenant (R3 · Maria S. is overdue)
+    await tester.tap(find.text('R3'));
+    await tester.pumpAndSettle();
+    expect(find.text('STATUS: OVERDUE (5 days late)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('remove_tenant_button')));
+    await tester.pumpAndSettle();
+
+    // Verify overdue notice dialog blocks removal
+    expect(find.text('Tenant Still Overdue'), findsOneWidget);
+    expect(find.textContaining('Cannot remove Maria S. from Unit R3'), findsOneWidget);
+    expect(find.byKey(const Key('btn_overdue_notice_understood')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('btn_overdue_notice_understood')));
+    await tester.pumpAndSettle();
+
+    // Close room R3 modal
+    await tester.tap(find.byIcon(Icons.close_rounded));
+    await tester.pumpAndSettle();
+
     // Tap back button
     await tester.tap(find.byTooltip('Back to Properties'));
     await tester.pumpAndSettle();
@@ -291,6 +311,30 @@ void main() {
     // Verify we are back on the Properties tab with Total Portfolio and NO "Add property" floating action button below
     expect(find.text('Total Portfolio'), findsOneWidget);
     expect(find.byKey(const Key('fab_add_property')), findsNothing);
+
+    // Test: Long-press property card triggers delete confirmation
+    await tester.longPress(find.byKey(const Key('property_card_p1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete Property'), findsWidgets);
+    expect(find.text('Are you sure you want to delete "Mabini Apts"?'), findsOneWidget);
+
+    // Cancel first
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mabini Apts'), findsOneWidget);
+
+    // Long press again and confirm deletion
+    await tester.longPress(find.byKey(const Key('property_card_p1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('btn_confirm_delete_property')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mabini Apts'), findsNothing);
   });
 
   testWidgets('More tab: opens SubscriptionPlansScreen, toggles billing, and simulates activation',

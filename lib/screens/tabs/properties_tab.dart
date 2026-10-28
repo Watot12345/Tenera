@@ -9,6 +9,7 @@ class PropertiesTab extends StatelessWidget {
   final List<PropertyItem> properties;
   final VoidCallback onAddProperty;
   final Function(PropertyItem?) onViewRooms;
+  final Future<void> Function(PropertyItem)? onDeleteProperty;
   final bool isStaffMode;
   final bool isBusiness;
 
@@ -17,6 +18,7 @@ class PropertiesTab extends StatelessWidget {
     required this.properties,
     required this.onAddProperty,
     required this.onViewRooms,
+    this.onDeleteProperty,
     this.isStaffMode = false,
     this.isBusiness = false,
   });
@@ -231,104 +233,203 @@ class PropertiesTab extends StatelessWidget {
     );
   }
 
-  Widget _buildPropertyCard(BuildContext context, PropertyItem prop, NumberFormat currencyFormat) {
-    final overdueCount = prop.rooms.where((r) => r.status == RoomStatus.overdue).length;
+  void _confirmDeleteProperty(BuildContext context, PropertyItem prop) {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        final isDark = AppTheme.isDark(dialogCtx);
+        final deleteColor = isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        return AlertDialog(
+          backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+          title: Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
-                child: const Icon(
-                  Icons.domain_rounded,
-                  color: AppTheme.primary,
-                  size: 22,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: deleteColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  color: deleteColor,
+                  size: 26,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      prop.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.getInkColor(context),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      prop.address,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.getInkMutedColor(context),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: overdueCount > 0 ? AppTheme.getStatusOverdueBg(context) : AppTheme.getStatusPaidBg(context),
-                  borderRadius: BorderRadius.circular(10),
-                ),
                 child: Text(
-                  '${prop.occupiedUnits}/${prop.totalUnits} Units',
+                  'Delete Property',
                   style: TextStyle(
-                    color: overdueCount > 0 ? AppTheme.getStatusOverdueText(context) : AppTheme.getStatusPaidText(context),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    color: AppTheme.getInkColor(dialogCtx),
                   ),
                 ),
               ),
             ],
           ),
-          Divider(height: 24, color: AppTheme.getBorderColor(context)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
+              Text(
+                'Are you sure you want to delete "${prop.name}"?',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.getInkColor(dialogCtx),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will permanently delete this property, along with all ${prop.totalUnits} rooms and tenant records from your phone.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.getInkMutedColor(dialogCtx),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              key: const Key('btn_confirm_delete_property'),
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                if (onDeleteProperty != null) {
+                  await onDeleteProperty!(prop);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: deleteColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text(
+                'Delete Property',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPropertyCard(BuildContext context, PropertyItem prop, NumberFormat currencyFormat) {
+    final overdueCount = prop.rooms.where((r) => r.status == RoomStatus.overdue).length;
+
+    return Material(
+      color: AppTheme.getSurfaceColor(context),
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        key: Key('property_card_${prop.id}'),
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => onViewRooms(prop),
+        onLongPress: () => _confirmDeleteProperty(context, prop),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Expected / Month',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.getInkMutedColor(context),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
+                    child: const Icon(
+                      Icons.domain_rounded,
+                      color: AppTheme.primary,
+                      size: 22,
                     ),
                   ),
-                  Text(
-                    isStaffMode ? '••••••' : '₱${currencyFormat.format(prop.monthlyRevenue)}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.getPrimaryColor(context),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          prop.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.getInkColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          prop.address,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.getInkMutedColor(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: overdueCount > 0 ? AppTheme.getStatusOverdueBg(context) : AppTheme.getStatusPaidBg(context),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${prop.occupiedUnits}/${prop.totalUnits} Units',
+                      style: TextStyle(
+                        color: overdueCount > 0 ? AppTheme.getStatusOverdueText(context) : AppTheme.getStatusPaidText(context),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
               ),
-              OutlinedButton.icon(
-                onPressed: () => onViewRooms(prop),
-                icon: const Icon(Icons.meeting_room_outlined, size: 16),
-                label: const Text('View Rooms'),
+              Divider(height: 24, color: AppTheme.getBorderColor(context)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expected / Month',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.getInkMutedColor(context),
+                        ),
+                      ),
+                      Text(
+                        isStaffMode ? '••••••' : '₱${currencyFormat.format(prop.monthlyRevenue)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.getPrimaryColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => onViewRooms(prop),
+                    icon: const Icon(Icons.meeting_room_outlined, size: 16),
+                    label: const Text('View Rooms'),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1302,6 +1302,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _handleDeleteProperty(PropertyItem prop) async {
+    setState(() {
+      _properties.removeWhere((p) => p.id == prop.id);
+      _recomputeLedger();
+    });
+    await DatabaseHelper.instance.deleteProperty(prop.id, propertyName: prop.name);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppTheme.primaryDeep,
+        content: Text('Property "${prop.name}" has been deleted.'),
+      ),
+    );
+  }
+
   void _sendFriendlyReminder(TenantBill tenant) {
     final formattedAmount = NumberFormat('#,###').format(tenant.amount);
     final roomDisplay = tenant.location.split('·')[0].trim();
@@ -2098,6 +2113,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return PropertiesTab(
           properties: _properties,
           onAddProperty: _openAddPropertyDialog,
+          onDeleteProperty: _handleDeleteProperty,
           isStaffMode: _isStaffMode,
           isBusiness: _isBusiness,
           onViewRooms: (prop) async {

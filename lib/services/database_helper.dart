@@ -633,6 +633,19 @@ class DatabaseHelper {
     notifyChanges();
   }
 
+  Future<void> deleteProperty(String propertyId, {String? propertyName}) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('rooms', where: 'property_id = ?', whereArgs: [propertyId]);
+      await txn.delete('properties', where: 'id = ?', whereArgs: [propertyId]);
+      if (propertyName != null && propertyName.isNotEmpty) {
+        await txn.delete('tenants', where: 'location LIKE ?', whereArgs: ['%$propertyName%']);
+        await txn.delete('payments', where: 'location LIKE ?', whereArgs: ['%$propertyName%']);
+      }
+    });
+    notifyChanges();
+  }
+
   Future<void> updateProperty(PropertyItem property) async {
     final db = await database;
     final now = DateTime.now().millisecondsSinceEpoch;
