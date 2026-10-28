@@ -88,24 +88,20 @@ class DirectSmsService {
     }
 
     try {
-      // Check permission first
       final hasPerm = await hasPermission();
-      if (!hasPerm) {
-        final granted = await requestPermission();
-        if (!granted) {
-          return SmsSendResult.failed(
-            'SMS permission denied. Enable it in device Settings.',
-            requiresPermission: true,
-          );
-        }
+      if (hasPerm) {
+        await _channel.invokeMethod('sendDirectSms', {
+          'phone': cleanPhone,
+          'message': message,
+        });
+        return SmsSendResult.ok;
       }
 
-      await _channel.invokeMethod('sendDirectSms', {
-        'phone': cleanPhone,
-        'message': message,
-      });
-
-      return SmsSendResult.ok;
+      // Play Protect compliant fallback: opens device default SMS messaging app
+      final launched = await openDefaultSmsApp(phone: cleanPhone, message: message);
+      return launched
+          ? SmsSendResult.ok
+          : SmsSendResult.failed('Unable to open device SMS app.');
     } on PlatformException catch (e) {
       if (e.code == 'NO_PERMISSION') {
         return SmsSendResult.failed(
