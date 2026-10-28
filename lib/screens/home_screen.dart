@@ -7,6 +7,7 @@ import '../models/payment.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
 import '../services/database_helper.dart';
+import '../services/direct_sms_service.dart';
 import '../services/plan_guard_service.dart';
 import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
@@ -1433,31 +1434,51 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ElevatedButton.icon(
               key: const Key('btn_share_reminder'),
-              onPressed: () {
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
                 Clipboard.setData(ClipboardData(text: reminderText));
                 Navigator.pop(dialogCtx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: AppTheme.primaryDeep,
-                    content: Text(
-                      'Reminder copied for ${tenant.name} to send via SMS / Chat!',
-                    ),
-                  ),
-                );
                 if (hasPhone) {
-                  final cleanPhone = tenant.phone!.replaceAll(RegExp(r'[^0-9+]'), '');
-                  final smsUri = Uri(
-                    scheme: 'sms',
-                    path: cleanPhone,
-                    queryParameters: <String, String>{'body': reminderText},
+                  final result = await DirectSmsService.sendDirectSms(
+                    phone: tenant.phone!,
+                    message: reminderText,
                   );
-                  launchUrl(smsUri, mode: LaunchMode.externalApplication).catchError((_) {
-                    return launchUrl(smsUri).catchError((_) => false);
-                  });
+                  if (result.success) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppTheme.primaryDeep,
+                        content: Text(
+                          'Reminder copied for ${tenant.name} & SMS sent directly from your SIM card!',
+                        ),
+                      ),
+                    );
+                  } else {
+                    await DirectSmsService.openDefaultSmsApp(
+                      phone: tenant.phone!,
+                      message: reminderText,
+                    );
+                    messenger.showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppTheme.primaryDeep,
+                        content: Text(
+                          'Reminder copied for ${tenant.name} to send via SMS app!',
+                        ),
+                      ),
+                    );
+                  }
+                } else {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppTheme.primaryDeep,
+                      content: Text(
+                        'Reminder copied for ${tenant.name} to send via SMS / Chat!',
+                      ),
+                    ),
+                  );
                 }
               },
-              icon: const Icon(Icons.share_rounded, size: 18),
-              label: const Text('Share Reminder', style: TextStyle(fontWeight: FontWeight.w700)),
+              icon: Icon(hasPhone ? Icons.sms_rounded : Icons.share_rounded, size: 18),
+              label: Text(hasPhone ? 'Send Direct SMS' : 'Copy Reminder', style: const TextStyle(fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,

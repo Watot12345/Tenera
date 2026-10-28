@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/database_helper.dart';
+import '../../services/direct_sms_service.dart';
 import '../../services/firebase_service.dart';
 import '../../services/plan_guard_service.dart';
 import '../../services/staff_mode_service.dart';
@@ -789,6 +790,54 @@ class _MoreTabState extends State<MoreTab> {
           ),
           const SizedBox(height: 20),
 
+          // Tenant Reminders & Direct SMS Section
+          Text(
+            'Tenant Reminders & Direct SMS',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: AppTheme.getInkMutedColor(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Material(
+            color: AppTheme.getSurfaceColor(context),
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
+              ),
+              child: ListTile(
+                key: const Key('tile_direct_sms'),
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.sms_rounded, color: AppTheme.primary, size: 20),
+                ),
+                title: Text(
+                  'Direct Phone SMS (SIM Card)',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context)),
+                ),
+                subtitle: Text(
+                  'Sends real SMS directly from your phone\'s SIM (uses your unli-text promo, ₱0 extra fee)',
+                  style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
+                ),
+                trailing: TextButton(
+                  key: const Key('btn_test_direct_sms'),
+                  onPressed: _showTestSmsDialog,
+                  child: const Text('Test SMS', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // App Updates & Releases Section
           Text(
             'Updates & Releases',
@@ -1137,6 +1186,116 @@ class _MoreTabState extends State<MoreTab> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showTestSmsDialog() {
+    final phoneCtrl = TextEditingController(text: '0917');
+    final msgCtrl = TextEditingController(
+      text: 'Test message from Tenera via device SIM card!',
+    );
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: AppTheme.getSurfaceElevatedColor(context),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.sms_rounded, color: AppTheme.primary, size: 20),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Test Direct SIM SMS',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.getInkColor(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sends a real SMS using this phone\'s active SIM card.',
+                style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                key: const Key('input_test_sms_phone'),
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                style: TextStyle(color: AppTheme.getInkColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Recipient Mobile Number',
+                  hintText: '09171234567',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: const Key('input_test_sms_message'),
+                controller: msgCtrl,
+                maxLines: 2,
+                style: TextStyle(color: AppTheme.getInkColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Message Content',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text('Cancel', style: TextStyle(color: AppTheme.getInkMutedColor(context))),
+            ),
+            ElevatedButton(
+              key: const Key('btn_confirm_test_sms'),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final phone = phoneCtrl.text.trim();
+                final msg = msgCtrl.text.trim();
+                Navigator.pop(dialogCtx);
+
+                final result = await DirectSmsService.sendDirectSms(
+                  phone: phone,
+                  message: msg,
+                );
+
+                messenger.showSnackBar(
+                  SnackBar(
+                    backgroundColor: result.success ? AppTheme.primaryDeep : const Color(0xFFC0392B),
+                    content: Text(
+                      result.success
+                          ? '✓ Real test SMS sent to $phone via device SIM!'
+                          : (result.errorMessage ?? 'Failed to send test SMS.'),
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Send Real SMS', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
     );
   }
 }
