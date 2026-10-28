@@ -134,20 +134,20 @@ class _MoreTabState extends State<MoreTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Tenera Property Manager',
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.ink,
+                          color: AppTheme.getInkColor(context),
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Offline First · v$_currentVersion',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.inkMuted,
+                          color: AppTheme.getInkMutedColor(context),
                         ),
                       ),
                     ],
@@ -162,15 +162,17 @@ class _MoreTabState extends State<MoreTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.primaryDeep, AppTheme.primary],
+              gradient: LinearGradient(
+                colors: AppTheme.isDark(context)
+                    ? [const Color(0xFF1E524B), const Color(0xFF133833)]
+                    : [AppTheme.primaryDeep, AppTheme.primary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryDeep.withValues(alpha: 0.22),
+                  color: (AppTheme.isDark(context) ? AppTheme.darkPrimaryDeep : AppTheme.primaryDeep).withValues(alpha: 0.22),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -252,24 +254,24 @@ class _MoreTabState extends State<MoreTab> {
 
           // Pro Landlord Tools Section - only shown when Pro or Business plan is availed
           if (_isPro) ...[
-            const Text(
+            Text(
               'Pro Landlord Tools',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: AppTheme.inkMuted,
+                color: AppTheme.getInkMutedColor(context),
               ),
             ),
             const SizedBox(height: 8),
 
           Material(
-            color: AppTheme.surface,
+            color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
@@ -281,10 +283,20 @@ class _MoreTabState extends State<MoreTab> {
                         color: AppTheme.accent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.bolt_rounded, color: AppTheme.primaryDeep, size: 22),
+                      child: Icon(
+                        Icons.bolt_rounded,
+                        color: AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primaryDeep,
+                        size: 22,
+                      ),
                     ),
-                    title: const Text('Utility Sub-Meter Splitter', style: TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: const Text('Split Meralco electric & water sub-meter bills per room', style: TextStyle(fontSize: 12)),
+                    title: Text(
+                      'Utility Sub-Meter Splitter',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
+                    ),
+                    subtitle: Text(
+                      'Split Meralco electric & water sub-meter bills per room',
+                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
+                    ),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -313,7 +325,7 @@ class _MoreTabState extends State<MoreTab> {
                       );
                     },
                   ),
-                  const Divider(height: 1, indent: 60),
+                  Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
                   ListTile(
                     key: const Key('more_reports_export'),
                     leading: Container(
@@ -322,10 +334,20 @@ class _MoreTabState extends State<MoreTab> {
                         color: AppTheme.accent.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.assessment_rounded, color: AppTheme.primaryDeep, size: 22),
+                      child: Icon(
+                        Icons.assessment_rounded,
+                        color: AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primaryDeep,
+                        size: 22,
+                      ),
                     ),
-                    title: const Text('Revenue & BIR Tax Report', style: TextStyle(fontWeight: FontWeight.w700)),
-                    subtitle: const Text('Export Philippine BIR tax schedules & revenue CSV', style: TextStyle(fontSize: 12)),
+                    title: Text(
+                      'Revenue & BIR Tax Report',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context)),
+                    ),
+                    subtitle: Text(
+                      'Export Philippine BIR tax schedules & revenue CSV',
+                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
+                    ),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -363,24 +385,24 @@ class _MoreTabState extends State<MoreTab> {
 
         // Business Tier Tools Section - only shown when Business plan is availed
         if (_isBusiness) ...[
-          const Text(
+          Text(
             'Business Tier Tools',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: AppTheme.getInkMutedColor(context),
             ),
           ),
           const SizedBox(height: 8),
 
           Material(
-            color: AppTheme.surface,
+            color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
@@ -390,13 +412,13 @@ class _MoreTabState extends State<MoreTab> {
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryDeep.withValues(alpha: 0.1),
+                          color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.domain_rounded, color: AppTheme.primaryDeep, size: 22),
+                        child: Icon(Icons.domain_rounded, color: AppTheme.getPrimaryColor(context), size: 22),
                       ),
-                      title: const Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: const Text('Cross-property performance, occupancy % & delinquency reports', style: TextStyle(fontSize: 12)),
+                      title: Text('Multi-Property Portfolio Analytics', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
+                      subtitle: Text('Cross-property performance, occupancy % & delinquency reports', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
@@ -426,28 +448,28 @@ class _MoreTabState extends State<MoreTab> {
                         );
                       },
                     ),
-                    const Divider(height: 1, indent: 60),
+                    Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
                   ],
                   ListTile(
                     key: const Key('more_caretaker_mode'),
                     leading: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: _isStaffMode ? AppTheme.accent.withValues(alpha: 0.25) : AppTheme.primaryDeep.withValues(alpha: 0.1),
+                        color: _isStaffMode ? AppTheme.accent.withValues(alpha: 0.25) : AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         _isStaffMode ? Icons.shield_rounded : Icons.shield_outlined,
-                        color: AppTheme.primaryDeep,
+                        color: _isStaffMode ? (AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep) : AppTheme.getPrimaryColor(context),
                         size: 22,
                       ),
                     ),
-                    title: const Text('Caretaker / Staff Mode', style: TextStyle(fontWeight: FontWeight.w700)),
+                    title: Text('Caretaker / Staff Mode', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
                     subtitle: Text(
                       _isStaffMode ? 'Active (Financials hidden) · Tap to exit' : 'Hide gross revenues and protect with 4-digit PIN',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _isStaffMode ? AppTheme.primaryDeep : AppTheme.inkMuted,
+                        color: _isStaffMode ? (AppTheme.isDark(context) ? AppTheme.darkAccent : AppTheme.primaryDeep) : AppTheme.getInkMutedColor(context),
                         fontWeight: _isStaffMode ? FontWeight.w700 : FontWeight.normal,
                       ),
                     ),
@@ -459,12 +481,12 @@ class _MoreTabState extends State<MoreTab> {
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             margin: const EdgeInsets.only(right: 6),
                             decoration: BoxDecoration(
-                              color: AppTheme.primaryDeep,
+                              color: AppTheme.getPrimaryColor(context),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text(
+                            child: Text(
                               'LOCKED',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Colors.white),
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: AppTheme.isDark(context) ? const Color(0xFF0F2623) : Colors.white),
                             ),
                           ),
                         ],
@@ -502,19 +524,19 @@ class _MoreTabState extends State<MoreTab> {
                     },
                   ),
                   if (!_isStaffMode) ...[
-                    const Divider(height: 1, indent: 60),
+                    Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
                     ListTile(
                       key: const Key('more_lease_contracts'),
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryDeep.withValues(alpha: 0.1),
+                          color: AppTheme.getPrimaryColor(context).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.assignment_turned_in_rounded, color: AppTheme.primaryDeep, size: 22),
+                        child: Icon(Icons.assignment_turned_in_rounded, color: AppTheme.getPrimaryColor(context), size: 22),
                       ),
-                      title: const Text('Philippine Lease Agreement Contracts', style: TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: const Text('Residential contract generator with tenant autofill & 1-tap copy', style: TextStyle(fontSize: 12)),
+                      title: Text('Philippine Lease Agreement Contracts', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
+                      subtitle: Text('Residential contract generator with tenant autofill & 1-tap copy', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
@@ -544,7 +566,7 @@ class _MoreTabState extends State<MoreTab> {
                         );
                       },
                     ),
-                    const Divider(height: 1, indent: 60),
+                    Divider(height: 1, indent: 60, color: AppTheme.getBorderColor(context)),
                     ListTile(
                       key: const Key('more_vip_support'),
                       leading: Container(
@@ -555,8 +577,8 @@ class _MoreTabState extends State<MoreTab> {
                         ),
                         child: const Icon(Icons.support_agent_rounded, color: Color(0xFF128C7E), size: 22),
                       ),
-                      title: const Text('VIP Priority Support', style: TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: const Text('Direct WhatsApp, phone & dedicated landlord concierge', style: TextStyle(fontSize: 12)),
+                      title: Text('VIP Priority Support', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
+                      subtitle: Text('Direct WhatsApp, phone & dedicated landlord concierge', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                         decoration: BoxDecoration(
@@ -718,13 +740,13 @@ class _MoreTabState extends State<MoreTab> {
           const SizedBox(height: 8),
 
           Material(
-            color: AppTheme.surface,
+            color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
@@ -737,14 +759,14 @@ class _MoreTabState extends State<MoreTab> {
                             child: CircularProgressIndicator(strokeWidth: 2.5),
                           )
                         : const Icon(Icons.cloud_sync_rounded, color: AppTheme.primary),
-                    title: const Text('Sync with Firebase Cloud', style: TextStyle(fontWeight: FontWeight.w600)),
+                    title: Text('Sync with Firebase Cloud', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
                     subtitle: Text(
                       FirebaseService.instance.isInitialized
                           ? (_pendingSyncCount > 0
                               ? '$_pendingSyncCount changes ready to upload'
                               : 'All data synchronized with cloud')
                           : 'Local SQLite active (Offline mode)',
-                      style: const TextStyle(fontSize: 12),
+                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
                     ),
                     trailing: _isSyncing
                         ? null
@@ -754,23 +776,23 @@ class _MoreTabState extends State<MoreTab> {
                           ),
                     onTap: _isSyncing ? null : _handleSync,
                   ),
-                  const Divider(height: 1, color: AppTheme.border),
+                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
                   ListTile(
-                    leading: const Icon(Icons.cloud_off_rounded, color: AppTheme.inkMuted),
-                    title: const Text('Offline Storage Mode', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('SQLite Single Source of Truth on this device', style: TextStyle(fontSize: 12)),
+                    leading: Icon(Icons.cloud_off_rounded, color: AppTheme.getInkMutedColor(context)),
+                    title: Text('Offline Storage Mode', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('SQLite Single Source of Truth on this device', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppTheme.statusPaidBg,
+                        color: AppTheme.getStatusPaidBg(context),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
+                      child: Text(
                         'ACTIVE',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.statusPaid,
+                          color: AppTheme.getStatusPaidText(context),
                         ),
                       ),
                     ),
@@ -782,24 +804,24 @@ class _MoreTabState extends State<MoreTab> {
           const SizedBox(height: 20),
 
           // App Updates & Releases Section
-          const Text(
+          Text(
             'Updates & Releases',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: AppTheme.getInkMutedColor(context),
             ),
           ),
           const SizedBox(height: 8),
 
           Material(
-            color: AppTheme.surface,
+            color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
@@ -812,17 +834,17 @@ class _MoreTabState extends State<MoreTab> {
                             child: CircularProgressIndicator(strokeWidth: 2.5),
                           )
                         : const Icon(Icons.system_update_rounded, color: AppTheme.primary),
-                    title: const Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text('Current version: v$_currentVersion (GitHub Release)', style: const TextStyle(fontSize: 12)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    title: Text('Check for Updates', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Current version: v$_currentVersion (GitHub Release)', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
                     onTap: _isCheckingUpdate ? null : _handleCheckUpdate,
                   ),
-                  const Divider(height: 1, color: AppTheme.border),
+                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
                   ListTile(
                     leading: const Icon(Icons.open_in_browser_rounded, color: AppTheme.primary),
-                    title: const Text('GitHub Releases Page', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('View changelog, APK releases & source code', style: TextStyle(fontSize: 12)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    title: Text('GitHub Releases Page', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('View changelog, APK releases & source code', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
                     onTap: () {
                       UpdateService.instance.launchDownload('https://github.com/Watot12345/Tenera/releases');
                     },
@@ -834,32 +856,32 @@ class _MoreTabState extends State<MoreTab> {
           const SizedBox(height: 20),
 
           // Data & Backup Section
-          const Text(
+          Text(
             'Data & Backup',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: AppTheme.getInkMutedColor(context),
             ),
           ),
           const SizedBox(height: 8),
 
           Material(
-            color: AppTheme.surface,
+            color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.save_alt_rounded, color: AppTheme.primary),
-                    title: const Text('Backup Data to Device', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Create offline JSON backup file', style: TextStyle(fontSize: 12)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    title: Text('Backup Data to Device', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Create offline JSON backup file', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -876,44 +898,44 @@ class _MoreTabState extends State<MoreTab> {
           const SizedBox(height: 20),
 
           // Legal & Guidelines Section
-          const Text(
+          Text(
             'Legal & Guidelines',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: AppTheme.inkMuted,
+              color: AppTheme.getInkMutedColor(context),
             ),
           ),
           const SizedBox(height: 8),
 
           Material(
-            color: AppTheme.surface,
+            color: AppTheme.getSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Column(
                 children: [
                   ListTile(
                     leading: const Icon(Icons.help_outline_rounded, color: AppTheme.primary),
-                    title: const Text('Welcome & App Guide', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Step-by-step guide: how to use Tenera', style: TextStyle(fontSize: 12)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    title: Text('Welcome & App Guide', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Step-by-step guide: how to use Tenera', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (context) => const WelcomeScreen()),
                       );
                     },
                   ),
-                  const Divider(height: 1, color: AppTheme.border),
+                  Divider(height: 1, color: AppTheme.getBorderColor(context)),
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined, color: AppTheme.primary),
-                    title: const Text('Privacy Policy & Terms', style: TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: const Text('RA 10173 & GDPR compliant', style: TextStyle(fontSize: 12)),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                    title: Text('Privacy Policy & Terms', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('RA 10173 & GDPR compliant', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, color: AppTheme.getInkMutedColor(context)),
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -935,7 +957,7 @@ class _MoreTabState extends State<MoreTab> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.getSurfaceElevatedColor(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -958,17 +980,17 @@ class _MoreTabState extends State<MoreTab> {
                       child: const Icon(Icons.support_agent_rounded, color: Color(0xFF128C7E), size: 26),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'VIP Priority Support',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.ink),
+                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(context)),
                           ),
                           Text(
                             'Dedicated Philippine Concierge for Business Landlords',
-                            style: TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                            style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context)),
                           ),
                         ],
                       ),
@@ -979,12 +1001,12 @@ class _MoreTabState extends State<MoreTab> {
                 ListTile(
                   key: const Key('btn_vip_whatsapp'),
                   leading: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 24),
-                  title: const Text('WhatsApp Concierge', style: TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: const Text('+63 917 888 3637 · Response within 15 mins', style: TextStyle(fontSize: 12)),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  title: Text('WhatsApp Concierge', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
+                  subtitle: Text('+63 917 888 3637 · Response within 15 mins', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.getInkMutedColor(context)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppTheme.border),
+                    side: BorderSide(color: AppTheme.getBorderColor(context)),
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -995,12 +1017,12 @@ class _MoreTabState extends State<MoreTab> {
                 ListTile(
                   key: const Key('btn_vip_phone'),
                   leading: const Icon(Icons.phone_in_talk_rounded, color: AppTheme.primaryDeep, size: 24),
-                  title: const Text('Direct Phone Assistance', style: TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: const Text('+63 917 888 3637 · Landlord Priority Line', style: TextStyle(fontSize: 12)),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  title: Text('Direct Phone Assistance', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
+                  subtitle: Text('+63 917 888 3637 · Landlord Priority Line', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.getInkMutedColor(context)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppTheme.border),
+                    side: BorderSide(color: AppTheme.getBorderColor(context)),
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -1010,13 +1032,13 @@ class _MoreTabState extends State<MoreTab> {
                 const SizedBox(height: 10),
                 ListTile(
                   key: const Key('btn_vip_email'),
-                  leading: const Icon(Icons.mail_outline_rounded, color: AppTheme.inkMuted, size: 24),
-                  title: const Text('VIP Email Queue', style: TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: const Text('support@tenera.ph · High-priority routing', style: TextStyle(fontSize: 12)),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  leading: Icon(Icons.mail_outline_rounded, color: AppTheme.getInkMutedColor(context), size: 24),
+                  title: Text('VIP Email Queue', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.getInkColor(context))),
+                  subtitle: Text('support@tenera.ph · High-priority routing', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context))),
+                  trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.getInkMutedColor(context)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppTheme.border),
+                    side: BorderSide(color: AppTheme.getBorderColor(context)),
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -1024,10 +1046,10 @@ class _MoreTabState extends State<MoreTab> {
                   },
                 ),
                 const SizedBox(height: 14),
-                const Center(
+                Center(
                   child: Text(
                     'Operating Hours: 8:00 AM – 8:00 PM PHT (Mon – Sun)',
-                    style: TextStyle(fontSize: 11, color: AppTheme.inkMuted, fontWeight: FontWeight.w500),
+                    style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context), fontWeight: FontWeight.w500),
                   ),
                 ),
               ],

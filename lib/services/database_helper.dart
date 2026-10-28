@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -10,6 +11,15 @@ import '../models/tenant.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
+
+  final StreamController<void> _changeController = StreamController<void>.broadcast();
+  Stream<void> get changes => _changeController.stream;
+
+  void notifyChanges() {
+    if (!_changeController.isClosed) {
+      _changeController.add(null);
+    }
+  }
 
   DatabaseHelper._init();
 
@@ -612,6 +622,7 @@ class DatabaseHelper {
         });
       }
     });
+    notifyChanges();
   }
 
   Future<void> updateProperty(PropertyItem property) async {
@@ -650,6 +661,7 @@ class DatabaseHelper {
         });
       }
     });
+    notifyChanges();
   }
 
   // ----------------------------------------------------
@@ -676,6 +688,7 @@ class DatabaseHelper {
     );
 
     await _recalculateProperty(propertyId);
+    notifyChanges();
   }
 
   Future<void> assignRoom(String propertyId, String roomCode, String tenantName, int rentAmount) async {
@@ -697,6 +710,7 @@ class DatabaseHelper {
     );
 
     await _recalculateProperty(propertyId);
+    notifyChanges();
   }
 
   Future<void> vacateRoom(String propertyId, String roomCode) async {
@@ -717,6 +731,7 @@ class DatabaseHelper {
     );
 
     await _recalculateProperty(propertyId);
+    notifyChanges();
   }
 
   Future<void> _recalculateProperty(String propertyId) async {
@@ -790,6 +805,7 @@ class DatabaseHelper {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    notifyChanges();
   }
 
   Future<void> updateTenant(TenantBill tenant) async {
@@ -815,11 +831,13 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [tenant.id],
     );
+    notifyChanges();
   }
 
   Future<void> deleteTenant(String id) async {
     final db = await database;
     await db.delete('tenants', where: 'id = ?', whereArgs: [id]);
+    notifyChanges();
   }
 
   // ----------------------------------------------------
@@ -881,6 +899,7 @@ class DatabaseHelper {
         whereArgs: [updatedTenant.id],
       );
     });
+    notifyChanges();
   }
 
   Future<void> insertPayment(PaymentRecord payment) async {
@@ -899,6 +918,7 @@ class DatabaseHelper {
       'created_at': now,
       'is_synced': 0,
     });
+    notifyChanges();
   }
 
   // ----------------------------------------------------

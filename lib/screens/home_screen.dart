@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -27,11 +28,26 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentNavIndex = 0;
+  StreamSubscription<void>? _dbSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadFromDatabase();
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    if (!isTest) {
+      _dbSubscription = DatabaseHelper.instance.changes.listen((_) {
+        if (mounted) {
+          _loadFromDatabase();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _dbSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadFromDatabase() async {

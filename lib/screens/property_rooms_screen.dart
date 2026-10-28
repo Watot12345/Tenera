@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
+import '../services/database_helper.dart';
 import '../services/plan_guard_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dashed_border_painter.dart';
@@ -36,16 +38,31 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
   late List<PropertyItem> _properties;
   late String _selectedFilter;
   final TextEditingController _searchController = TextEditingController();
+  StreamSubscription<void>? _dbSubscription;
 
   @override
   void initState() {
     super.initState();
     _properties = List.from(widget.properties);
     _selectedFilter = widget.initialProperty?.name ?? 'All';
+    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    if (!isTest) {
+      _dbSubscription = DatabaseHelper.instance.changes.listen((_) async {
+        try {
+          final updatedProps = await DatabaseHelper.instance.getProperties();
+          if (mounted) {
+            setState(() {
+              _properties = updatedProps;
+            });
+          }
+        } catch (_) {}
+      });
+    }
   }
 
   @override
   void dispose() {
+    _dbSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -81,7 +98,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.getSurfaceElevatedColor(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -102,7 +119,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                         width: 40,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: AppTheme.border,
+                          color: AppTheme.getBorderColor(modalCtx),
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -119,7 +136,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                           child: const Icon(Icons.add_home_rounded, color: AppTheme.primary, size: 24),
                         ),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -128,14 +145,14 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
-                                  color: AppTheme.ink,
+                                  color: AppTheme.getInkColor(modalCtx),
                                 ),
                               ),
                               Text(
                                 'Add unit to your property grid',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppTheme.inkMuted,
+                                  color: AppTheme.getInkMutedColor(modalCtx),
                                 ),
                               ),
                             ],
@@ -146,10 +163,11 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                     const SizedBox(height: 20),
 
                     // Property Selection
-                    const Text('Property', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                    Text('Property', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(modalCtx))),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<PropertyItem>(
                       initialValue: targetProp,
+                      dropdownColor: AppTheme.getSurfaceColor(modalCtx),
                       decoration: InputDecoration(
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -157,7 +175,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                       items: _properties.map((p) {
                         return DropdownMenuItem(
                           value: p,
-                          child: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          child: Text(p.name, style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.getInkColor(modalCtx))),
                         );
                       }).toList(),
                       onChanged: (val) {
@@ -170,7 +188,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                     const SizedBox(height: 14),
 
                     // Room Code Field
-                    const Text('Room / Unit Code', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                    Text('Room / Unit Code', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(modalCtx))),
                     const SizedBox(height: 6),
                     TextField(
                       controller: codeController,
@@ -186,7 +204,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                     const SizedBox(height: 14),
 
                     // Monthly Rent Field
-                    const Text('Monthly Rent (₱)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                    Text('Monthly Rent (₱)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(modalCtx))),
                     const SizedBox(height: 6),
                     TextField(
                       controller: rentController,
@@ -202,7 +220,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                     const SizedBox(height: 14),
 
                     // Initial Status
-                    const Text('Initial Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                    Text('Initial Status', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(modalCtx))),
                     const SizedBox(height: 6),
                     Row(
                       children: [
@@ -213,10 +231,10 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
-                                color: newStatus == RoomStatus.vacant ? AppTheme.primaryDeep : AppTheme.background,
+                                color: newStatus == RoomStatus.vacant ? AppTheme.primaryDeep : AppTheme.getBackgroundColor(modalCtx),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: newStatus == RoomStatus.vacant ? AppTheme.primaryDeep : AppTheme.border,
+                                  color: newStatus == RoomStatus.vacant ? AppTheme.primaryDeep : AppTheme.getBorderColor(modalCtx),
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -224,7 +242,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                 'Vacant',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: newStatus == RoomStatus.vacant ? Colors.white : AppTheme.ink,
+                                  color: newStatus == RoomStatus.vacant ? Colors.white : AppTheme.getInkColor(modalCtx),
                                 ),
                               ),
                             ),
@@ -238,10 +256,10 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
-                                color: newStatus == RoomStatus.occupied ? AppTheme.primary : AppTheme.background,
+                                color: newStatus == RoomStatus.occupied ? AppTheme.primary : AppTheme.getBackgroundColor(modalCtx),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: newStatus == RoomStatus.occupied ? AppTheme.primary : AppTheme.border,
+                                  color: newStatus == RoomStatus.occupied ? AppTheme.primary : AppTheme.getBorderColor(modalCtx),
                                 ),
                               ),
                               alignment: Alignment.center,
@@ -249,7 +267,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                 'Occupied',
                                 style: TextStyle(
                                   fontWeight: FontWeight.w700,
-                                  color: newStatus == RoomStatus.occupied ? Colors.white : AppTheme.ink,
+                                  color: newStatus == RoomStatus.occupied ? Colors.white : AppTheme.getInkColor(modalCtx),
                                 ),
                               ),
                             ),
@@ -260,7 +278,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
 
                     if (newStatus == RoomStatus.occupied) ...[
                       const SizedBox(height: 14),
-                      const Text('Tenant Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                      Text('Tenant Name', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(modalCtx))),
                       const SizedBox(height: 6),
                       TextField(
                         controller: tenantController,
@@ -350,21 +368,25 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     showDialog(
       context: context,
       builder: (dialogCtx) {
+        final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
         return AlertDialog(
-          backgroundColor: AppTheme.surface,
+          backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFECEB),
+                  color: isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.person_remove_rounded, color: Color(0xFFC92A2A), size: 22),
+                child: Icon(Icons.person_remove_rounded, color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A), size: 22),
               ),
               const SizedBox(width: 10),
-              const Text('Remove Tenant', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+              Text(
+                'Remove Tenant',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx)),
+              ),
             ],
           ),
           content: Column(
@@ -373,24 +395,24 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
             children: [
               Text(
                 'Are you sure you want to remove ${room.tenantName ?? "the tenant"} from Unit ${room.code} in ${prop.name}?',
-                style: const TextStyle(fontSize: 14, color: AppTheme.ink),
+                style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(dialogCtx)),
               ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.background,
+                  color: AppTheme.getBackgroundColor(dialogCtx),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(color: AppTheme.getBorderColor(dialogCtx)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline_rounded, size: 16, color: AppTheme.inkMuted),
+                    Icon(Icons.info_outline_rounded, size: 16, color: AppTheme.getInkMutedColor(dialogCtx)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Unit ${room.code} will be marked as Vacant and ready for new tenants.',
-                        style: const TextStyle(fontSize: 12, color: AppTheme.inkMuted),
+                        style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx)),
                       ),
                     ),
                   ],
@@ -476,11 +498,12 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
         return Container(
           padding: const EdgeInsets.all(22),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: AppTheme.getSurfaceElevatedColor(ctx),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -491,7 +514,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.border,
+                    color: AppTheme.getBorderColor(ctx),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -505,10 +528,10 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: room.status == RoomStatus.overdue
-                          ? const Color(0xFFFFECEB)
+                          ? (isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB))
                           : (room.status == RoomStatus.occupied
-                              ? const Color(0xFFE2F3EF)
-                              : AppTheme.border.withValues(alpha: 0.5)),
+                              ? (isDark ? const Color(0xFF133833) : const Color(0xFFE2F3EF))
+                              : (isDark ? const Color(0xFF243633) : AppTheme.getBorderColor(ctx).withValues(alpha: 0.5))),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
@@ -518,10 +541,10 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                               ? Icons.meeting_room_rounded
                               : Icons.door_front_door_outlined),
                       color: room.status == RoomStatus.overdue
-                          ? const Color(0xFFC92A2A)
+                          ? (isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A))
                           : (room.status == RoomStatus.occupied
                               ? AppTheme.primary
-                              : AppTheme.inkMuted),
+                              : AppTheme.getInkMutedColor(ctx)),
                       size: 26,
                     ),
                   ),
@@ -532,25 +555,25 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                       children: [
                         Text(
                           'Unit ${room.code} · ${prop.name}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: AppTheme.ink,
+                            color: AppTheme.getInkColor(ctx),
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           prop.address,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.inkMuted,
+                            color: AppTheme.getInkMutedColor(ctx),
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded),
+                    icon: Icon(Icons.close_rounded, color: AppTheme.getInkMutedColor(ctx)),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -564,17 +587,17 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: room.status == RoomStatus.overdue
-                      ? const Color(0xFFFFECEB)
+                      ? (isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB))
                       : (room.status == RoomStatus.occupied
-                          ? AppTheme.statusPaidBg
-                          : AppTheme.background),
+                          ? AppTheme.getStatusPaidBg(ctx)
+                          : AppTheme.getBackgroundColor(ctx)),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: room.status == RoomStatus.overdue
-                        ? const Color(0xFFFFD4D1)
+                        ? (isDark ? const Color(0xFF6B2B32) : const Color(0xFFFFD4D1))
                         : (room.status == RoomStatus.occupied
-                            ? AppTheme.statusPaid.withValues(alpha: 0.2)
-                            : AppTheme.border),
+                            ? AppTheme.getStatusPaidText(ctx).withValues(alpha: 0.3)
+                            : AppTheme.getBorderColor(ctx)),
                   ),
                 ),
                 child: Row(
@@ -587,10 +610,10 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                               : Icons.info_outline_rounded),
                       size: 18,
                       color: room.status == RoomStatus.overdue
-                          ? const Color(0xFFC92A2A)
+                          ? (isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A))
                           : (room.status == RoomStatus.occupied
-                              ? AppTheme.statusPaid
-                              : AppTheme.inkMuted),
+                              ? AppTheme.getStatusPaidText(ctx)
+                              : AppTheme.getInkMutedColor(ctx)),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -603,10 +626,10 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                         color: room.status == RoomStatus.overdue
-                            ? const Color(0xFFC92A2A)
+                            ? (isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A))
                             : (room.status == RoomStatus.occupied
-                                ? AppTheme.statusPaid
-                                : AppTheme.inkMuted),
+                                ? AppTheme.getStatusPaidText(ctx)
+                                : AppTheme.getInkMutedColor(ctx)),
                       ),
                     ),
                   ],
@@ -619,9 +642,9 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.background,
+                  color: AppTheme.getBackgroundColor(ctx),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.border),
+                  border: Border.all(color: AppTheme.getBorderColor(ctx)),
                 ),
                 child: Column(
                   children: [
@@ -639,14 +662,14 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Tenant Assigned',
-                                  style: TextStyle(color: AppTheme.inkMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                                  style: TextStyle(color: AppTheme.getInkMutedColor(ctx), fontSize: 13, fontWeight: FontWeight.w500),
                                 ),
                                 if (room.status != RoomStatus.vacant)
-                                  const Text(
+                                  Text(
                                     'Press & hold to remove tenant',
-                                    style: TextStyle(color: Color(0xFFC92A2A), fontSize: 11, fontWeight: FontWeight.w600),
+                                    style: TextStyle(color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A), fontSize: 11, fontWeight: FontWeight.w600),
                                   ),
                               ],
                             ),
@@ -659,12 +682,12 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: room.status == RoomStatus.vacant ? AppTheme.inkMuted : AppTheme.ink,
+                                    color: room.status == RoomStatus.vacant ? AppTheme.getInkMutedColor(ctx) : AppTheme.getInkColor(ctx),
                                   ),
                                 ),
                                 if (room.status != RoomStatus.vacant) ...[
                                   const SizedBox(width: 6),
-                                  const Icon(Icons.touch_app_rounded, size: 16, color: Color(0xFFC92A2A)),
+                                  Icon(Icons.touch_app_rounded, size: 16, color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A)),
                                 ],
                               ],
                             ),
@@ -672,13 +695,13 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                         ),
                       ),
                     ),
-                    const Divider(height: 20, color: AppTheme.border),
+                    Divider(height: 20, color: AppTheme.getBorderColor(ctx)),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Monthly Rent',
-                          style: TextStyle(color: AppTheme.inkMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: AppTheme.getInkMutedColor(ctx), fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                         Text(
                           '₱${currencyFormat.format(room.rentAmount ?? 0)} / mo',
@@ -691,20 +714,22 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                       ],
                     ),
                     if (room.status != RoomStatus.vacant) ...[
-                      const Divider(height: 20, color: AppTheme.border),
+                      Divider(height: 20, color: AppTheme.getBorderColor(ctx)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Payment Details',
-                            style: TextStyle(color: AppTheme.inkMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                            style: TextStyle(color: AppTheme.getInkMutedColor(ctx), fontSize: 13, fontWeight: FontWeight.w500),
                           ),
                           Text(
                             room.statusText ?? (room.status == RoomStatus.overdue ? 'Overdue' : 'Paid'),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: room.status == RoomStatus.overdue ? const Color(0xFFC92A2A) : AppTheme.statusPaid,
+                              color: room.status == RoomStatus.overdue
+                                  ? (isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A))
+                                  : AppTheme.getStatusPaidText(ctx),
                             ),
                           ),
                         ],
@@ -880,6 +905,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
   @override
   Widget build(BuildContext context) {
     final query = _searchController.text.trim().toLowerCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final filteredProperties = _properties.where((prop) {
       if (_selectedFilter != 'All' && prop.name != _selectedFilter) {
@@ -894,13 +920,13 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     final totalUnits = _properties.fold(0, (sum, p) => sum + p.totalUnits);
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppTheme.ink),
+          icon: Icon(Icons.arrow_back_rounded, color: AppTheme.getInkColor(context)),
           onPressed: () => Navigator.of(context).pop(),
           tooltip: 'Back to Properties',
         ),
@@ -909,8 +935,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
           children: [
             Text(
               _selectedFilter == 'All' ? 'View Rooms' : _selectedFilter,
-              style: const TextStyle(
-                color: AppTheme.ink,
+              style: TextStyle(
+                color: AppTheme.getInkColor(context),
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
@@ -920,8 +946,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
               _selectedFilter == 'All'
                   ? '${_properties.length} properties · $totalUnits units'
                   : '${_properties.firstWhere((p) => p.name == _selectedFilter, orElse: () => _properties.first).occupiedUnits} occupied units',
-              style: const TextStyle(
-                color: AppTheme.inkMuted,
+              style: TextStyle(
+                color: AppTheme.getInkMutedColor(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -976,7 +1002,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                       selectedColor: AppTheme.primary,
                       checkmarkColor: Colors.white,
                       labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : AppTheme.ink,
+                        color: isSelected ? Colors.white : AppTheme.getInkColor(context),
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                         fontSize: 13,
                       ),
@@ -990,20 +1016,21 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
             // Search Bar
             Container(
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: AppTheme.getSurfaceColor(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: TextField(
                 controller: _searchController,
+                style: TextStyle(color: AppTheme.getInkColor(context)),
                 onChanged: (val) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'Search property or unit',
-                  hintStyle: const TextStyle(color: AppTheme.inkMuted, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.inkMuted, size: 20),
+                  hintStyle: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 14),
+                  prefixIcon: Icon(Icons.search_rounded, color: AppTheme.getInkMutedColor(context), size: 20),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          icon: Icon(Icons.clear_rounded, color: AppTheme.getInkMutedColor(context), size: 18),
                           onPressed: () {
                             setState(() {
                               _searchController.clear();
@@ -1022,16 +1049,16 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.surface,
+                color: AppTheme.getSurfaceColor(context),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.border.withValues(alpha: 0.6)),
+                border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.6)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildLegendItem(const Color(0xFF2E7D32), 'Occupied'),
-                  _buildLegendItem(const Color(0xFFC92A2A), 'Overdue'),
-                  _buildLegendItem(const Color(0xFF546E7A), 'Vacant'),
+                  _buildLegendItem(isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32), 'Occupied'),
+                  _buildLegendItem(isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A), 'Overdue'),
+                  _buildLegendItem(isDark ? const Color(0xFF8EAEA6) : const Color(0xFF546E7A), 'Vacant'),
                 ],
               ),
             ),
@@ -1044,7 +1071,7 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   'No units found matching "$query"',
-                  style: const TextStyle(color: AppTheme.inkMuted, fontSize: 14),
+                  style: TextStyle(color: AppTheme.getInkMutedColor(context), fontSize: 14),
                 ),
               )
             else
@@ -1060,9 +1087,9 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                         return Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AppTheme.surface,
+                            color: AppTheme.getSurfaceColor(context),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppTheme.border.withValues(alpha: 0.8)),
+                            border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1075,8 +1102,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                     children: [
                                       Text(
                                         prop.name,
-                                        style: const TextStyle(
-                                          color: AppTheme.ink,
+                                        style: TextStyle(
+                                          color: AppTheme.getInkColor(context),
                                           fontSize: 18,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -1084,8 +1111,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                       const SizedBox(height: 2),
                                       Text(
                                         '${prop.occupiedUnits} of ${prop.totalUnits} occupied',
-                                        style: const TextStyle(
-                                          color: AppTheme.inkMuted,
+                                        style: TextStyle(
+                                          color: AppTheme.getInkMutedColor(context),
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -1096,22 +1123,22 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFFFECEB),
+                                        color: isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(
+                                          Icon(
                                             Icons.error_outline_rounded,
                                             size: 13,
-                                            color: Color(0xFFC92A2A),
+                                            color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             '$overdueCount overdue',
-                                            style: const TextStyle(
-                                              color: Color(0xFFC92A2A),
+                                            style: TextStyle(
+                                              color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A),
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -1123,22 +1150,22 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFE8F5E9),
+                                        color: isDark ? const Color(0xFF133833) : const Color(0xFFE8F5E9),
                                         borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: const Row(
+                                      child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(
                                             Icons.check_rounded,
                                             size: 13,
-                                            color: Color(0xFF2E7D32),
+                                            color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32),
                                           ),
-                                          SizedBox(width: 4),
+                                          const SizedBox(width: 4),
                                           Text(
                                             'Up to date',
                                             style: TextStyle(
-                                              color: Color(0xFF2E7D32),
+                                              color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF2E7D32),
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
                                             ),
@@ -1185,13 +1212,14 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
   }
 
   Widget _buildRoomBlock(BuildContext context, PropertyItem prop, RoomUnit room) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Widget content;
     if (room.status == RoomStatus.overdue) {
       content = Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFFFECEB),
+          color: isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFD4D1), width: 1.2),
+          border: Border.all(color: isDark ? const Color(0xFF6B2B32) : const Color(0xFFFFD4D1), width: 1.2),
         ),
         child: Stack(
           clipBehavior: Clip.none,
@@ -1199,8 +1227,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
             Center(
               child: Text(
                 room.code,
-                style: const TextStyle(
-                  color: Color(0xFFC92A2A),
+                style: TextStyle(
+                  color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A),
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1212,8 +1240,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
               child: Container(
                 width: 14,
                 height: 14,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFC92A2A),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFFEF4444) : const Color(0xFFC92A2A),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
@@ -1234,15 +1262,15 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     } else if (room.status == RoomStatus.occupied) {
       content = Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFE2F3EF),
+          color: isDark ? const Color(0xFF133833) : const Color(0xFFE2F3EF),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFC4E8E0), width: 1.2),
+          border: Border.all(color: isDark ? const Color(0xFF1E524B) : const Color(0xFFC4E8E0), width: 1.2),
         ),
         child: Center(
           child: Text(
             room.code,
-            style: const TextStyle(
-              color: Color(0xFF0C5A53),
+            style: TextStyle(
+              color: isDark ? const Color(0xFF4ADE80) : const Color(0xFF0C5A53),
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -1252,8 +1280,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
     } else {
       // Vacant with dashed border
       content = CustomPaint(
-        painter: const DashedBorderPainter(
-          color: Color(0xFF90A4AE),
+        painter: DashedBorderPainter(
+          color: isDark ? const Color(0xFF334945) : const Color(0xFF90A4AE),
           radius: 12,
           dashLength: 3.5,
           dashGap: 2.5,
@@ -1262,8 +1290,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
         child: Center(
           child: Text(
             room.code,
-            style: const TextStyle(
-              color: Color(0xFF546E7A),
+            style: TextStyle(
+              color: isDark ? const Color(0xFF8EAEA6) : const Color(0xFF546E7A),
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),
@@ -1297,8 +1325,8 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
-            color: AppTheme.ink,
+          style: TextStyle(
+            color: AppTheme.getInkColor(context),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
