@@ -13,6 +13,9 @@ class FirebaseService {
 
   bool get isInitialized => _isInitialized;
   String? get deviceId => _deviceId;
+  String get realtimeDatabaseUrl =>
+      DefaultFirebaseOptions.android.databaseURL ??
+      'https://test-9a579-default-rtdb.firebaseio.com';
 
   /// Safe initialization of Firebase with options from DefaultFirebaseOptions
   Future<bool> initialize() async {

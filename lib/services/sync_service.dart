@@ -1,4 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:tenera/services/database_helper.dart';
 import 'package:tenera/services/firebase_service.dart';
 
@@ -49,13 +50,13 @@ class SyncService {
     }
   }
 
-  /// Syncs unsynced SQLite records up to Firestore
-  Future<SyncResult> syncToFirebase() async {
+  /// Syncs unsynced SQLite records up to Firebase Realtime Database
+  Future<SyncResult> syncToFirebase({http.Client? client}) async {
     final firebase = FirebaseService.instance;
-    final firestore = firebase.firestore;
     final deviceId = firebase.deviceId ?? 'default_landlord';
+    final baseUrl = firebase.realtimeDatabaseUrl;
 
-    if (firestore == null) {
+    if (baseUrl.isEmpty) {
       final pending = await getPendingSyncCount();
       return SyncResult(
         status: SyncStatus.unconfigured,
@@ -63,6 +64,9 @@ class SyncService {
         uploadedCount: 0,
       );
     }
+
+    final httpClient = client ?? http.Client();
+    final bool isInternalClient = (client == null);
 
     try {
       final db = DatabaseHelper.instance;
@@ -72,56 +76,64 @@ class SyncService {
       final unsyncedProps = await db.getUnsynced('properties');
       for (final p in unsyncedProps) {
         final id = p['id'] as String;
-        await firestore
-            .collection('landlords')
-            .doc(deviceId)
-            .collection('properties')
-            .doc(id)
-            .set(Map<String, dynamic>.from(p)..remove('is_synced'), SetOptions(merge: true));
-        await db.markSynced('properties', id);
-        uploaded++;
+        final data = Map<String, dynamic>.from(p)..remove('is_synced');
+        final res = await httpClient.put(
+          Uri.parse('$baseUrl/landlords/$deviceId/properties/$id.json'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(data),
+        );
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          await db.markSynced('properties', id);
+          uploaded++;
+        }
       }
 
       // 2. Sync Rooms
       final unsyncedRooms = await db.getUnsynced('rooms');
       for (final r in unsyncedRooms) {
         final id = r['id'] as String;
-        await firestore
-            .collection('landlords')
-            .doc(deviceId)
-            .collection('rooms')
-            .doc(id)
-            .set(Map<String, dynamic>.from(r)..remove('is_synced'), SetOptions(merge: true));
-        await db.markSynced('rooms', id);
-        uploaded++;
+        final data = Map<String, dynamic>.from(r)..remove('is_synced');
+        final res = await httpClient.put(
+          Uri.parse('$baseUrl/landlords/$deviceId/rooms/$id.json'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(data),
+        );
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          await db.markSynced('rooms', id);
+          uploaded++;
+        }
       }
 
       // 3. Sync Tenants
       final unsyncedTenants = await db.getUnsynced('tenants');
       for (final t in unsyncedTenants) {
         final id = t['id'] as String;
-        await firestore
-            .collection('landlords')
-            .doc(deviceId)
-            .collection('tenants')
-            .doc(id)
-            .set(Map<String, dynamic>.from(t)..remove('is_synced'), SetOptions(merge: true));
-        await db.markSynced('tenants', id);
-        uploaded++;
+        final data = Map<String, dynamic>.from(t)..remove('is_synced');
+        final res = await httpClient.put(
+          Uri.parse('$baseUrl/landlords/$deviceId/tenants/$id.json'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(data),
+        );
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          await db.markSynced('tenants', id);
+          uploaded++;
+        }
       }
 
       // 4. Sync Payments
       final unsyncedPayments = await db.getUnsynced('payments');
       for (final pay in unsyncedPayments) {
         final id = pay['id'] as String;
-        await firestore
-            .collection('landlords')
-            .doc(deviceId)
-            .collection('payments')
-            .doc(id)
-            .set(Map<String, dynamic>.from(pay)..remove('is_synced'), SetOptions(merge: true));
-        await db.markSynced('payments', id);
-        uploaded++;
+        final data = Map<String, dynamic>.from(pay)..remove('is_synced');
+        final res = await httpClient.put(
+          Uri.parse('$baseUrl/landlords/$deviceId/payments/$id.json'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(data),
+        );
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          await db.markSynced('payments', id);
+          uploaded++;
+        }
       }
 
       _lastSyncTime = DateTime.now();
@@ -129,8 +141,8 @@ class SyncService {
       return SyncResult(
         status: SyncStatus.success,
         message: uploaded > 0
-            ? 'Successfully synced $uploaded record${uploaded == 1 ? "" : "s"} to Firebase Cloud.'
-            : 'All records are up to date with Firebase Cloud.',
+            ? 'Successfully synced $uploaded record${uploaded == 1 ? "" : "s"} to Firebase Realtime Database.'
+            : 'All records are up to date with Firebase Realtime Database.',
         uploadedCount: uploaded,
       );
     } catch (e) {
@@ -139,6 +151,10 @@ class SyncService {
         message: 'Sync error: ${e.toString()}',
         uploadedCount: 0,
       );
+    } finally {
+      if (isInternalClient) {
+        httpClient.close();
+      }
     }
   }
 }
