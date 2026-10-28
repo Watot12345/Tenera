@@ -656,70 +656,55 @@ class _MoreTabState extends State<MoreTab> {
                       ),
                     ),
                     title: Text(
-                      'App Theme / Dark Mode',
+                      'Theme & Appearance',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppTheme.getInkColor(context),
                       ),
                     ),
                     subtitle: Text(
-                      themeMode == ThemeMode.dark
-                          ? 'Dark Mode Active'
-                          : (themeMode == ThemeMode.light
-                              ? 'Light Mode Active'
-                              : 'System Default (Auto)'),
+                      'Tap icon to toggle',
                       style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.getInkMutedColor(context),
                       ),
                     ),
-                    trailing: DropdownButtonHideUnderline(
-                      child: DropdownButton<ThemeMode>(
-                        key: const Key('dropdown_theme_mode'),
-                        value: themeMode,
-                        dropdownColor: AppTheme.getSurfaceColor(context),
+                    trailing: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.isDark(context)
+                            ? const Color(0xFF1E2D2A)
+                            : const Color(0xFFF0F4F4),
                         borderRadius: BorderRadius.circular(12),
-                        icon: const Icon(Icons.arrow_drop_down_rounded),
-                        items: [
-                          DropdownMenuItem(
-                            value: ThemeMode.system,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.brightness_auto_rounded, size: 16, color: AppTheme.getInkMutedColor(context)),
-                                const SizedBox(width: 6),
-                                Text('System', style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(context))),
-                              ],
-                            ),
+                        border: Border.all(color: AppTheme.getBorderColor(context)),
+                      ),
+                      padding: const EdgeInsets.all(3),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildThemeModeIconButton(
+                            context: context,
+                            mode: ThemeMode.system,
+                            currentMode: themeMode,
+                            icon: Icons.brightness_auto_rounded,
+                            key: const Key('btn_theme_system'),
                           ),
-                          DropdownMenuItem(
-                            value: ThemeMode.light,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.light_mode_rounded, size: 16, color: Color(0xFFF2A33A)),
-                                const SizedBox(width: 6),
-                                Text('Light', style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(context))),
-                              ],
-                            ),
+                          const SizedBox(width: 2),
+                          _buildThemeModeIconButton(
+                            context: context,
+                            mode: ThemeMode.light,
+                            currentMode: themeMode,
+                            icon: Icons.light_mode_rounded,
+                            key: const Key('btn_theme_light'),
                           ),
-                          DropdownMenuItem(
-                            value: ThemeMode.dark,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.dark_mode_rounded, size: 16, color: Color(0xFF1BA69A)),
-                                const SizedBox(width: 6),
-                                Text('Dark', style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(context))),
-                              ],
-                            ),
+                          const SizedBox(width: 2),
+                          _buildThemeModeIconButton(
+                            context: context,
+                            mode: ThemeMode.dark,
+                            currentMode: themeMode,
+                            icon: Icons.dark_mode_rounded,
+                            key: const Key('btn_theme_dark'),
                           ),
                         ],
-                        onChanged: (newMode) {
-                          if (newMode != null) {
-                            ThemeService.setThemeMode(newMode);
-                          }
-                        },
                       ),
                     ),
                   ),
@@ -1117,6 +1102,41 @@ class _MoreTabState extends State<MoreTab> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildThemeModeIconButton({
+    required BuildContext context,
+    required ThemeMode mode,
+    required ThemeMode currentMode,
+    required IconData icon,
+    required Key key,
+  }) {
+    final isSelected = currentMode == mode;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: key,
+        onTap: () => ThemeService.setThemeMode(mode),
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (AppTheme.isDark(context) ? AppTheme.primaryDeep : AppTheme.primary)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: isSelected
+                ? Colors.white
+                : AppTheme.getInkMutedColor(context),
+          ),
+        ),
+      ),
     );
   }
 }

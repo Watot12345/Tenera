@@ -17,7 +17,9 @@ import 'package:tenera/screens/subscription_plans_screen.dart';
 import 'package:tenera/services/database_helper.dart';
 import 'package:tenera/services/plan_guard_service.dart';
 import 'package:tenera/services/theme_service.dart';
+import 'package:intl/intl.dart';
 import 'package:tenera/theme/app_theme.dart';
+import 'package:tenera/widgets/roof_ledger_logo.dart';
 
 void main() {
   setUp(() async {
@@ -112,6 +114,12 @@ void main() {
     expect(find.text('Due soon'), findsOneWidget);
     expect(find.byKey(const Key('quick_action_record_payment')), findsOneWidget);
     expect(find.text('Privacy & Terms'), findsNothing);
+
+    // Verify Home Screen AppBar contains logo, title, and current date
+    expect(find.byType(RoofLedgerLogo), findsWidgets);
+    expect(find.text('Tenera'), findsWidgets);
+    final String currentDateStr = DateFormat('EEE, MMM d').format(DateTime.now());
+    expect(find.text(currentDateStr), findsOneWidget);
   });
 
   testWidgets('Quick action: Record payment logs payment and updates dashboard',
@@ -1199,27 +1207,30 @@ void main() {
     await tester.tap(find.byKey(const Key('nav_more')));
     await tester.pumpAndSettle();
 
-    // Verify Appearance section exists
+    // Ensure Appearance section is scrolled into view and visible
+    await tester.ensureVisible(find.byKey(const Key('tile_theme_mode')));
+    await tester.pumpAndSettle();
+
+    // Verify Appearance section exists and theme toggle is icon-only
     expect(find.text('Appearance & Display'), findsOneWidget);
     expect(find.byKey(const Key('tile_theme_mode')), findsOneWidget);
+    expect(find.byKey(const Key('btn_theme_dark')), findsOneWidget);
+    expect(find.byKey(const Key('btn_theme_light')), findsOneWidget);
+    expect(find.byKey(const Key('btn_theme_system')), findsOneWidget);
 
-    // Switch theme mode to Dark
-    await ThemeService.setThemeMode(ThemeMode.dark);
+    // Tap icon to switch to Dark
+    await tester.tap(find.byKey(const Key('btn_theme_dark')));
     await tester.pumpAndSettle();
-
-    // Verify Dark Theme is active
     expect(ThemeService.themeModeNotifier.value, ThemeMode.dark);
 
-    // Switch theme mode to Light
-    await ThemeService.setThemeMode(ThemeMode.light);
+    // Tap icon to switch to Light
+    await tester.tap(find.byKey(const Key('btn_theme_light')));
     await tester.pumpAndSettle();
-
     expect(ThemeService.themeModeNotifier.value, ThemeMode.light);
 
-    // Reset to System
-    await ThemeService.setThemeMode(ThemeMode.system);
+    // Tap icon to reset to System
+    await tester.tap(find.byKey(const Key('btn_theme_system')));
     await tester.pumpAndSettle();
-
     expect(ThemeService.themeModeNotifier.value, ThemeMode.system);
   });
 }

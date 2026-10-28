@@ -10,6 +10,7 @@ import '../services/database_helper.dart';
 import '../services/plan_guard_service.dart';
 import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/roof_ledger_logo.dart';
 import 'property_rooms_screen.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
@@ -1733,16 +1734,38 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         titleSpacing: 20,
-        title: Text(
-          'Tenera',
-          style: TextStyle(
-            color: AppTheme.getInkColor(context),
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-          ),
+        title: Row(
+          children: [
+            RoofLedgerLogo(
+              size: 28,
+              isLight: AppTheme.isDark(context),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              'Tenera',
+              style: TextStyle(
+                color: AppTheme.getInkColor(context),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: Text(
+                currentDateStr,
+                style: TextStyle(
+                  color: AppTheme.getInkMutedColor(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
           if (_isPro)
             IconButton(
               key: const Key('home_action_utility_splitter'),
