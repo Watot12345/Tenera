@@ -112,7 +112,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _vacantUnits = (_totalUnits - occupied).clamp(0, _totalUnits);
     }
 
-    _collectedAmount = _paymentRecords.fold<int>(0, (sum, p) => sum + p.amount);
+    _collectedAmount =
+        _paymentRecords.where((p) => !p.isVoided).fold<int>(0, (sum, p) => sum + p.amount);
 
     final propertyExpected = _properties.fold<int>(0, (sum, p) => sum + p.monthlyRevenue);
     final tenantExpected = _allTenants.fold<int>(0, (sum, t) => sum + t.amount);
@@ -1507,23 +1508,44 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.getStatusPaidBg(context),
+                    color: rec.isVoided
+                        ? const Color(0xFFC0392B).withValues(alpha: 0.15)
+                        : AppTheme.getStatusPaidBg(context),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.check_circle_rounded,
-                    color: AppTheme.getStatusPaidText(context),
+                    rec.isVoided ? Icons.cancel_outlined : Icons.check_circle_rounded,
+                    color: rec.isVoided ? const Color(0xFFC0392B) : AppTheme.getStatusPaidText(context),
                     size: 34,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  'Rent Payment Receipt',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.getInkColor(context),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Rent Payment Receipt',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.getInkColor(context),
+                      ),
+                    ),
+                    if (rec.isVoided) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFC0392B),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'VOIDED',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1534,6 +1556,33 @@ class _HomeScreenState extends State<HomeScreen> {
                     color: AppTheme.getInkMutedColor(context),
                   ),
                 ),
+                if (rec.isVoided) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC0392B).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFC0392B).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, color: Color(0xFFC0392B), size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Reason: ${rec.voidReason ?? "Entry error"}',
+                            style: const TextStyle(
+                              color: Color(0xFFC0392B),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -1617,7 +1666,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 20,
-                              color: AppTheme.getStatusPaidText(context),
+                              decoration: rec.isVoided ? TextDecoration.lineThrough : null,
+                              color: rec.isVoided ? const Color(0xFFC0392B) : AppTheme.getStatusPaidText(context),
                             ),
                           ),
                         ],
@@ -1652,9 +1702,129 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
+                if (!rec.isVoided) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      key: const Key('btn_void_payment'),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _promptVoidPayment(rec);
+                      },
+                      icon: const Icon(Icons.undo_rounded, size: 16, color: Color(0xFFC0392B)),
+                      label: const Text(
+                        'Void Payment (Mistake / Reversal)',
+                        style: TextStyle(color: Color(0xFFC0392B), fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _promptVoidPayment(PaymentRecord rec) {
+    final reasonCtrl = TextEditingController(text: 'Wrong amount entered');
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return AlertDialog(
+          backgroundColor: AppTheme.getSurfaceElevatedColor(context),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC0392B).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.cancel_outlined, color: Color(0xFFC0392B), size: 22),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Void Payment ${rec.id.toUpperCase()}?',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.getInkColor(context),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Per financial audit rules (PRD BR-2), payments are never deleted. Voiding will reverse ₱${NumberFormat('#,###').format(rec.amount)} from your collections and record an audit reason in the ledger.',
+                style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(context), height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                key: const Key('input_void_reason'),
+                controller: reasonCtrl,
+                style: TextStyle(color: AppTheme.getInkColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'Reason for Voiding',
+                  hintText: 'e.g. Wrong amount, duplicate entry, bounced transfer',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text('Cancel', style: TextStyle(color: AppTheme.getInkMutedColor(context))),
+            ),
+            ElevatedButton(
+              key: const Key('btn_confirm_void_payment'),
+              onPressed: () async {
+                final reason = reasonCtrl.text.trim();
+                final finalReason = reason.isEmpty ? 'Voided mistake' : reason;
+                setState(() {
+                  final idx = _paymentRecords.indexWhere((p) => p.id == rec.id);
+                  if (idx != -1) {
+                    _paymentRecords[idx] = _paymentRecords[idx].copyWith(
+                      isVoided: true,
+                      voidReason: finalReason,
+                    );
+                  }
+                  _recomputeLedger();
+                });
+                Navigator.pop(dialogCtx);
+
+                await DatabaseHelper.instance.voidPayment(
+                  paymentId: rec.id,
+                  reason: finalReason,
+                  tenantName: rec.tenantName,
+                );
+
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: AppTheme.primaryDeep,
+                    content: Text('✓ Payment ${rec.id.toUpperCase()} voided: "$finalReason"'),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC0392B),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Confirm Void', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
         );
       },
     );

@@ -1233,6 +1233,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(ThemeService.themeModeNotifier.value, ThemeMode.system);
   });
+
+  testWidgets(
+      'PRD BR-2 & FR-E6: Void payment mistake with audit reason reverses collections and maintains ledger entry',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+
+    await pumpAppAndLoadDatabase(tester);
+
+    // Initial collections: ₱42,000
+    expect(find.text('₱42,000'), findsOneWidget);
+
+    // Switch to Payments tab
+    await tester.tap(find.byKey(const Key('nav_payments')));
+    await tester.pumpAndSettle();
+
+    // Verify payment records exist
+    expect(find.text('Juan Carlos'), findsOneWidget);
+
+    // Tap first payment record to open receipt
+    await tester.tap(find.text('Juan Carlos'));
+    await tester.pumpAndSettle();
+
+    // Verify receipt modal opened
+    expect(find.text('Rent Payment Receipt'), findsOneWidget);
+    expect(find.byKey(const Key('btn_void_payment')), findsOneWidget);
+
+    // Tap Void Payment button
+    await tester.tap(find.byKey(const Key('btn_void_payment')));
+    await tester.pumpAndSettle();
+
+    // Verify prompt dialog opened
+    expect(find.byKey(const Key('input_void_reason')), findsOneWidget);
+    expect(find.byKey(const Key('btn_confirm_void_payment')), findsOneWidget);
+
+    // Confirm void
+    await tester.tap(find.byKey(const Key('btn_confirm_void_payment')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 1000));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify payment is now tagged VOID in list
+    expect(find.text('VOID'), findsOneWidget);
+
+    // Navigate back to Home tab
+    await tester.tap(find.byKey(const Key('nav_home')));
+    await tester.pumpAndSettle();
+
+    // Collected amount reduced from ₱42,000 by ₱4,000 to ₱38,000
+    expect(find.text('₱38,000'), findsOneWidget);
+  });
 }
 
 

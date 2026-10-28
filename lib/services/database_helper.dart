@@ -89,6 +89,12 @@ class DatabaseHelper {
     try {
       await db.execute('ALTER TABLE tenants ADD COLUMN automated_reminders INTEGER DEFAULT 1');
     } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE payments ADD COLUMN is_voided INTEGER NOT NULL DEFAULT 0');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE payments ADD COLUMN void_reason TEXT');
+    } catch (_) {}
 
     return db;
   }
@@ -150,6 +156,8 @@ class DatabaseHelper {
         date_formatted TEXT NOT NULL,
         reference_no TEXT,
         cash_image_name TEXT,
+        is_voided INTEGER NOT NULL DEFAULT 0,
+        void_reason TEXT,
         created_at INTEGER NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 0
       )
@@ -857,6 +865,8 @@ class DatabaseHelper {
         dateFormatted: p['date_formatted'] as String,
         referenceNo: p['reference_no'] as String?,
         cashImageName: p['cash_image_name'] as String?,
+        isVoided: (p['is_voided'] as int? ?? 0) == 1,
+        voidReason: p['void_reason'] as String?,
       );
     }).toList();
   }
@@ -878,6 +888,8 @@ class DatabaseHelper {
         'date_formatted': payment.dateFormatted,
         'reference_no': payment.referenceNo,
         'cash_image_name': payment.cashImageName,
+        'is_voided': payment.isVoided ? 1 : 0,
+        'void_reason': payment.voidReason,
         'created_at': now,
         'is_synced': 0,
       });
@@ -915,8 +927,49 @@ class DatabaseHelper {
       'date_formatted': payment.dateFormatted,
       'reference_no': payment.referenceNo,
       'cash_image_name': payment.cashImageName,
+      'is_voided': payment.isVoided ? 1 : 0,
+      'void_reason': payment.voidReason,
       'created_at': now,
       'is_synced': 0,
+    });
+    notifyChanges();
+  }
+
+  /// Voids a payment record with an audit reason (PRD BR-2 & FR-E6)
+  Future<void> voidPayment({
+    required String paymentId,
+    required String reason,
+    String? tenantName,
+  }) async {
+    final db = await database;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await db.transaction((txn) async {
+      await txn.update(
+        'payments',
+        {
+          'is_voided': 1,
+          'void_reason': reason,
+          'is_synced': 0,
+        },
+        where: 'id = ?',
+        whereArgs: [paymentId],
+      );
+
+      // If tenantName provided, update tenant status back to unpaid
+      if (tenantName != null) {
+        await txn.update(
+          'tenants',
+          {
+            'is_paid': 0,
+            'status_text': 'Payment Voided',
+            'updated_at': now,
+            'is_synced': 0,
+          },
+          where: 'name = ?',
+          whereArgs: [tenantName],
+        );
+      }
     });
     notifyChanges();
   }

@@ -239,24 +239,50 @@ class _PaymentsTabState extends State<PaymentsTab> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: AppTheme.getStatusPaidText(context),
+                                  decoration: filtered[index].isVoided ? TextDecoration.lineThrough : null,
+                                  color: filtered[index].isVoided
+                                      ? const Color(0xFFC0392B)
+                                      : AppTheme.getStatusPaidText(context),
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.getBackgroundColor(context),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  filtered[index].method,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.getInkMutedColor(context),
-                                    fontWeight: FontWeight.w600,
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (filtered[index].isVoided) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                      margin: const EdgeInsets.only(right: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFC0392B).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'VOID',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Color(0xFFC0392B),
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.getBackgroundColor(context),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      filtered[index].method,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.getInkMutedColor(context),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                             ],
                           ),

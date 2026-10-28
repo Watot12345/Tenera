@@ -365,87 +365,177 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
   }
 
   void _confirmRemoveTenant(BuildContext modalCtx, PropertyItem prop, RoomUnit room) {
+    final currencyFormat = NumberFormat('#,###');
+    final int depositHeld = room.rentAmount ?? 3500;
+    final deductionsCtrl = TextEditingController(text: '0');
+    final notesCtrl = TextEditingController();
+
     showDialog(
       context: context,
       builder: (dialogCtx) {
         final isDark = Theme.of(dialogCtx).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.person_remove_rounded, color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A), size: 22),
+
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            final int deductions = int.tryParse(deductionsCtrl.text.replaceAll(',', '').trim()) ?? 0;
+            final int netRefund = depositHeld - deductions;
+
+            return AlertDialog(
+              backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF3B1E22) : const Color(0xFFFFECEB),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.assignment_turned_in_rounded, color: isDark ? const Color(0xFFF87171) : const Color(0xFFC92A2A), size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Remove Tenant',
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx)),
+                        ),
+                        Text(
+                          'Move-Out & Deposit Settlement · Unit ${room.code}',
+                          style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              Text(
-                'Remove Tenant',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppTheme.getInkColor(dialogCtx)),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Are you sure you want to remove ${room.tenantName ?? "the tenant"} from Unit ${room.code} in ${prop.name}?',
-                style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(dialogCtx)),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.getBackgroundColor(dialogCtx),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.getBorderColor(dialogCtx)),
-                ),
-                child: Row(
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline_rounded, size: 16, color: AppTheme.getInkMutedColor(dialogCtx)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Unit ${room.code} will be marked as Vacant and ready for new tenants.',
-                        style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx)),
+                    Text(
+                      'Are you sure you want to remove ${room.tenantName ?? "the tenant"} from Unit ${room.code} in ${prop.name}?',
+                      style: TextStyle(fontSize: 14, color: AppTheme.getInkColor(dialogCtx)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Settle the tenant\'s security deposit and deduct any unpaid bills or repairs (PRD FR-D7):',
+                      style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx), height: 1.4),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Security deposit summary box
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.getBackgroundColor(dialogCtx),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.getBorderColor(dialogCtx)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Security Deposit Held', style: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(dialogCtx))),
+                              Text('₱${currencyFormat.format(depositHeld)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.getInkColor(dialogCtx))),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total Deductions', style: TextStyle(fontSize: 13, color: Color(0xFFC0392B))),
+                              Text('-₱${currencyFormat.format(deductions)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFFC0392B))),
+                            ],
+                          ),
+                          Divider(height: 16, color: AppTheme.getBorderColor(dialogCtx)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(netRefund >= 0 ? 'Net Refund to Tenant' : 'Tenant Balance Due', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(dialogCtx))),
+                              Text(
+                                '₱${currencyFormat.format(netRefund.abs())}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: netRefund >= 0 ? AppTheme.getStatusPaidText(dialogCtx) : const Color(0xFFC0392B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    TextField(
+                      controller: deductionsCtrl,
+                      keyboardType: TextInputType.number,
+                      onChanged: (_) => setDialogState(() {}),
+                      style: TextStyle(color: AppTheme.getInkColor(dialogCtx)),
+                      decoration: InputDecoration(
+                        labelText: 'Deductions Amount (₱)',
+                        hintText: 'e.g. 500',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: notesCtrl,
+                      style: TextStyle(color: AppTheme.getInkColor(dialogCtx)),
+                      decoration: InputDecoration(
+                        labelText: 'Deductions Itemization / Notes',
+                        hintText: 'e.g. Unpaid water bill ₱250, wall cleaning ₱250',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogCtx);
-                if (Navigator.canPop(modalCtx)) {
-                  Navigator.pop(modalCtx);
-                }
-                _removeTenantFromRoom(prop, room);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC92A2A),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Remove Tenant'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(dialogCtx);
+                    if (Navigator.canPop(modalCtx)) {
+                      Navigator.pop(modalCtx);
+                    }
+                    _removeTenantFromRoom(
+                      prop,
+                      room,
+                      netRefund: netRefund,
+                      deductions: deductions,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC92A2A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Remove Tenant'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  void _removeTenantFromRoom(PropertyItem prop, RoomUnit room) {
+  void _removeTenantFromRoom(
+    PropertyItem prop,
+    RoomUnit room, {
+    int? netRefund,
+    int? deductions,
+  }) {
+    final currencyFormat = NumberFormat('#,###');
     setState(() {
       final pIdx = _properties.indexWhere((p) => p.id == prop.id);
       if (pIdx != -1) {
@@ -477,10 +567,16 @@ class _PropertyRoomsScreenState extends State<PropertyRoomsScreen> {
 
     widget.onTenantRemoved?.call(prop, room.code);
 
+    final refundMsg = netRefund != null
+        ? (netRefund >= 0
+            ? ' (Refund: ₱${currencyFormat.format(netRefund)})'
+            : ' (Balance Due: ₱${currencyFormat.format(netRefund.abs())})')
+        : '';
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppTheme.primaryDeep,
-        content: Text('${room.tenantName ?? "Tenant"} removed. Unit ${room.code} is now Vacant.'),
+        content: Text('✓ Move-out settled for ${room.tenantName ?? "Tenant"}$refundMsg. Unit ${room.code} is now Vacant.'),
       ),
     );
   }
