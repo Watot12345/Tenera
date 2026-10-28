@@ -606,9 +606,7 @@ class _MoreTabState extends State<MoreTab> {
                         leading: Icon(
                           themeMode == ThemeMode.dark
                               ? Icons.dark_mode_rounded
-                              : (themeMode == ThemeMode.light
-                                  ? Icons.light_mode_rounded
-                                  : Icons.brightness_auto_rounded),
+                              : Icons.light_mode_rounded,
                           color: AppTheme.primary,
                           size: 22,
                         ),
@@ -624,8 +622,6 @@ class _MoreTabState extends State<MoreTab> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              _buildThemeModeIconButton(context: context, mode: ThemeMode.system, currentMode: themeMode, icon: Icons.brightness_auto_rounded, key: const Key('btn_theme_system')),
-                              const SizedBox(width: 2),
                               _buildThemeModeIconButton(context: context, mode: ThemeMode.light, currentMode: themeMode, icon: Icons.light_mode_rounded, key: const Key('btn_theme_light')),
                               const SizedBox(width: 2),
                               _buildThemeModeIconButton(context: context, mode: ThemeMode.dark, currentMode: themeMode, icon: Icons.dark_mode_rounded, key: const Key('btn_theme_dark')),

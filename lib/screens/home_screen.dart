@@ -13,12 +13,14 @@ import '../services/staff_mode_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_banner_widget.dart';
 import '../widgets/roof_ledger_logo.dart';
+import '../services/trial_service.dart';
 import 'property_rooms_screen.dart';
 import 'tabs/home_tab.dart';
 import 'tabs/more_tab.dart';
 import 'tabs/payments_tab.dart';
 import 'tabs/properties_tab.dart';
 import 'tabs/tenants_tab.dart';
+import 'trial_expired_screen.dart';
 import 'utility_calculator_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -35,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _checkTrialStatus();
     _loadFromDatabase();
     final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
     if (!isTest) {
@@ -43,6 +46,16 @@ class _HomeScreenState extends State<HomeScreen> {
           _loadFromDatabase();
         }
       });
+    }
+  }
+
+  Future<void> _checkTrialStatus() async {
+    final isExpired = await TrialService.isTrialExpired();
+    if (isExpired && mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const TrialExpiredScreen()),
+        (route) => false,
+      );
     }
   }
 

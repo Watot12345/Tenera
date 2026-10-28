@@ -8,7 +8,7 @@ class ThemeService {
   static const String prefKeyThemeMode = 'app_theme_mode';
 
   static final ValueNotifier<ThemeMode> themeModeNotifier =
-      ValueNotifier<ThemeMode>(ThemeMode.system);
+      ValueNotifier<ThemeMode>(ThemeMode.light);
 
   /// Initializes the stored theme preference on app startup
   static Future<void> initialize() async {
@@ -16,10 +16,8 @@ class ThemeService {
     final modeStr = prefs.getString(prefKeyThemeMode);
     if (modeStr == 'dark') {
       themeModeNotifier.value = ThemeMode.dark;
-    } else if (modeStr == 'light') {
-      themeModeNotifier.value = ThemeMode.light;
     } else {
-      themeModeNotifier.value = ThemeMode.system;
+      themeModeNotifier.value = ThemeMode.light;
     }
   }
 

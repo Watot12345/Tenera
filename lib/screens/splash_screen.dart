@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/trial_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/roof_ledger_logo.dart';
 import 'home_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'trial_expired_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -126,10 +128,18 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted || _hasNavigated) return;
 
+    // Check whether the 14-day free trial has expired without a paid subscription
+    final isTrialExpired = await TrialService.isTrialExpired();
+
     // Navigate to destination
-    final Widget destination = hasAcceptedPrivacy
-        ? const HomeScreen()
-        : const PrivacyPolicyScreen();
+    final Widget destination;
+    if (!hasAcceptedPrivacy) {
+      destination = const PrivacyPolicyScreen();
+    } else if (isTrialExpired) {
+      destination = const TrialExpiredScreen();
+    } else {
+      destination = const HomeScreen();
+    }
 
     _navigateTo(destination);
   }

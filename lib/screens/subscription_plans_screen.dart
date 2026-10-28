@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/ad_service.dart';
+import '../services/trial_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/roof_ledger_logo.dart';
 
@@ -30,17 +31,10 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
 
   Future<void> _loadSavedPlan() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Initialize or load 14-day free trial start date
-    String? trialStartStr = prefs.getString(SubscriptionPlansScreen.prefKeyTrialStartDate);
-    if (trialStartStr == null) {
-      trialStartStr = DateTime.now().toIso8601String();
-      await prefs.setString(SubscriptionPlansScreen.prefKeyTrialStartDate, trialStartStr);
-    }
-    final trialStartDate = DateTime.tryParse(trialStartStr) ?? DateTime.now();
-    final elapsedDays = DateTime.now().difference(trialStartDate).inDays;
-    final daysRemaining = (14 - elapsedDays).clamp(0, 14);
-    final isTrialActive = elapsedDays < 14;
+    final daysRemaining = await TrialService.getDaysRemaining();
+    final isTrialExpired = await TrialService.isTrialExpired();
+    final isPaid = await TrialService.isPaidSubscriber();
+    final isTrialActive = !isTrialExpired && !isPaid;
 
     final savedPlan = prefs.getString(SubscriptionPlansScreen.prefKeyCurrentPlan);
 
@@ -57,10 +51,12 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(SubscriptionPlansScreen.prefKeyCurrentPlan, planId);
     await prefs.setString(SubscriptionPlansScreen.prefKeyBillingCycle, isAnnual ? 'annual' : 'monthly');
+    await TrialService.markSubscriptionPaid(planId);
     await AdService.refreshAdStatus();
     setState(() {
       _currentPlan = planId;
       _isAnnual = isAnnual;
+      _isTrialActive = false;
     });
   }
 

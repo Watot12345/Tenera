@@ -14,10 +14,12 @@ import 'package:tenera/screens/portfolio_analytics_screen.dart';
 import 'package:tenera/screens/privacy_policy_screen.dart';
 import 'package:tenera/screens/reports_export_screen.dart';
 import 'package:tenera/screens/subscription_plans_screen.dart';
+import 'package:tenera/screens/trial_expired_screen.dart';
 import 'package:tenera/services/ad_service.dart';
 import 'package:tenera/services/database_helper.dart';
 import 'package:tenera/services/plan_guard_service.dart';
 import 'package:tenera/services/theme_service.dart';
+import 'package:tenera/services/trial_service.dart';
 import 'package:intl/intl.dart';
 import 'package:tenera/theme/app_theme.dart';
 import 'package:tenera/widgets/ad_banner_widget.dart';
@@ -25,6 +27,7 @@ import 'package:tenera/widgets/roof_ledger_logo.dart';
 
 void main() {
   setUp(() async {
+    TrialService.resetForTest();
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
     await DatabaseHelper.reset();
@@ -1286,7 +1289,7 @@ void main() {
     expect(find.text('Tenera Pro & Plans'), findsOneWidget);
   });
 
-  testWidgets('Dark mode support: Appearance settings allows toggling Light, Dark, and System modes',
+  testWidgets('Dark mode support: Appearance settings defaults to Light and toggles Dark mode',
       (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({
       PrivacyPolicyScreen.prefKeyAccepted: true,
@@ -1294,6 +1297,9 @@ void main() {
     });
 
     await pumpAppAndLoadDatabase(tester);
+
+    // Verify default is Light mode
+    expect(ThemeService.themeModeNotifier.value, ThemeMode.light);
 
     // Navigate to More tab
     await tester.tap(find.byKey(const Key('nav_more')));
@@ -1303,27 +1309,22 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('tile_theme_mode')));
     await tester.pumpAndSettle();
 
-    // Verify Appearance section exists and theme toggle is icon-only
+    // Verify Appearance section exists, has Light & Dark, and System button is removed
     expect(find.text('Appearance & Display'), findsOneWidget);
     expect(find.byKey(const Key('tile_theme_mode')), findsOneWidget);
     expect(find.byKey(const Key('btn_theme_dark')), findsOneWidget);
     expect(find.byKey(const Key('btn_theme_light')), findsOneWidget);
-    expect(find.byKey(const Key('btn_theme_system')), findsOneWidget);
+    expect(find.byKey(const Key('btn_theme_system')), findsNothing);
 
     // Tap icon to switch to Dark
     await tester.tap(find.byKey(const Key('btn_theme_dark')));
     await tester.pumpAndSettle();
     expect(ThemeService.themeModeNotifier.value, ThemeMode.dark);
 
-    // Tap icon to switch to Light
+    // Tap icon to switch back to Light
     await tester.tap(find.byKey(const Key('btn_theme_light')));
     await tester.pumpAndSettle();
     expect(ThemeService.themeModeNotifier.value, ThemeMode.light);
-
-    // Tap icon to reset to System
-    await tester.tap(find.byKey(const Key('btn_theme_system')));
-    await tester.pumpAndSettle();
-    expect(ThemeService.themeModeNotifier.value, ThemeMode.system);
   });
 
   testWidgets(
@@ -1420,6 +1421,60 @@ void main() {
 
     expect(await PlanGuardService.isAdFree(), isTrue);
     expect(AdService.isAdFreeNotifier.value, isTrue);
+  });
+
+  testWidgets('14-Day Free Trial anti-bypass: Day 0-13 active, Day 14+ locked, unlock on paid activation',
+      (WidgetTester tester) async {
+    final now = DateTime.now().toUtc();
+
+    // 1. Fresh user: Day 0 -> 14 days remaining, not expired
+    TrialService.resetForTest();
+    SharedPreferences.setMockInitialValues({
+      TrialService.prefKeyTrialStartDate: now.toIso8601String(),
+    });
+    await TrialService.initialize();
+
+    expect(await TrialService.isTrialExpired(), isFalse);
+    expect(await TrialService.getDaysRemaining(), 14);
+
+    // 2. Day 15 (expired) -> locks out
+    TrialService.resetForTest();
+    final expiredStart = now.subtract(const Duration(days: 15));
+    SharedPreferences.setMockInitialValues({
+      TrialService.prefKeyTrialStartDate: expiredStart.toIso8601String(),
+      TrialService.prefKeyHighestTimestamp: now.toIso8601String(),
+    });
+    await TrialService.initialize();
+
+    expect(await TrialService.isTrialExpired(), isTrue);
+    expect(await TrialService.getDaysRemaining(), 0);
+
+    // 3. Pump TrialExpiredScreen
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: TrialExpiredScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('14-Day Free Trial Ended'), findsOneWidget);
+    expect(find.byKey(const Key('btn_unlock_pro')), findsOneWidget);
+
+    // 4. Activate plan from TrialExpiredScreen
+    await tester.tap(find.byKey(const Key('btn_unlock_pro')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('btn_confirm_trial_unlock')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_confirm_trial_unlock')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify subscription is now paid and trial is no longer expired
+    expect(await TrialService.isPaidSubscriber(), isTrue);
+    expect(await TrialService.isTrialExpired(), isFalse);
   });
 }
 

@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'services/ad_service.dart';
 import 'services/firebase_service.dart';
 import 'services/theme_service.dart';
+import 'services/trial_service.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 
@@ -24,6 +25,7 @@ void main() async {
   );
   await ThemeService.initialize();
   FirebaseService.instance.initialize();
+  await TrialService.initialize();
   await AdService.initialize();
   runApp(const TeneraApp());
 }
