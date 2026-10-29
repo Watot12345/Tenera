@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../models/arrears_aging.dart';
 import '../models/payment.dart';
 import '../models/property.dart';
 import '../models/tenant.dart';
@@ -587,6 +588,294 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
     );
   }
 
+  void _showArrearsAgingDialog() {
+    final List<TenantBill> activeTenants;
+    if (_selectedPropertyFilter == 'ALL') {
+      activeTenants = _tenants;
+    } else {
+      final prop = _properties.firstWhere((p) => p.id == _selectedPropertyFilter, orElse: () => _properties.first);
+      activeTenants = _tenants.where((t) => t.location.contains(prop.name)).toList();
+    }
+    final report = ArrearsAgingReport.fromTenants(activeTenants);
+    final currencyFmt = NumberFormat('#,###');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.getSurfaceElevatedColor(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          maxChildSize: 0.95,
+          minChildSize: 0.5,
+          expand: false,
+          builder: (ctx, scrollController) {
+            return Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppTheme.getBorderColor(ctx),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFC92A2A).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(Icons.history_toggle_off_rounded, color: Color(0xFFC92A2A), size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Arrears & Debt Aging',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 17,
+                                  color: AppTheme.getInkColor(ctx),
+                                ),
+                              ),
+                              Text(
+                                'PRD FR-H3 Delinquency Analysis',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.getInkMutedColor(ctx),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(sheetCtx),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // KPI Total Arrears Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFC92A2A), Color(0xFFA61E1E)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'TOTAL OVERDUE ARREARS',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '₱${currencyFmt.format(report.totalArrears)}',
+                                key: const Key('text_total_arrears_amount'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${report.totalDelinquentTenants} delinquent tenants across active leases.',
+                                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        // Explanation
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF5F5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFFD8D8)),
+                          ),
+                          child: const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.info_outline_rounded, color: Color(0xFFC92A2A), size: 20),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Aging debt buckets categorize overdue balances by days past due. This isolates immediate payment reminders from serious delinquency requiring formal demand notices.',
+                                  style: TextStyle(fontSize: 12, color: Color(0xFFC92A2A), height: 1.3),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'DELINQUENCY AGING BREAKDOWN',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: AppTheme.getInkMutedColor(ctx),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...report.buckets.map((bucket) {
+                          final pct = report.totalArrears > 0
+                              ? (bucket.totalAmount / report.totalArrears)
+                              : 0.0;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getSurfaceColor(ctx),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.getBorderColor(ctx)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      bucket.label,
+                                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: AppTheme.getInkColor(ctx)),
+                                    ),
+                                    Text(
+                                      '₱${currencyFmt.format(bucket.totalAmount)} (${(pct * 100).toStringAsFixed(1)}%)',
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFFC92A2A)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  bucket.subtitle,
+                                  style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(ctx)),
+                                ),
+                                const SizedBox(height: 8),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: pct.clamp(0.0, 1.0),
+                                    backgroundColor: AppTheme.getBorderColor(ctx),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC92A2A)),
+                                    minHeight: 6,
+                                  ),
+                                ),
+                                if (bucket.items.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  ...bucket.items.map((item) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 3),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '• ${item.tenant.name} (${item.tenant.location})',
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.getInkColor(ctx)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '₱${currencyFmt.format(item.amount)} · ${item.daysOverdue}d late',
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(ctx)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: ElevatedButton.icon(
+                    key: const Key('btn_share_arrears_report'),
+                    icon: const Icon(Icons.share_rounded, size: 18),
+                    label: const Text('Share / Copy Arrears Statement'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC92A2A),
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    onPressed: () {
+                      final selectedProp = _selectedPropertyFilter == 'ALL'
+                          ? 'All Properties'
+                          : _properties.firstWhere((p) => p.id == _selectedPropertyFilter, orElse: () => _properties.first).name;
+                      final txt = report.generateReportText(propertyName: selectedProp);
+                      Clipboard.setData(ClipboardData(text: txt));
+                      Navigator.pop(sheetCtx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: AppTheme.primaryDeep,
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle_rounded, color: AppTheme.accent),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '✓ Arrears Aging Statement copied to clipboard!',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -600,6 +889,12 @@ class _ReportsExportScreenState extends State<ReportsExportScreen> {
         foregroundColor: AppTheme.ink,
         elevation: 0,
         actions: [
+          IconButton(
+            key: const Key('btn_arrears_aging_report'),
+            icon: const Icon(Icons.history_toggle_off_rounded, color: Color(0xFFC92A2A)),
+            tooltip: 'Arrears Aging & Debt Report',
+            onPressed: _showArrearsAgingDialog,
+          ),
           IconButton(
             key: const Key('btn_deposit_liability_report'),
             icon: const Icon(Icons.shield_outlined, color: AppTheme.primaryDeep),

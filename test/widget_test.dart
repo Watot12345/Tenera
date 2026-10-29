@@ -7,11 +7,13 @@ import 'package:tenera/models/expense.dart';
 import 'package:tenera/models/lease_contract.dart';
 import 'package:tenera/models/payment.dart';
 import 'package:tenera/models/property.dart';
+import 'package:tenera/models/maintenance_ticket.dart';
 import 'package:tenera/models/portfolio_analytics.dart';
 import 'package:tenera/models/tenant.dart';
 import 'package:tenera/screens/expenses_screen.dart';
 import 'package:tenera/screens/home_screen.dart';
 import 'package:tenera/screens/lease_contract_screen.dart';
+import 'package:tenera/screens/maintenance_tracker_screen.dart';
 import 'package:tenera/screens/portfolio_analytics_screen.dart';
 import 'package:tenera/screens/privacy_policy_screen.dart';
 import 'package:tenera/screens/reports_export_screen.dart';
@@ -1978,6 +1980,170 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Deposit Liability & Escrow Report copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('Unit Maintenance & Repair Tracker (PRD Module 7): logs new repair ticket, updates status, and auto-logs expense',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    late List<PropertyItem> props;
+    late List<MaintenanceTicket> tickets;
+    await tester.runAsync(() async {
+      props = await DatabaseHelper.instance.getProperties();
+      tickets = await DatabaseHelper.instance.getMaintenanceTickets();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: MaintenanceTrackerScreen(
+          initialProperties: props,
+          initialTickets: tickets,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Unit Maintenance & Repairs'), findsOneWidget);
+    expect(find.text('Bathroom shower valve leaking'), findsOneWidget);
+    expect(find.text('Ceiling fan capacitor replacement'), findsOneWidget);
+
+    expect(find.byKey(const Key('fab_log_ticket')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('fab_log_ticket')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Log Repair Request'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('input_ticket_title')), 'Kitchen faucet dripping');
+    await tester.enterText(find.byKey(const Key('input_ticket_desc')), 'Slow drip under sink');
+    await tester.enterText(find.byKey(const Key('input_ticket_cost')), '500');
+
+    await tester.tap(find.byKey(const Key('btn_confirm_log_ticket')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kitchen faucet dripping'), findsOneWidget);
+
+    // Dismiss snackbar
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    // Tap first pending ticket's status updater
+    final updateBtn = find.byIcon(Icons.pending_actions_rounded).first;
+    expect(updateBtn, findsOneWidget);
+    await tester.tap(updateBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Update Status'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('dropdown_ticket_status')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Resolved').last);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('input_update_ticket_cost')), '850');
+    expect(find.byKey(const Key('checkbox_sync_expense')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('btn_confirm_update_ticket')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Status updated to Resolved!'), findsOneWidget);
+
+    late List<ExpenseRecord> expenses;
+    await tester.runAsync(() async {
+      expenses = await DatabaseHelper.instance.getExpenses();
+    });
+    expect(expenses.any((e) => e.category == 'Repairs & Maintenance'), isTrue);
+
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('btn_share_maintenance_summary')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Maintenance & Repair list copied to clipboard!'), findsOneWidget);
+  });
+
+  testWidgets('Database Health Check & VACUUM (PRD FR-I4): audits SQLite tables and performs defragmentation',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    await tester.tap(find.byKey(const Key('nav_more')));
+    await tester.pumpAndSettle();
+
+    final healthTile = find.byKey(const Key('tile_db_health'));
+    await tester.ensureVisible(healthTile);
+    await tester.tap(healthTile);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('Database Health Check'), findsOneWidget);
+    expect(find.textContaining('PRAGMA integrity_check: ok'), findsOneWidget);
+    expect(find.text('Properties Registered'), findsOneWidget);
+    expect(find.text('Rooms / Units Tracked'), findsOneWidget);
+    expect(find.text('Tenants on Ledger'), findsOneWidget);
+    expect(find.text('Maintenance Tickets'), findsOneWidget);
+
+    expect(find.byKey(const Key('btn_vacuum_db')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn_vacuum_db')));
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('SQLite database vacuumed and defragmented!'), findsOneWidget);
+  });
+
+  testWidgets('Arrears (Aging) & Delinquency Report (PRD FR-H3): breaks down debt into 4 aging buckets and navigates from Overdue card',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    final overdueCard = find.byKey(const Key('card_home_overdue'));
+    expect(overdueCard, findsOneWidget);
+    await tester.tap(overdueCard);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    expect(find.text('BIR Tax & Revenue Reports'), findsOneWidget);
+
+    final agingBtn = find.byKey(const Key('btn_arrears_aging_report'));
+    expect(agingBtn, findsOneWidget);
+    await tester.tap(agingBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Arrears & Debt Aging'), findsOneWidget);
+    expect(find.text('TOTAL OVERDUE ARREARS'), findsOneWidget);
+    expect(find.text('DELINQUENCY AGING BREAKDOWN'), findsOneWidget);
+    expect(find.text('1–7 Days Late'), findsOneWidget);
+    expect(find.text('8–15 Days Late'), findsOneWidget);
+    expect(find.text('16–30 Days Late'), findsOneWidget);
+    expect(find.text('30+ Days Late'), findsOneWidget);
+
+    final shareArrearsBtn = find.byKey(const Key('btn_share_arrears_report'));
+    expect(shareArrearsBtn, findsOneWidget);
+    await tester.tap(shareArrearsBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Arrears Aging Statement copied to clipboard!'), findsOneWidget);
   });
 }
 

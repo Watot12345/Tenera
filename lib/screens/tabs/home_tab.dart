@@ -20,6 +20,7 @@ class HomeTab extends StatelessWidget {
   final VoidCallback onRemindOverdueQuick;
   final Function(TenantBill) onTenantTap;
   final Function(TenantBill) onSendReminder;
+  final VoidCallback? onOverdueTap;
   final bool isStaffMode;
 
   const HomeTab({
@@ -40,6 +41,7 @@ class HomeTab extends StatelessWidget {
     required this.onRemindOverdueQuick,
     required this.onTenantTap,
     required this.onSendReminder,
+    this.onOverdueTap,
     this.isStaffMode = false,
   });
 
@@ -155,45 +157,54 @@ class HomeTab extends StatelessWidget {
   Widget _buildOverdueCard(BuildContext context) {
     final currencyFormat = NumberFormat('#,###');
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.error_outline_rounded,
-                color: AppTheme.getStatusOverdueText(context),
-                size: 18,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Overdue',
-                style: TextStyle(
-                  color: AppTheme.getInkColor(context),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+    return InkWell(
+      key: const Key('card_home_overdue'),
+      borderRadius: BorderRadius.circular(16),
+      onTap: onOverdueTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.getSurfaceColor(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.8)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: AppTheme.getStatusOverdueText(context),
+                  size: 18,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            isStaffMode ? '••••••' : '₱${currencyFormat.format(overdueTotal)}',
-            style: TextStyle(
-              color: AppTheme.getStatusOverdueText(context),
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
+                const SizedBox(width: 6),
+                Text(
+                  'Overdue',
+                  style: TextStyle(
+                    color: AppTheme.getInkColor(context),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (onOverdueTap != null) ...[
+                  const Spacer(),
+                  Icon(Icons.chevron_right_rounded, size: 16, color: AppTheme.getInkMutedColor(context)),
+                ],
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              isStaffMode ? '••••••' : '₱${currencyFormat.format(overdueTotal)}',
+              style: TextStyle(
+                color: AppTheme.getStatusOverdueText(context),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

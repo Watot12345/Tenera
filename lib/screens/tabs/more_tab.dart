@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/database_health.dart';
 import '../../services/database_helper.dart';
 import '../../services/direct_sms_service.dart';
 import '../../services/landlord_profile_service.dart';
@@ -14,6 +15,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/roof_ledger_logo.dart';
 import '../expenses_screen.dart';
 import '../lease_contract_screen.dart';
+import '../maintenance_tracker_screen.dart';
 import '../portfolio_analytics_screen.dart';
 import '../privacy_policy_screen.dart';
 import '../reports_export_screen.dart';
@@ -489,6 +491,182 @@ class _MoreTabState extends State<MoreTab> {
     );
   }
 
+  Widget _buildHealthRow(String label, String value, BuildContext ctx, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
+              color: AppTheme.getInkColor(ctx),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+              color: isBold ? AppTheme.primaryDeep : AppTheme.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDatabaseHealthDialog() async {
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return FutureBuilder<DatabaseHealthReport>(
+          future: DatabaseHelper.instance.checkDatabaseHealth(),
+          builder: (ctx, snapshot) {
+            if (!snapshot.hasData) {
+              return AlertDialog(
+                backgroundColor: AppTheme.getSurfaceElevatedColor(ctx),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                content: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Running SQLite Integrity Audit...', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            final report = snapshot.data!;
+            return AlertDialog(
+              backgroundColor: AppTheme.getSurfaceElevatedColor(ctx),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: report.isHealthy
+                          ? const Color(0xFF2B8A3E).withValues(alpha: 0.15)
+                          : const Color(0xFFC92A2A).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      report.isHealthy ? Icons.verified_user_rounded : Icons.warning_rounded,
+                      color: report.isHealthy ? const Color(0xFF2B8A3E) : const Color(0xFFC92A2A),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Database Health Check',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: AppTheme.getInkColor(ctx),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: report.isHealthy ? const Color(0xFFF0FDF4) : const Color(0xFFFFECEB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: report.isHealthy ? const Color(0xFFBBF7D0) : const Color(0xFFFFC9C9)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            report.isHealthy ? Icons.check_circle_rounded : Icons.error_rounded,
+                            color: report.isHealthy ? const Color(0xFF16A34A) : const Color(0xFFC92A2A),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              report.isHealthy
+                                  ? 'SQLite Status: 100% HEALTHY\nPRAGMA integrity_check: ok'
+                                  : 'Integrity Warning: ${report.integrityMessage}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: report.isHealthy ? const Color(0xFF166534) : const Color(0xFFC92A2A),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'RECORD AUDIT BREAKDOWN',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.getInkMutedColor(ctx),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    _buildHealthRow('Properties Registered', '${report.propertyCount}', ctx),
+                    _buildHealthRow('Rooms / Units Tracked', '${report.roomCount}', ctx),
+                    _buildHealthRow('Tenants on Ledger', '${report.tenantCount}', ctx),
+                    _buildHealthRow('Recorded Payments', '${report.paymentCount}', ctx),
+                    _buildHealthRow('Property Expenses Logged', '${report.expenseCount}', ctx),
+                    _buildHealthRow('Maintenance Tickets', '${report.maintenanceCount}', ctx),
+                    const Divider(height: 14),
+                    _buildHealthRow('Total SQLite Rows', '${report.totalRecords}', ctx, isBold: true),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx),
+                  child: const Text('Close'),
+                ),
+                ElevatedButton.icon(
+                  key: const Key('btn_vacuum_db'),
+                  icon: const Icon(Icons.cleaning_services_rounded, size: 16),
+                  label: const Text('Vacuum & Optimize'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () async {
+                    await DatabaseHelper.instance.vacuumDatabase();
+                    if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: AppTheme.primaryDeep,
+                          content: Text('✓ SQLite database vacuumed and defragmented!'),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -722,6 +900,31 @@ class _MoreTabState extends State<MoreTab> {
                             );
                             if (!canAccess || !context.mounted) return;
                             Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen()));
+                          },
+                        ),
+                        Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                        ListTile(
+                          key: const Key('tile_maintenance_tracker'),
+                          dense: true,
+                          leading: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8590C).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.build_circle_rounded, color: Color(0xFFE8590C), size: 20),
+                          ),
+                          title: Text('Unit Maintenance & Repairs', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: AppTheme.getInkColor(context))),
+                          subtitle: Text('Track room plumbing, electrical & repair tickets', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                          trailing: _buildPillBadge('PRO'),
+                          onTap: () async {
+                            final canAccess = await PlanGuardService.requirePro(
+                              context: context,
+                              featureName: 'Maintenance & Repairs',
+                              featureBenefit: 'Log and track repair tickets per room, update status, and auto-log repair costs into property expenses.',
+                            );
+                            if (!canAccess || !context.mounted) return;
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const MaintenanceTrackerScreen()));
                           },
                         ),
                       ],
@@ -990,6 +1193,16 @@ class _MoreTabState extends State<MoreTab> {
                     subtitle: Text('Import properties, tenants & records from JSON', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
                     trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
                     onTap: _showRestoreDialog,
+                  ),
+                  Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
+                  ListTile(
+                    key: const Key('tile_db_health'),
+                    dense: true,
+                    leading: const Icon(Icons.health_and_safety_rounded, color: AppTheme.primary, size: 22),
+                    title: Text('Database Health & Integrity Check', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppTheme.getInkColor(context))),
+                    subtitle: Text('Audit SQLite records & run VACUUM optimization', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(context))),
+                    trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppTheme.getInkMutedColor(context)),
+                    onTap: _showDatabaseHealthDialog,
                   ),
                   Divider(height: 1, indent: 54, color: AppTheme.getBorderColor(context)),
                   ListTile(

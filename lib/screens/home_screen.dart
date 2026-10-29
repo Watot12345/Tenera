@@ -21,6 +21,7 @@ import 'tabs/more_tab.dart';
 import 'tabs/payments_tab.dart';
 import 'tabs/properties_tab.dart';
 import 'tabs/tenants_tab.dart';
+import 'reports_export_screen.dart';
 import 'trial_expired_screen.dart';
 import 'utility_calculator_screen.dart';
 
@@ -2195,6 +2196,18 @@ $footer
           },
           onTenantTap: (tenant) => _openRecordPaymentDialog(tenant),
           onSendReminder: (tenant) => _sendFriendlyReminder(tenant),
+          onOverdueTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReportsExportScreen(
+                  initialPayments: _paymentRecords,
+                  initialProperties: _properties,
+                  initialTenants: _allTenants,
+                ),
+              ),
+            );
+          },
           isStaffMode: _isStaffMode,
         );
       case 1:

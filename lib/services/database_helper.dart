@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import '../models/database_health.dart';
 import '../models/deposit_liability.dart';
 import '../models/expense.dart';
+import '../models/maintenance_ticket.dart';
 import '../models/payment.dart';
 import '../models/portfolio_analytics.dart';
 import '../models/property.dart';
@@ -116,6 +118,27 @@ class DatabaseHelper {
       ''');
     } catch (_) {}
 
+    try {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS maintenance_tickets (
+          id TEXT PRIMARY KEY,
+          property_id TEXT NOT NULL,
+          property_name TEXT NOT NULL,
+          room_code TEXT NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT NOT NULL,
+          category TEXT NOT NULL,
+          priority TEXT NOT NULL,
+          status TEXT NOT NULL,
+          cost INTEGER,
+          reported_date TEXT NOT NULL,
+          resolved_date TEXT,
+          created_at INTEGER NOT NULL,
+          is_synced INTEGER NOT NULL DEFAULT 0
+        )
+      ''');
+    } catch (_) {}
+
     return db;
   }
 
@@ -193,6 +216,25 @@ class DatabaseHelper {
         amount INTEGER NOT NULL,
         date_formatted TEXT NOT NULL,
         receipt_ref TEXT,
+        created_at INTEGER NOT NULL,
+        is_synced INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE maintenance_tickets (
+        id TEXT PRIMARY KEY,
+        property_id TEXT NOT NULL,
+        property_name TEXT NOT NULL,
+        room_code TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        category TEXT NOT NULL,
+        priority TEXT NOT NULL,
+        status TEXT NOT NULL,
+        cost INTEGER,
+        reported_date TEXT NOT NULL,
+        resolved_date TEXT,
         created_at INTEGER NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 0
       )
@@ -508,6 +550,60 @@ class DatabaseHelper {
     for (final exp in expenses) {
       await db.insert('expenses', {
         ...exp,
+        'created_at': now,
+        'is_synced': 1,
+      });
+    }
+
+    // Seed Initial Maintenance Tickets (PRD Module 7)
+    final tickets = [
+      {
+        'id': 'mt1',
+        'property_id': 'p1',
+        'property_name': 'Mabini Apts',
+        'room_code': 'Unit 2A',
+        'title': 'Bathroom shower valve leaking',
+        'description': 'Tenant reported dripping sound and low water pressure.',
+        'category': 'Plumbing',
+        'priority': 'High',
+        'status': 'In Progress',
+        'cost': 850,
+        'reported_date': 'Oct 26, 2026',
+        'resolved_date': null,
+      },
+      {
+        'id': 'mt2',
+        'property_id': 'p1',
+        'property_name': 'Mabini Apts',
+        'room_code': 'Unit 2F',
+        'title': 'Ceiling fan capacitor replacement',
+        'description': 'Replaced old capacitor. Fan working at full speed.',
+        'category': 'Electrical',
+        'priority': 'Medium',
+        'status': 'Resolved',
+        'cost': 450,
+        'reported_date': 'Oct 22, 2026',
+        'resolved_date': 'Oct 23, 2026',
+      },
+      {
+        'id': 'mt3',
+        'property_id': 'p2',
+        'property_name': 'Rizal House',
+        'room_code': 'Room 1B',
+        'title': 'Window screen latch loose',
+        'description': 'Mesh screen latch detached during heavy rain.',
+        'category': 'Carpentry',
+        'priority': 'Low',
+        'status': 'Reported',
+        'cost': null,
+        'reported_date': 'Oct 27, 2026',
+        'resolved_date': null,
+      },
+    ];
+
+    for (final t in tickets) {
+      await db.insert('maintenance_tickets', {
+        ...t,
         'created_at': now,
         'is_synced': 1,
       });
@@ -1403,6 +1499,117 @@ class DatabaseHelper {
   }
 
   // ----------------------------------------------------
+  // MAINTENANCE TICKETS CRUD (PRD Module 7)
+  // ----------------------------------------------------
+  Future<List<MaintenanceTicket>> getMaintenanceTickets({String? propertyId, String? status}) async {
+    final db = await database;
+    List<Map<String, Object?>> maps;
+    if (propertyId != null && propertyId.isNotEmpty && propertyId != 'ALL') {
+      if (status != null && status != 'ALL') {
+        maps = await db.query(
+          'maintenance_tickets',
+          where: 'property_id = ? AND status = ?',
+          whereArgs: [propertyId, status],
+          orderBy: 'created_at DESC',
+        );
+      } else {
+        maps = await db.query(
+          'maintenance_tickets',
+          where: 'property_id = ?',
+          whereArgs: [propertyId],
+          orderBy: 'created_at DESC',
+        );
+      }
+    } else {
+      if (status != null && status != 'ALL') {
+        maps = await db.query(
+          'maintenance_tickets',
+          where: 'status = ?',
+          whereArgs: [status],
+          orderBy: 'created_at DESC',
+        );
+      } else {
+        maps = await db.query('maintenance_tickets', orderBy: 'created_at DESC');
+      }
+    }
+    return maps.map((m) => MaintenanceTicket.fromMap(m)).toList();
+  }
+
+  Future<void> insertMaintenanceTicket(MaintenanceTicket ticket) async {
+    final db = await database;
+    await db.insert('maintenance_tickets', ticket.toMap());
+    notifyChanges();
+  }
+
+  Future<void> updateMaintenanceTicket(MaintenanceTicket ticket) async {
+    final db = await database;
+    await db.update(
+      'maintenance_tickets',
+      ticket.toMap(),
+      where: 'id = ?',
+      whereArgs: [ticket.id],
+    );
+    notifyChanges();
+  }
+
+  Future<void> deleteMaintenanceTicket(String id) async {
+    final db = await database;
+    await db.delete('maintenance_tickets', where: 'id = ?', whereArgs: [id]);
+    notifyChanges();
+  }
+
+  // ----------------------------------------------------
+  // DATABASE INTEGRITY & HEALTH CHECK (PRD FR-I4)
+  // ----------------------------------------------------
+  Future<DatabaseHealthReport> checkDatabaseHealth() async {
+    final db = await database;
+    String integrityMsg = 'ok';
+    bool isHealthy = true;
+
+    try {
+      final pragmaRes = await db.rawQuery('PRAGMA integrity_check');
+      if (pragmaRes.isNotEmpty) {
+        integrityMsg = pragmaRes.first.values.first.toString();
+        isHealthy = integrityMsg.toLowerCase() == 'ok';
+      }
+    } catch (e) {
+      integrityMsg = e.toString();
+      isHealthy = false;
+    }
+
+    final pCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM properties')) ?? 0;
+    final rCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM rooms')) ?? 0;
+    final tCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM tenants')) ?? 0;
+    final payCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM payments')) ?? 0;
+    final expCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM expenses')) ?? 0;
+    int mtCount = 0;
+    try {
+      mtCount = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM maintenance_tickets')) ?? 0;
+    } catch (_) {}
+
+    final total = pCount + rCount + tCount + payCount + expCount + mtCount;
+
+    return DatabaseHealthReport(
+      isHealthy: isHealthy,
+      integrityMessage: integrityMsg,
+      propertyCount: pCount,
+      roomCount: rCount,
+      tenantCount: tCount,
+      paymentCount: payCount,
+      expenseCount: expCount,
+      maintenanceCount: mtCount,
+      totalRecords: total,
+      databaseVersion: 'SQLite 3 (v1.0.1)',
+      checkedAt: DateTime.now(),
+    );
+  }
+
+  Future<void> vacuumDatabase() async {
+    final db = await database;
+    await db.rawQuery('VACUUM');
+  }
+
+  // ----------------------------------------------------
   // BACKUP & RESTORE
   // ----------------------------------------------------
   Future<String> exportBackupJson() async {
@@ -1412,17 +1619,19 @@ class DatabaseHelper {
     final tenants = await db.query('tenants');
     final payments = await db.query('payments');
     final expenses = await db.query('expenses');
+    final maintenance = await db.query('maintenance_tickets');
 
     final backupData = {
       'app': 'Tenera',
       'version': 1,
-      'tenera_backup_version': 1,
+      'tenera_backup_version': 2,
       'exported_at': DateTime.now().toIso8601String(),
       'properties': properties,
       'rooms': rooms,
       'tenants': tenants,
       'payments': payments,
       'expenses': expenses,
+      'maintenance_tickets': maintenance,
     };
 
     return const JsonEncoder.withIndent('  ').convert(backupData);
@@ -1436,6 +1645,9 @@ class DatabaseHelper {
 
       final db = await database;
       await db.transaction((txn) async {
+        try {
+          await txn.delete('maintenance_tickets');
+        } catch (_) {}
         await txn.delete('expenses');
         await txn.delete('payments');
         await txn.delete('rooms');
@@ -1474,6 +1686,13 @@ class DatabaseHelper {
         for (final exp in exps) {
           if (exp is Map) {
             await txn.insert('expenses', Map<String, dynamic>.from(exp));
+          }
+        }
+
+        final mts = decoded['maintenance_tickets'] as List<dynamic>? ?? [];
+        for (final mt in mts) {
+          if (mt is Map) {
+            await txn.insert('maintenance_tickets', Map<String, dynamic>.from(mt));
           }
         }
       });
