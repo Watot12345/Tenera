@@ -112,6 +112,10 @@ class _TenantsTabState extends State<TenantsTab> {
     final messengerCtrl = TextEditingController(text: tenant.messenger ?? '');
     final amountCtrl = TextEditingController(text: tenant.amount.toString());
     final locationCtrl = TextEditingController(text: tenant.location);
+    final idPhotoCtrl = TextEditingController(text: tenant.idPhotoPath ?? '');
+    final graceCtrl = TextEditingController(text: tenant.gracePeriodDays.toString());
+    final lateDailyCtrl = TextEditingController(text: tenant.lateFeeDaily.toString());
+    final lateFlatCtrl = TextEditingController(text: tenant.lateFeeFlat.toString());
 
     showDialog(
       context: context,
@@ -188,6 +192,56 @@ class _TenantsTabState extends State<TenantsTab> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
+              const SizedBox(height: 12),
+              TextField(
+                key: const Key('input_edit_tenant_id_photo'),
+                controller: idPhotoCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Government ID Document Ref / Path',
+                  hintText: 'e.g. PhilSys / Driver License / passport.jpg',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('input_edit_tenant_grace_days'),
+                      controller: graceCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Grace Days',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      key: const Key('input_edit_tenant_late_daily'),
+                      controller: lateDailyCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Daily Fee (₱)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      key: const Key('input_edit_tenant_late_flat'),
+                      controller: lateFlatCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Flat Fee (₱)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -205,6 +259,10 @@ class _TenantsTabState extends State<TenantsTab> {
               final newPhone = phoneCtrl.text.trim();
               final newMessenger = messengerCtrl.text.trim();
               final newLoc = locationCtrl.text.trim();
+              final newIdPhoto = idPhotoCtrl.text.trim();
+              final newGrace = int.tryParse(graceCtrl.text.trim()) ?? tenant.gracePeriodDays;
+              final newDaily = int.tryParse(lateDailyCtrl.text.trim()) ?? tenant.lateFeeDaily;
+              final newFlat = int.tryParse(lateFlatCtrl.text.trim()) ?? tenant.lateFeeFlat;
 
               final updated = tenant.copyWith(
                 name: newName,
@@ -213,6 +271,10 @@ class _TenantsTabState extends State<TenantsTab> {
                 phone: newPhone.isNotEmpty ? newPhone : null,
                 messenger: newMessenger.isNotEmpty ? newMessenger : null,
                 location: newLoc.isNotEmpty ? newLoc : tenant.location,
+                idPhotoPath: newIdPhoto.isNotEmpty ? newIdPhoto : null,
+                gracePeriodDays: newGrace,
+                lateFeeDaily: newDaily,
+                lateFeeFlat: newFlat,
               );
 
               Navigator.pop(dialogCtx);
@@ -231,6 +293,350 @@ class _TenantsTabState extends State<TenantsTab> {
             child: const Text('Save Changes'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showTenantIdDialog(TenantBill tenant) {
+    final idCtrl = TextEditingController(text: tenant.idPhotoPath ?? '');
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final hasId = tenant.idPhotoPath != null && tenant.idPhotoPath!.isNotEmpty;
+
+          return AlertDialog(
+            key: Key('dialog_tenant_id_${tenant.id}'),
+            backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.badge_rounded, color: AppTheme.primary, size: 22),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Government ID', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppTheme.getInkColor(dialogCtx))),
+                      Text(tenant.name, style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: hasId ? AppTheme.statusPaid.withValues(alpha: 0.08) : AppTheme.accentOrange.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: hasId ? AppTheme.statusPaid.withValues(alpha: 0.3) : AppTheme.accentOrange.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          hasId ? Icons.verified_user_rounded : Icons.warning_amber_rounded,
+                          size: 36,
+                          color: hasId ? AppTheme.statusPaid : AppTheme.accentOrange,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          hasId ? 'Valid ID Verified On File' : 'No Government ID On File',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: hasId ? AppTheme.statusPaid : AppTheme.accentOrange,
+                          ),
+                        ),
+                        if (hasId) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            tenant.idPhotoPath!,
+                            key: Key('text_tenant_id_path_${tenant.id}'),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.getInkColor(dialogCtx),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text('Document / ID Photo Reference:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.getInkColor(dialogCtx))),
+                  const SizedBox(height: 6),
+                  TextField(
+                    key: const Key('input_tenant_id_doc'),
+                    controller: idCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. PhilSys ID #1234 / passport.jpg',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text('Quick Presets:', style: TextStyle(fontSize: 11, color: AppTheme.getInkMutedColor(dialogCtx))),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: ['PhilSys National ID', 'Driver\'s License', 'Passport', 'UMID'].map((preset) {
+                      return ActionChip(
+                        label: Text(preset, style: const TextStyle(fontSize: 11)),
+                        onPressed: () {
+                          idCtrl.text = '$preset (Verified)';
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              if (hasId)
+                TextButton(
+                  key: const Key('btn_remove_tenant_id'),
+                  onPressed: () async {
+                    Navigator.pop(dialogCtx);
+                    final updated = tenant.copyWith(idPhotoPath: null);
+                    await DatabaseHelper.instance.updateTenantIdPhoto(tenantId: tenant.id, idPhotoPath: null);
+                    widget.onEditTenant?.call(updated);
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppTheme.primaryDeep,
+                        content: Text('Government ID removed for ${tenant.name}.'),
+                      ),
+                    );
+                  },
+                  child: const Text('Remove ID', style: TextStyle(color: Color(0xFFC92A2A))),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                key: const Key('btn_save_tenant_id'),
+                onPressed: () async {
+                  final newPath = idCtrl.text.trim();
+                  if (newPath.isEmpty) return;
+                  Navigator.pop(dialogCtx);
+                  final updated = tenant.copyWith(idPhotoPath: newPath);
+                  await DatabaseHelper.instance.updateTenantIdPhoto(tenantId: tenant.id, idPhotoPath: newPath);
+                  widget.onEditTenant?.call(updated);
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppTheme.primaryDeep,
+                      content: Text('Government ID saved for ${tenant.name}!'),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Save ID'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  void _showLateFeeRuleDialog(TenantBill tenant) {
+    final graceCtrl = TextEditingController(text: tenant.gracePeriodDays.toString());
+    final dailyCtrl = TextEditingController(text: tenant.lateFeeDaily.toString());
+    final flatCtrl = TextEditingController(text: tenant.lateFeeFlat.toString());
+    bool isWaived = tenant.isLateFeeWaived;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final estFee = tenant.calculateLateFee();
+
+          return AlertDialog(
+            key: Key('dialog_late_fee_${tenant.id}'),
+            backgroundColor: AppTheme.getSurfaceElevatedColor(dialogCtx),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentOrange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.gavel_rounded, color: AppTheme.accentOrange, size: 22),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Late-Fee / Penalty Rules', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: AppTheme.getInkColor(dialogCtx))),
+                      Text(tenant.name, style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.getSurfaceColor(dialogCtx),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.getBorderColor(dialogCtx)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Overdue Status:', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx))),
+                            Text(tenant.isPaid ? 'Paid' : tenant.statusText, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Current Calculated Penalty:', style: TextStyle(fontSize: 12, color: AppTheme.getInkMutedColor(dialogCtx))),
+                            Text(
+                              isWaived ? '₱0 (Waived)' : '₱$estFee',
+                              key: const Key('text_dialog_calculated_late_fee'),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                                color: isWaived ? AppTheme.statusPaid : const Color(0xFFC92A2A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    key: const Key('input_late_fee_grace'),
+                    controller: graceCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Grace Period (Days)',
+                      helperText: 'Number of days past due before penalty starts',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('input_late_fee_daily'),
+                    controller: dailyCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Daily Late Fee (₱ / day)',
+                      helperText: 'e.g. ₱50 per day overdue beyond grace',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const Key('input_late_fee_flat'),
+                    controller: flatCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'One-Time Flat Late Fee (₱)',
+                      helperText: 'Fixed charge applied once overdue',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SwitchListTile(
+                    key: const Key('switch_waive_late_fee'),
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Waive Late Fee for Current Bill', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Forgives current penalty without deleting rule', style: TextStyle(fontSize: 11)),
+                    value: isWaived,
+                    onChanged: (val) {
+                      setDialogState(() {
+                        isWaived = val;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                key: const Key('btn_save_late_fee'),
+                onPressed: () async {
+                  final grace = int.tryParse(graceCtrl.text.trim()) ?? tenant.gracePeriodDays;
+                  final daily = int.tryParse(dailyCtrl.text.trim()) ?? tenant.lateFeeDaily;
+                  final flat = int.tryParse(flatCtrl.text.trim()) ?? tenant.lateFeeFlat;
+
+                  final updated = tenant.copyWith(
+                    gracePeriodDays: grace,
+                    lateFeeDaily: daily,
+                    lateFeeFlat: flat,
+                    isLateFeeWaived: isWaived,
+                  );
+
+                  Navigator.pop(dialogCtx);
+                  await DatabaseHelper.instance.updateTenantLateFeeRule(
+                    tenantId: tenant.id,
+                    graceDays: grace,
+                    lateFeeDaily: daily,
+                    lateFeeFlat: flat,
+                    isWaived: isWaived,
+                  );
+                  widget.onEditTenant?.call(updated);
+
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppTheme.primaryDeep,
+                      content: Text('Late-fee rule updated for ${tenant.name}!'),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Save Late-Fee Rule'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -300,6 +706,8 @@ class _TenantsTabState extends State<TenantsTab> {
 
     if (!mounted) return;
 
+    TenantBill currentTenant = tenant;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -308,343 +716,414 @@ class _TenantsTabState extends State<TenantsTab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (sheetCtx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          maxChildSize: 0.95,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (ctx, scrollController) {
-            return Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 8),
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTheme.getBorderColor(ctx),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            final lateFee = currentTenant.calculateLateFee();
+            final totalDue = currentTenant.totalDueWithLateFee;
+
+            return DraggableScrollableSheet(
+              initialChildSize: 0.75,
+              maxChildSize: 0.95,
+              minChildSize: 0.5,
+              expand: false,
+              builder: (ctx, scrollController) {
+                return Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 8),
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.getBorderColor(ctx),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
                             children: [
-                              Text(
-                                'Statement of Account',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 18,
-                                  color: AppTheme.getInkColor(ctx),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
+                                child: const Icon(Icons.receipt_long_rounded, color: AppTheme.primary, size: 22),
                               ),
-                              Text(
-                                tenant.name,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppTheme.getInkMutedColor(ctx),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.pop(sheetCtx),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: ListView(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppTheme.getSurfaceColor(ctx),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.getBorderColor(ctx)),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'CURRENT BALANCE DUE',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.5,
-                                        color: AppTheme.getInkMutedColor(ctx),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '₱${NumberFormat('#,###').format(tenant.amount)}',
-                                      style: TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w900,
-                                        color: tenant.isPaid
-                                            ? AppTheme.getStatusPaidText(ctx)
-                                            : (tenant.isOverdue
-                                                ? AppTheme.getStatusOverdueText(ctx)
-                                                : AppTheme.getStatusDueSoonText(ctx)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: tenant.isPaid
-                                        ? AppTheme.getStatusPaidBg(ctx)
-                                        : (tenant.isOverdue
-                                            ? AppTheme.getStatusOverdueBg(ctx)
-                                            : AppTheme.getStatusDueSoonBg(ctx)),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    tenant.isPaid ? 'Paid' : tenant.statusText,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: tenant.isPaid
-                                          ? AppTheme.getStatusPaidText(ctx)
-                                          : (tenant.isOverdue
-                                              ? AppTheme.getStatusOverdueText(ctx)
-                                              : AppTheme.getStatusDueSoonText(ctx)),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            const Divider(height: 1),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.home_work_outlined, size: 16, color: AppTheme.inkMuted),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    tenant.location,
-                                    style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(ctx), fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (tenant.phone != null && tenant.phone!.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
+                              const SizedBox(width: 12),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.phone_android_rounded, size: 16, color: AppTheme.inkMuted),
-                                  const SizedBox(width: 8),
                                   Text(
-                                    tenant.phone!,
-                                    style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(ctx)),
+                                    'Statement of Account',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 18,
+                                      color: AppTheme.getInkColor(ctx),
+                                    ),
+                                  ),
+                                  Text(
+                                    currentTenant.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppTheme.getInkMutedColor(ctx),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                             ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'PAYMENT & BILLING HISTORY',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                          color: AppTheme.getInkMutedColor(ctx),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      if (tenantPayments.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: AppTheme.getSurfaceColor(ctx),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppTheme.getBorderColor(ctx)),
                           ),
-                          child: Text(
-                            'No payment records found yet for this tenant.',
-                            style: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(ctx)),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(sheetCtx),
                           ),
-                        )
-                      else
-                        ...tenantPayments.map((p) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            padding: const EdgeInsets.all(12),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    Expanded(
+                      child: ListView(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: AppTheme.getSurfaceColor(ctx),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: p.isVoided
-                                    ? const Color(0xFFC92A2A).withValues(alpha: 0.3)
-                                    : AppTheme.getBorderColor(ctx),
-                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppTheme.getBorderColor(ctx)),
                             ),
-                            child: Row(
+                            child: Column(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: p.isVoided
-                                        ? const Color(0xFFFFECEB)
-                                        : AppTheme.statusPaid.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Icon(
-                                    p.isVoided ? Icons.block_rounded : Icons.check_circle_outline_rounded,
-                                    size: 18,
-                                    color: p.isVoided ? const Color(0xFFC92A2A) : AppTheme.statusPaid,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p.method,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 14,
-                                          color: AppTheme.getInkColor(ctx),
-                                          decoration: p.isVoided ? TextDecoration.lineThrough : null,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${p.dateFormatted}${p.referenceNo != null ? " · Ref: ${p.referenceNo}" : ""}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppTheme.getInkMutedColor(ctx),
-                                        ),
-                                      ),
-                                      if (p.isVoided && p.voidReason != null)
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                          'Voided: ${p.voidReason}',
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFFC92A2A), fontStyle: FontStyle.italic),
+                                          'CURRENT BALANCE DUE',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.5,
+                                            color: AppTheme.getInkMutedColor(ctx),
+                                          ),
                                         ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '₱${NumberFormat('#,###').format(totalDue)}',
+                                          key: const Key('text_soa_balance_due'),
+                                          style: TextStyle(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w900,
+                                            color: currentTenant.isPaid
+                                                ? AppTheme.getStatusPaidText(ctx)
+                                                : (currentTenant.isOverdue
+                                                    ? AppTheme.getStatusOverdueText(ctx)
+                                                    : AppTheme.getStatusDueSoonText(ctx)),
+                                          ),
+                                        ),
+                                        if (lateFee > 0 || currentTenant.isLateFeeWaived) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Rent: ₱${NumberFormat('#,###').format(currentTenant.amount)} + Late Fee: ₱${NumberFormat('#,###').format(lateFee)}${currentTenant.isLateFeeWaived ? " (Waived)" : ""}',
+                                            key: const Key('text_soa_late_fee_breakdown'),
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: currentTenant.isLateFeeWaived ? AppTheme.statusPaid : const Color(0xFFC92A2A),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: currentTenant.isPaid
+                                            ? AppTheme.getStatusPaidBg(ctx)
+                                            : (currentTenant.isOverdue
+                                                ? AppTheme.getStatusOverdueBg(ctx)
+                                                : AppTheme.getStatusDueSoonBg(ctx)),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        currentTenant.isPaid ? 'Paid' : currentTenant.statusText,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: currentTenant.isPaid
+                                              ? AppTheme.getStatusPaidText(ctx)
+                                              : (currentTenant.isOverdue
+                                                  ? AppTheme.getStatusOverdueText(ctx)
+                                                  : AppTheme.getStatusDueSoonText(ctx)),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                const Divider(height: 1),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.home_work_outlined, size: 16, color: AppTheme.inkMuted),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        currentTenant.location,
+                                        style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(ctx), fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (currentTenant.phone != null && currentTenant.phone!.isNotEmpty) ...[
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.phone_android_rounded, size: 16, color: AppTheme.inkMuted),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        currentTenant.phone!,
+                                        style: TextStyle(fontSize: 13, color: AppTheme.getInkColor(ctx)),
+                                      ),
                                     ],
                                   ),
-                                ),
-                                Text(
-                                  '₱${NumberFormat('#,###').format(p.amount)}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    color: p.isVoided ? AppTheme.getInkMutedColor(ctx) : AppTheme.statusPaid,
-                                    decoration: p.isVoided ? TextDecoration.lineThrough : null,
+                                ],
+                                if (currentTenant.isOverdue && (currentTenant.lateFeeDaily > 0 || currentTenant.lateFeeFlat > 0)) ...[
+                                  const SizedBox(height: 10),
+                                  InkWell(
+                                    key: const Key('btn_toggle_waive_late_fee'),
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: () async {
+                                      final newWaived = !currentTenant.isLateFeeWaived;
+                                      await DatabaseHelper.instance.toggleWaiveTenantLateFee(currentTenant.id, newWaived);
+                                      final updated = currentTenant.copyWith(isLateFeeWaived: newWaived);
+                                      setSheetState(() {
+                                        currentTenant = updated;
+                                      });
+                                      widget.onEditTenant?.call(updated);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: currentTenant.isLateFeeWaived ? AppTheme.statusPaid.withValues(alpha: 0.1) : const Color(0xFFFFECEB),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: currentTenant.isLateFeeWaived ? AppTheme.statusPaid.withValues(alpha: 0.3) : const Color(0xFFC92A2A).withValues(alpha: 0.3),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            currentTenant.isLateFeeWaived ? Icons.undo_rounded : Icons.money_off_rounded,
+                                            size: 14,
+                                            color: currentTenant.isLateFeeWaived ? AppTheme.statusPaid : const Color(0xFFC92A2A),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            currentTenant.isLateFeeWaived ? 'Undo Late-Fee Waiver' : 'Waive Late-Fee for Current Bill',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: currentTenant.isLateFeeWaived ? AppTheme.statusPaid : const Color(0xFFC92A2A),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
-                          );
-                        }),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  child: ElevatedButton.icon(
-                    key: const Key('btn_share_soa'),
-                    icon: const Icon(Icons.share_rounded, size: 18),
-                    label: const Text('Share / Copy Statement of Account'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    onPressed: () {
-                      final buffer = StringBuffer();
-                      buffer.writeln('========================================');
-                      buffer.writeln('STATEMENT OF ACCOUNT (SOA)');
-                      buffer.writeln(landlord.businessName.isNotEmpty ? landlord.businessName : 'Tenera Property Management');
-                      if (landlord.phone.isNotEmpty) {
-                        buffer.writeln('Landlord Contact: ${landlord.phone}');
-                      }
-                      buffer.writeln('Date: ${DateFormat('MMMM d, y').format(DateTime.now())}');
-                      buffer.writeln('========================================');
-                      buffer.writeln('Tenant: ${tenant.name}');
-                      buffer.writeln('Assigned Unit: ${tenant.location}');
-                      buffer.writeln('Status: ${tenant.isPaid ? "Paid" : tenant.statusText}');
-                      buffer.writeln('Current Balance Due: ₱${NumberFormat('#,###').format(tenant.amount)}');
-                      buffer.writeln('----------------------------------------');
-                      buffer.writeln('PAYMENT TRANSACTIONS:');
-                      if (tenantPayments.isEmpty) {
-                        buffer.writeln('No previous payments on record.');
-                      } else {
-                        for (final p in tenantPayments) {
-                          if (p.isVoided) {
-                            buffer.writeln('• ${p.dateFormatted}: [VOIDED] ₱${NumberFormat('#,###').format(p.amount)} (${p.method})');
-                          } else {
-                            buffer.writeln('• ${p.dateFormatted}: ₱${NumberFormat('#,###').format(p.amount)} via ${p.method}${p.referenceNo != null ? " (Ref: ${p.referenceNo})" : ""}');
-                          }
-                        }
-                      }
-                      buffer.writeln('========================================');
-                      if (!tenant.isPaid && tenant.amount > 0) {
-                        buffer.writeln('Please settle the balance of ₱${NumberFormat('#,###').format(tenant.amount)} at your earliest convenience.');
-                        if (landlord.receiptFooter.isNotEmpty) {
-                          buffer.writeln(landlord.receiptFooter);
-                        }
-                      } else {
-                        buffer.writeln('All dues are currently settled. Thank you!');
-                      }
-
-                      Clipboard.setData(ClipboardData(text: buffer.toString()));
-                      Navigator.pop(sheetCtx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: AppTheme.primaryDeep,
-                          content: Row(
-                            children: [
-                              const Icon(Icons.check_circle_rounded, color: AppTheme.accent),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '✓ Statement of Account for ${tenant.name} copied to clipboard!',
-                                  style: const TextStyle(color: Colors.white),
-                                ),
-                              ),
-                            ],
                           ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'PAYMENT & BILLING HISTORY',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                              color: AppTheme.getInkMutedColor(ctx),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          if (tenantPayments.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppTheme.getSurfaceColor(ctx),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: AppTheme.getBorderColor(ctx)),
+                              ),
+                              child: Text(
+                                'No payment records found yet for this tenant.',
+                                style: TextStyle(fontSize: 13, color: AppTheme.getInkMutedColor(ctx)),
+                              ),
+                            )
+                          else
+                            ...tenantPayments.map((p) {
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.getSurfaceColor(ctx),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: p.isVoided
+                                        ? const Color(0xFFC92A2A).withValues(alpha: 0.3)
+                                        : AppTheme.getBorderColor(ctx),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: p.isVoided
+                                            ? const Color(0xFFFFECEB)
+                                            : AppTheme.statusPaid.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        p.isVoided ? Icons.block_rounded : Icons.check_circle_outline_rounded,
+                                        size: 18,
+                                        color: p.isVoided ? const Color(0xFFC92A2A) : AppTheme.statusPaid,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            p.method,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 14,
+                                              color: AppTheme.getInkColor(ctx),
+                                              decoration: p.isVoided ? TextDecoration.lineThrough : null,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            '${p.dateFormatted}${p.referenceNo != null ? " · Ref: ${p.referenceNo}" : ""}',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: AppTheme.getInkMutedColor(ctx),
+                                            ),
+                                          ),
+                                          if (p.isVoided && p.voidReason != null)
+                                            Text(
+                                              'Voided: ${p.voidReason}',
+                                              style: const TextStyle(fontSize: 11, color: Color(0xFFC92A2A), fontStyle: FontStyle.italic),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    Text(
+                                      '₱${NumberFormat('#,###').format(p.amount)}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15,
+                                        color: p.isVoided ? AppTheme.getInkMutedColor(ctx) : AppTheme.statusPaid,
+                                        decoration: p.isVoided ? TextDecoration.lineThrough : null,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      child: ElevatedButton.icon(
+                        key: const Key('btn_share_soa'),
+                        icon: const Icon(Icons.share_rounded, size: 18),
+                        label: const Text('Share / Copy Statement of Account'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+                        onPressed: () {
+                          final buffer = StringBuffer();
+                          buffer.writeln('========================================');
+                          buffer.writeln('STATEMENT OF ACCOUNT (SOA)');
+                          buffer.writeln(landlord.businessName.isNotEmpty ? landlord.businessName : 'Tenera Property Management');
+                          if (landlord.phone.isNotEmpty) {
+                            buffer.writeln('Landlord Contact: ${landlord.phone}');
+                          }
+                          buffer.writeln('Date: ${DateFormat('MMMM d, y').format(DateTime.now())}');
+                          buffer.writeln('========================================');
+                          buffer.writeln('Tenant: ${currentTenant.name}');
+                          buffer.writeln('Assigned Unit: ${currentTenant.location}');
+                          buffer.writeln('Status: ${currentTenant.isPaid ? "Paid" : currentTenant.statusText}');
+                          if (lateFee > 0 || currentTenant.isLateFeeWaived) {
+                            buffer.writeln('Base Monthly Rent: ₱${NumberFormat('#,###').format(currentTenant.amount)}');
+                            buffer.writeln('Late Fee Penalty: ₱${NumberFormat('#,###').format(lateFee)}${currentTenant.isLateFeeWaived ? " (WAIVED)" : ""}');
+                            buffer.writeln('Current Total Due: ₱${NumberFormat('#,###').format(totalDue)}');
+                          } else {
+                            buffer.writeln('Current Balance Due: ₱${NumberFormat('#,###').format(totalDue)}');
+                          }
+                          buffer.writeln('----------------------------------------');
+                          buffer.writeln('PAYMENT TRANSACTIONS:');
+                          if (tenantPayments.isEmpty) {
+                            buffer.writeln('No previous payments on record.');
+                          } else {
+                            for (final p in tenantPayments) {
+                              if (p.isVoided) {
+                                buffer.writeln('• ${p.dateFormatted}: [VOIDED] ₱${NumberFormat('#,###').format(p.amount)} (${p.method})');
+                              } else {
+                                buffer.writeln('• ${p.dateFormatted}: ₱${NumberFormat('#,###').format(p.amount)} via ${p.method}${p.referenceNo != null ? " (Ref: ${p.referenceNo})" : ""}');
+                              }
+                            }
+                          }
+                          buffer.writeln('========================================');
+                          if (!currentTenant.isPaid && totalDue > 0) {
+                            buffer.writeln('Please settle the balance of ₱${NumberFormat('#,###').format(totalDue)} at your earliest convenience.');
+                            if (landlord.receiptFooter.isNotEmpty) {
+                              buffer.writeln(landlord.receiptFooter);
+                            }
+                          } else {
+                            buffer.writeln('All dues are currently settled. Thank you!');
+                          }
+
+                          Clipboard.setData(ClipboardData(text: buffer.toString()));
+                          Navigator.pop(sheetCtx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: AppTheme.primaryDeep,
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_rounded, color: AppTheme.accent),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      '✓ Statement of Account for ${currentTenant.name} copied to clipboard!',
+                                      style: const TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
             );
           },
         );
@@ -655,14 +1134,16 @@ class _TenantsTabState extends State<TenantsTab> {
   void _showTenantActionSheet(TenantBill tenant) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppTheme.getSurfaceElevatedColor(context),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => SafeArea(
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: SingleChildScrollView(
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Container(
                 margin: const EdgeInsets.only(top: 12, bottom: 8),
                 width: 40,
@@ -699,6 +1180,34 @@ class _TenantsTabState extends State<TenantsTab> {
                 },
               ),
               ListTile(
+                key: Key('action_id_doc_${tenant.id}'),
+                leading: const Icon(Icons.badge_rounded, color: AppTheme.primary),
+                title: const Text('Government ID / Document', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  tenant.idPhotoPath != null ? 'ID on file • Tap to view/update' : 'No government ID uploaded yet',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showTenantIdDialog(tenant);
+                },
+              ),
+              ListTile(
+                key: Key('action_late_fee_${tenant.id}'),
+                leading: Icon(Icons.gavel_rounded, color: AppTheme.accentOrange),
+                title: const Text('Late-Fee / Penalty Rules', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  tenant.lateFeeDaily > 0 || tenant.lateFeeFlat > 0
+                      ? '₱${tenant.lateFeeDaily}/day + ₱${tenant.lateFeeFlat} flat (${tenant.gracePeriodDays}d grace)'
+                      : 'Configure automated penalties',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showLateFeeRuleDialog(tenant);
+                },
+              ),
+              ListTile(
                 key: Key('action_edit_tenant_${tenant.id}'),
                 leading: const Icon(Icons.edit_rounded, color: AppTheme.primary),
                 title: const Text('Edit Tenant Details', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -721,7 +1230,8 @@ class _TenantsTabState extends State<TenantsTab> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   @override
@@ -1028,6 +1538,64 @@ class _TenantsTabState extends State<TenantsTab> {
                                               fontSize: 13,
                                             ),
                                           ),
+                                          if ((tenant.idPhotoPath != null && tenant.idPhotoPath!.isNotEmpty) ||
+                                              (!tenant.isPaid && tenant.calculateLateFee() > 0)) ...[
+                                            const SizedBox(height: 4),
+                                            Wrap(
+                                              spacing: 6,
+                                              runSpacing: 4,
+                                              children: [
+                                                if (tenant.idPhotoPath != null && tenant.idPhotoPath!.isNotEmpty)
+                                                  Container(
+                                                    key: Key('badge_id_${tenant.id}'),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: AppTheme.primary.withValues(alpha: 0.1),
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: const Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        Icon(Icons.verified_user_rounded, size: 10, color: AppTheme.primary),
+                                                        SizedBox(width: 3),
+                                                        Text(
+                                                          'ID on File',
+                                                          style: TextStyle(
+                                                            fontSize: 10,
+                                                            color: AppTheme.primary,
+                                                            fontWeight: FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                if (!tenant.isPaid && tenant.calculateLateFee() > 0)
+                                                  Container(
+                                                    key: Key('badge_late_fee_${tenant.id}'),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFFFECEB),
+                                                      borderRadius: BorderRadius.circular(6),
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      children: [
+                                                        const Icon(Icons.gavel_rounded, size: 10, color: Color(0xFFC92A2A)),
+                                                        const SizedBox(width: 3),
+                                                        Text(
+                                                          '+₱${tenant.calculateLateFee()} late fee',
+                                                          style: const TextStyle(
+                                                            fontSize: 10,
+                                                            color: Color(0xFFC92A2A),
+                                                            fontWeight: FontWeight.w700,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ],
                                           if ((tenant.phone != null && tenant.phone!.isNotEmpty) ||
                                               (tenant.messenger != null && tenant.messenger!.isNotEmpty)) ...[
                                             const SizedBox(height: 4),
@@ -1072,7 +1640,7 @@ class _TenantsTabState extends State<TenantsTab> {
                                           crossAxisAlignment: CrossAxisAlignment.end,
                                           children: [
                                             Text(
-                                              '₱${currencyFormat.format(tenant.amount)}',
+                                              '₱${currencyFormat.format(tenant.totalDueWithLateFee)}',
                                               style: TextStyle(
                                                 color: AppTheme.getInkColor(context),
                                                 fontSize: 16,

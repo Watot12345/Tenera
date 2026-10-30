@@ -2145,6 +2145,137 @@ void main() {
 
     expect(find.textContaining('Arrears Aging Statement copied to clipboard!'), findsOneWidget);
   });
+
+  testWidgets('Tenant Government ID Attachment & Verification (PRD FR-C2): opens ID modal, saves ID document reference, and displays ID badge',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to Tenants Tab
+    await tester.tap(find.byKey(const Key('nav_tenants')));
+    await tester.pumpAndSettle();
+
+    // Open options for Maria S. (t1)
+    final optionsBtn = find.byKey(const Key('btn_tenant_options_t1'));
+    expect(optionsBtn, findsOneWidget);
+    await tester.tap(optionsBtn);
+    await tester.pumpAndSettle();
+
+    // Verify Government ID action is present and tap it
+    final idAction = find.byKey(const Key('action_id_doc_t1'));
+    expect(idAction, findsOneWidget);
+    await tester.tap(idAction);
+    await tester.pumpAndSettle();
+
+    // Verify modal is open
+    expect(find.byKey(const Key('dialog_tenant_id_t1')), findsOneWidget);
+    expect(find.text('Government ID'), findsOneWidget);
+
+    // Enter a new ID reference
+    final idInput = find.byKey(const Key('input_tenant_id_doc'));
+    expect(idInput, findsOneWidget);
+    await tester.enterText(idInput, 'PhilSys-ID-4421-9988');
+    await tester.pumpAndSettle();
+
+    // Save ID
+    await tester.tap(find.byKey(const Key('btn_save_tenant_id')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify confirmation and ID on File badge
+    expect(find.textContaining('Government ID saved for Maria S.!'), findsOneWidget);
+    expect(find.byKey(const Key('badge_id_t1')), findsOneWidget);
+  });
+
+  testWidgets('Automated Late-Fee Rules & Landlord Waiver (PRD FR-D5): configures penalty rules, displays breakdown in SOA, and toggles waiver',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({
+      PrivacyPolicyScreen.prefKeyAccepted: true,
+      SubscriptionPlansScreen.prefKeyCurrentPlan: 'pro',
+    });
+    await pumpAppAndLoadDatabase(tester);
+
+    // Navigate to Tenants Tab
+    await tester.tap(find.byKey(const Key('nav_tenants')));
+    await tester.pumpAndSettle();
+
+    // Open options for Maria S. (t1)
+    final optionsBtn = find.byKey(const Key('btn_tenant_options_t1'));
+    expect(optionsBtn, findsOneWidget);
+    await tester.tap(optionsBtn);
+    await tester.pumpAndSettle();
+
+    // Open Late-Fee Rule modal
+    final lateFeeAction = find.byKey(const Key('action_late_fee_t1'));
+    expect(lateFeeAction, findsOneWidget);
+    await tester.tap(lateFeeAction);
+    await tester.pumpAndSettle();
+
+    // Verify Late-Fee dialog
+    expect(find.byKey(const Key('dialog_late_fee_t1')), findsOneWidget);
+    expect(find.text('Late-Fee / Penalty Rules'), findsOneWidget);
+
+    // Configure late fee: 1 grace day, ₱100 daily, ₱250 flat
+    final graceInput = find.byKey(const Key('input_late_fee_grace'));
+    final dailyInput = find.byKey(const Key('input_late_fee_daily'));
+    final flatInput = find.byKey(const Key('input_late_fee_flat'));
+
+    await tester.enterText(graceInput, '1');
+    await tester.enterText(dailyInput, '100');
+    await tester.enterText(flatInput, '250');
+    await tester.pumpAndSettle();
+
+    // Save rule
+    await tester.tap(find.byKey(const Key('btn_save_late_fee')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Dismiss any snackbar
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+
+    // Tap tenant card to open Statement of Account (SOA)
+    final tenantCard = find.byKey(const Key('tenant_card_t1'));
+    expect(tenantCard, findsOneWidget);
+    await tester.tap(tenantCard);
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify late fee breakdown appears in SOA
+    expect(find.byKey(const Key('text_soa_late_fee_breakdown')), findsOneWidget);
+    expect(find.byKey(const Key('btn_toggle_waive_late_fee')), findsOneWidget);
+
+    // Tap Waive Late Fee button
+    await tester.tap(find.byKey(const Key('btn_toggle_waive_late_fee')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await Future.delayed(const Duration(milliseconds: 300));
+    });
+    await tester.pumpAndSettle();
+
+    // Verify waiver is active
+    expect(find.textContaining('(Waived)'), findsOneWidget);
+
+    // Share SOA with waiver reflected
+    final shareSoaBtn = find.byKey(const Key('btn_share_soa'));
+    expect(shareSoaBtn, findsOneWidget);
+    await tester.tap(shareSoaBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Statement of Account for Maria S. copied to clipboard!'), findsOneWidget);
+  });
 }
 
 

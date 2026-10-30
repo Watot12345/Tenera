@@ -139,6 +139,22 @@ class DatabaseHelper {
       ''');
     } catch (_) {}
 
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN id_photo_path TEXT');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN grace_period_days INTEGER DEFAULT 3');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN late_fee_daily INTEGER DEFAULT 0');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN late_fee_flat INTEGER DEFAULT 0');
+    } catch (_) {}
+    try {
+      await db.execute('ALTER TABLE tenants ADD COLUMN is_late_fee_waived INTEGER DEFAULT 0');
+    } catch (_) {}
+
     return db;
   }
 
@@ -184,6 +200,11 @@ class DatabaseHelper {
         phone TEXT,
         messenger TEXT,
         automated_reminders INTEGER NOT NULL DEFAULT 1,
+        id_photo_path TEXT,
+        grace_period_days INTEGER DEFAULT 3,
+        late_fee_daily INTEGER DEFAULT 0,
+        late_fee_flat INTEGER DEFAULT 0,
+        is_late_fee_waived INTEGER DEFAULT 0,
         updated_at INTEGER NOT NULL,
         is_synced INTEGER NOT NULL DEFAULT 0
       )
@@ -360,8 +381,8 @@ class DatabaseHelper {
 
     // Seed Tenants
     final tenants = [
-      {'id': 't1', 'name': 'Maria S.', 'initials': 'MS', 'location': 'Room 3 · Mabini Apts', 'amount': 3500, 'status_text': '5 days late', 'is_overdue': 1, 'is_paid': 0, 'phone': '0917 888 1234', 'messenger': 'mariasantos', 'automated_reminders': 1},
-      {'id': 't2', 'name': 'Ramon D.', 'initials': 'RD', 'location': 'Unit 2B · Mabini Apts', 'amount': 5000, 'status_text': '2 days late', 'is_overdue': 1, 'is_paid': 0, 'phone': '0918 555 6789', 'messenger': 'ramond', 'automated_reminders': 1},
+      {'id': 't1', 'name': 'Maria S.', 'initials': 'MS', 'location': 'Room 3 · Mabini Apts', 'amount': 3500, 'status_text': '5 days late', 'is_overdue': 1, 'is_paid': 0, 'phone': '0917 888 1234', 'messenger': 'mariasantos', 'automated_reminders': 1, 'id_photo_path': 'Government_ID_MariaSantos.jpg', 'grace_period_days': 3, 'late_fee_daily': 50, 'late_fee_flat': 100, 'is_late_fee_waived': 0},
+      {'id': 't2', 'name': 'Ramon D.', 'initials': 'RD', 'location': 'Unit 2B · Mabini Apts', 'amount': 5000, 'status_text': '2 days late', 'is_overdue': 1, 'is_paid': 0, 'phone': '0918 555 6789', 'messenger': 'ramond', 'automated_reminders': 1, 'grace_period_days': 3, 'late_fee_daily': 0, 'late_fee_flat': 0, 'is_late_fee_waived': 0},
       {'id': 't3', 'name': 'Jun R.', 'initials': 'JR', 'location': 'Room 5 · Rizal House', 'amount': 3000, 'status_text': 'In 2 days', 'is_overdue': 0, 'is_paid': 0, 'phone': '0922 333 4455', 'messenger': 'junr_ph', 'automated_reminders': 1},
       {'id': 't4', 'name': 'Ana P.', 'initials': 'AP', 'location': 'Unit 1A · Rizal House', 'amount': 4000, 'status_text': 'In 4 days', 'is_overdue': 0, 'is_paid': 0, 'phone': '0905 111 2233', 'messenger': 'anap_official', 'automated_reminders': 1},
       {'id': 't5', 'name': 'Juan Carlos', 'initials': 'JC', 'location': 'Room 1 · Mabini Apts', 'amount': 4000, 'status_text': 'Paid Oct 25', 'is_overdue': 0, 'is_paid': 1, 'phone': '0917 999 8877', 'messenger': 'jcarlos', 'automated_reminders': 1},
@@ -1140,6 +1161,11 @@ class DatabaseHelper {
         phone: t['phone'] as String?,
         messenger: t['messenger'] as String?,
         automatedReminders: t['automated_reminders'] == null ? true : (t['automated_reminders'] as int) != 0,
+        idPhotoPath: t['id_photo_path'] as String?,
+        gracePeriodDays: (t['grace_period_days'] as int?) ?? 3,
+        lateFeeDaily: (t['late_fee_daily'] as int?) ?? 0,
+        lateFeeFlat: (t['late_fee_flat'] as int?) ?? 0,
+        isLateFeeWaived: (t['is_late_fee_waived'] as int?) == 1,
       );
     }).toList();
   }
@@ -1162,6 +1188,11 @@ class DatabaseHelper {
         'phone': tenant.phone,
         'messenger': tenant.messenger,
         'automated_reminders': tenant.automatedReminders ? 1 : 0,
+        'id_photo_path': tenant.idPhotoPath,
+        'grace_period_days': tenant.gracePeriodDays,
+        'late_fee_daily': tenant.lateFeeDaily,
+        'late_fee_flat': tenant.lateFeeFlat,
+        'is_late_fee_waived': tenant.isLateFeeWaived ? 1 : 0,
         'updated_at': now,
         'is_synced': 0,
       },
@@ -1187,11 +1218,73 @@ class DatabaseHelper {
         'phone': tenant.phone,
         'messenger': tenant.messenger,
         'automated_reminders': tenant.automatedReminders ? 1 : 0,
+        'id_photo_path': tenant.idPhotoPath,
+        'grace_period_days': tenant.gracePeriodDays,
+        'late_fee_daily': tenant.lateFeeDaily,
+        'late_fee_flat': tenant.lateFeeFlat,
+        'is_late_fee_waived': tenant.isLateFeeWaived ? 1 : 0,
         'updated_at': now,
         'is_synced': 0,
       },
       where: 'id = ?',
       whereArgs: [tenant.id],
+    );
+    notifyChanges();
+  }
+
+  Future<void> updateTenantLateFeeRule({
+    required String tenantId,
+    required int graceDays,
+    required int lateFeeDaily,
+    required int lateFeeFlat,
+    required bool isWaived,
+  }) async {
+    final db = await database;
+    await db.update(
+      'tenants',
+      {
+        'grace_period_days': graceDays,
+        'late_fee_daily': lateFeeDaily,
+        'late_fee_flat': lateFeeFlat,
+        'is_late_fee_waived': isWaived ? 1 : 0,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        'is_synced': 0,
+      },
+      where: 'id = ?',
+      whereArgs: [tenantId],
+    );
+    notifyChanges();
+  }
+
+  Future<void> updateTenantIdPhoto({
+    required String tenantId,
+    required String? idPhotoPath,
+  }) async {
+    final db = await database;
+    await db.update(
+      'tenants',
+      {
+        'id_photo_path': idPhotoPath,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        'is_synced': 0,
+      },
+      where: 'id = ?',
+      whereArgs: [tenantId],
+    );
+    notifyChanges();
+  }
+
+  Future<void> toggleWaiveTenantLateFee(String tenantId, bool waive) async {
+    final db = await database;
+    await db.update(
+      'tenants',
+      {
+        'is_late_fee_waived': waive ? 1 : 0,
+        'updated_at': DateTime.now().millisecondsSinceEpoch,
+        'is_synced': 0,
+      },
+      where: 'id = ?',
+      whereArgs: [tenantId],
     );
     notifyChanges();
   }
