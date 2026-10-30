@@ -482,9 +482,67 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 14),
 
                     // Amount
-                    Text(
-                      'Amount Paid (₱)',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getInkMutedColor(context)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Amount Paid (₱)',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.getInkMutedColor(context)),
+                        ),
+                        if (selected.calculateLateFee() > 0)
+                          InkWell(
+                            key: const Key('btn_chip_toggle_late_fee'),
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {
+                              setSheetState(() {
+                                if (amountController.text == selected.totalDueWithLateFee.toString()) {
+                                  amountController.text = selected.amount.toString();
+                                } else {
+                                  amountController.text = selected.totalDueWithLateFee.toString();
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: amountController.text == selected.totalDueWithLateFee.toString()
+                                    ? AppTheme.primary.withValues(alpha: 0.12)
+                                    : AppTheme.accentOrange.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: amountController.text == selected.totalDueWithLateFee.toString()
+                                      ? AppTheme.primary.withValues(alpha: 0.3)
+                                      : AppTheme.accentOrange.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    amountController.text == selected.totalDueWithLateFee.toString()
+                                        ? Icons.check_circle_rounded
+                                        : Icons.add_circle_outline_rounded,
+                                    size: 13,
+                                    color: amountController.text == selected.totalDueWithLateFee.toString()
+                                        ? AppTheme.primary
+                                        : AppTheme.accentOrange,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '+₱${selected.calculateLateFee()} Late Fee',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: amountController.text == selected.totalDueWithLateFee.toString()
+                                          ? AppTheme.primary
+                                          : AppTheme.accentOrange,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     TextField(

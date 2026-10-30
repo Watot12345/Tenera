@@ -549,7 +549,6 @@ class _TenantsTabState extends State<TenantsTab> {
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: 'Grace Period (Days)',
-                      helperText: 'Number of days past due before penalty starts',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -559,8 +558,7 @@ class _TenantsTabState extends State<TenantsTab> {
                     controller: dailyCtrl,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'Daily Late Fee (₱ / day)',
-                      helperText: 'e.g. ₱50 per day overdue beyond grace',
+                      labelText: 'Daily Late Fee (₱)',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -570,8 +568,7 @@ class _TenantsTabState extends State<TenantsTab> {
                     controller: flatCtrl,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'One-Time Flat Late Fee (₱)',
-                      helperText: 'Fixed charge applied once overdue',
+                      labelText: 'Flat Late Fee (₱)',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
@@ -580,7 +577,6 @@ class _TenantsTabState extends State<TenantsTab> {
                     key: const Key('switch_waive_late_fee'),
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Waive Late Fee for Current Bill', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Forgives current penalty without deleting rule', style: TextStyle(fontSize: 11)),
                     value: isWaived,
                     onChanged: (val) {
                       setDialogState(() {
@@ -928,7 +924,7 @@ class _TenantsTabState extends State<TenantsTab> {
                                           ),
                                           const SizedBox(width: 6),
                                           Text(
-                                            currentTenant.isLateFeeWaived ? 'Undo Late-Fee Waiver' : 'Waive Late-Fee for Current Bill',
+                                            currentTenant.isLateFeeWaived ? 'Undo Waiver' : 'Waive Late Fee',
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,
@@ -1173,7 +1169,6 @@ class _TenantsTabState extends State<TenantsTab> {
                 key: Key('action_soa_tenant_${tenant.id}'),
                 leading: const Icon(Icons.receipt_long_rounded, color: AppTheme.primary),
                 title: const Text('Statement of Account (SOA)', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: const Text('View ledger & transaction history', style: TextStyle(fontSize: 12)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _showStatementOfAccount(tenant);
@@ -1183,10 +1178,7 @@ class _TenantsTabState extends State<TenantsTab> {
                 key: Key('action_id_doc_${tenant.id}'),
                 leading: const Icon(Icons.badge_rounded, color: AppTheme.primary),
                 title: const Text('Government ID / Document', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(
-                  tenant.idPhotoPath != null ? 'ID on file • Tap to view/update' : 'No government ID uploaded yet',
-                  style: const TextStyle(fontSize: 12),
-                ),
+                subtitle: tenant.idPhotoPath != null ? Text(tenant.idPhotoPath!, style: const TextStyle(fontSize: 12)) : null,
                 onTap: () {
                   Navigator.pop(ctx);
                   _showTenantIdDialog(tenant);
@@ -1196,12 +1188,12 @@ class _TenantsTabState extends State<TenantsTab> {
                 key: Key('action_late_fee_${tenant.id}'),
                 leading: Icon(Icons.gavel_rounded, color: AppTheme.accentOrange),
                 title: const Text('Late-Fee / Penalty Rules', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(
-                  tenant.lateFeeDaily > 0 || tenant.lateFeeFlat > 0
-                      ? '₱${tenant.lateFeeDaily}/day + ₱${tenant.lateFeeFlat} flat (${tenant.gracePeriodDays}d grace)'
-                      : 'Configure automated penalties',
-                  style: const TextStyle(fontSize: 12),
-                ),
+                subtitle: (tenant.lateFeeDaily > 0 || tenant.lateFeeFlat > 0)
+                    ? Text(
+                        '₱${tenant.lateFeeDaily}/day + ₱${tenant.lateFeeFlat} flat (${tenant.gracePeriodDays}d grace)',
+                        style: const TextStyle(fontSize: 12),
+                      )
+                    : null,
                 onTap: () {
                   Navigator.pop(ctx);
                   _showLateFeeRuleDialog(tenant);
