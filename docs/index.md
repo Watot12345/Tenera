@@ -25,7 +25,7 @@ Get the latest official Android APK package directly from GitHub:
 
 <div align="center" style="margin: 24px 0;">
   <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" style="display:inline-block; background-color:#1D3557; color:#FFFFFF; font-weight:700; font-size:18px; padding:16px 32px; border-radius:14px; text-decoration:none; box-shadow:0 4px 14px rgba(29,53,87,0.35);">
-    ⬇️ Download Tenera APK (v1.0)
+    ⬇️ Download Tenera APK (v1.0.1)
   </a>
 </div>
 

@@ -4,58 +4,167 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tenera - Release Notes & Changelog</title>
+  <meta name="description" content="Official release notes, version history, and APK downloads for Tenera Property Manager.">
+  <meta name="theme-color" content="#1D3557">
+  <link rel="icon" type="image/png" href="assets/app_icon_squircle.png">
   <style>
     :root {
       --primary-deep: #1D3557;
       --accent: #E9C46A;
-      --background: #F8F9FA;
+      --accent-hover: #DFB54E;
+      --background: #F8FAFC;
       --surface: #FFFFFF;
       --ink: #1B2430;
-      --ink-muted: #64748B;
+      --ink-muted: #52637A;
       --border: #E2E8F0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--background); color: var(--ink); line-height: 1.6; }
-    header { background: var(--primary-deep); color: white; padding: 20px; border-bottom: 3px solid var(--accent); }
-    .container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
-    nav a { color: #E2E8F0; text-decoration: none; font-weight: 600; margin-left: 16px; }
-    nav a:hover { color: var(--accent); }
-    .card { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 30px; margin-bottom: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-    h1 { font-size: 28px; margin-bottom: 12px; color: var(--primary-deep); }
-    h2 { font-size: 22px; margin-top: 10px; margin-bottom: 14px; color: var(--primary-deep); }
-    h3 { font-size: 16px; margin-top: 16px; margin-bottom: 8px; color: var(--ink); }
-    ul { margin-left: 20px; margin-bottom: 16px; }
-    li { margin-bottom: 6px; }
-    .tag { display: inline-block; background: #D8F3DC; color: #1B4332; font-weight: 800; font-size: 12px; padding: 4px 12px; border-radius: 8px; margin-bottom: 12px; }
-    .btn { display: inline-block; background: var(--primary-deep); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; margin-top: 10px; }
-    footer { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 14px; }
+    body { background-color: var(--background); color: var(--ink); line-height: 1.6; min-block-size: 100dvh; display: flex; flex-direction: column; }
+    header {
+      background: linear-gradient(135deg, var(--primary-deep) 0%, #152238 100%);
+      color: white;
+      padding-block: 16px;
+      padding-inline: 20px;
+      border-block-end: 3px solid var(--accent);
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 50;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
+    }
+    .nav-container {
+      max-inline-size: 1140px;
+      margin-inline: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: safe center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: white;
+    }
+    .logo-img {
+      display: block;
+      inline-size: 40px;
+      block-size: 40px;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+    .logo-text h1 { font-size: 20px; font-weight: 800; line-height: 1.15; }
+    .logo-text span { display: block; font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    nav {
+      display: flex;
+      gap: 8px;
+      align-items: safe center;
+      flex-wrap: wrap;
+      flex-wrap: balance;
+    }
+    nav a {
+      color: #E2E8F0;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding-block: 6px;
+      padding-inline: 12px;
+      border-radius: 8px;
+      transition: color 0.2s, background-color 0.2s;
+    }
+    nav a:hover { color: var(--accent); background-color: rgba(255, 255, 255, 0.08); }
+    nav a[aria-current="page"] {
+      color: var(--accent);
+      background-color: rgba(233, 196, 106, 0.14);
+      border-block-end: 2px solid var(--accent);
+    }
+    .nav-cta {
+      background-color: var(--accent);
+      color: var(--ink) !important;
+      font-weight: 800;
+    }
+    .container { max-inline-size: 920px; margin-inline: auto; padding-block: 42px; padding-inline: 20px; flex-grow: 1; }
+    .card { background: var(--surface); border-radius: 18px; border: 1px solid var(--border); padding: 32px; margin-block-end: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    .card.latest { border: 2px solid var(--accent); box-shadow: 0 8px 24px rgba(29, 53, 87, 0.08); }
+    h1 { font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.2rem); margin-block-end: 8px; color: var(--primary-deep); font-weight: 900; }
+    h2 { font-size: 22px; margin-block: 8px 6px; color: var(--primary-deep); font-weight: 800; }
+    h3 { font-size: 16px; margin-block: 18px 8px; color: var(--ink); font-weight: 800; }
+    ul { margin-inline-start: 20px; margin-block-end: 16px; }
+    li { margin-block-end: 8px; font-size: 14.5px; color: #334155; }
+    .tag { display: inline-block; background: #D8F3DC; color: #1B4332; font-weight: 800; font-size: 12px; padding-block: 4px; padding-inline: 12px; border-radius: 999px; margin-block-end: 8px; }
+    .tag-prev { background: #E2E8F0; color: #334155; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; background: var(--primary-deep); color: white; padding-block: 12px; padding-inline: 24px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; margin-block-start: 10px; }
+    .btn:hover { background: #162944; }
+    footer { background: #0F172A; color: #94A3B8; text-align: center; padding-block: 40px; padding-inline: 20px; font-size: 14px; }
+    footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
   </style>
 </head>
 <body>
   <header>
-    <div style="max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-      <a href="index.html" style="color: white; text-decoration: none; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
-        <img src="assets/app_icon_squircle.png" alt="Tenera Logo" style="width: 34px; height: 34px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
-        Tenera
+    <div class="nav-container">
+      <a href="index.html" class="logo-badge">
+        <img src="assets/app_icon_squircle.png" alt="Tenera Logo" class="logo-img" width="40" height="40">
+        <div class="logo-text">
+          <h1>Tenera</h1>
+          <span>Property Manager</span>
+        </div>
       </a>
-      <nav>
+      <nav aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="releases.html">Changelog</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#pricing">Pricing</a>
+        <a href="releases.html" aria-current="page">Changelog</a>
+        <a href="privacy-policy.html">Privacy</a>
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="nav-cta">⬇️ Download APK</a>
       </nav>
     </div>
   </header>
 
-  <div class="container">
-    <h1>📋 Release Notes & Changelog</h1>
-    <p style="color: var(--ink-muted); margin-bottom: 24px;">Track all official builds and updates published to the GitHub Releases repository.</p>
+  <main class="container">
+    <h1>📋 Release Notes &amp; Changelog</h1>
+    <p style="color: var(--ink-muted); margin-block-end: 28px;">Track all official builds, features, and security improvements published to GitHub Releases.</p>
 
-    <div class="card">
+    <!-- v1.0.1 -->
+    <article class="card latest">
       <span class="tag">✓ LATEST STABLE RELEASE</span>
+      <h2>Version v1.0.1 (Audit, SOA, Operations &amp; Security Update)</h2>
+      <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Target: Android 7.0+ (API 24 to 35) · Offline SQLite SSOT</p>
+
+      <h3>🧾 Ledger, Partial Payments &amp; Security Deposit Escrow</h3>
+      <ul>
+        <li><strong>Partial &amp; Advance Payments (BR-6 / FR-E3):</strong> Record partial rent payments or advance credits with automatic running balance calculation.</li>
+        <li><strong>Tenant Statement of Account (SOA / FR-E4):</strong> Full chronological ledger per tenant showing rent charges, utility splits, payments, and running balance.</li>
+        <li><strong>Void &amp; Adjustment Audit Trail (BR-2 / FR-E6):</strong> Mistaken payment entries can be voided with a mandatory reason while preserving immutable financial history.</li>
+        <li><strong>Move-Out Deposit Settlement &amp; Escrow Reports (BR-4 / FR-D7 / FR-H7):</strong> Security deposits are tracked strictly as escrow liabilities (never inflated into collected rent income), with move-out deduction itemization and refund calculation.</li>
+      </ul>
+
+      <h3>🏢 Tenant ID, Late Fees, Maintenance &amp; Operations</h3>
+      <ul>
+        <li><strong>Government ID Attachment (FR-C2) &amp; Late-Fee Rules (FR-D5):</strong> Attach tenant ID photos offline and configure optional per-lease grace days and late penalties with 1-tap landlord waiver support.</li>
+        <li><strong>Expense Tracker &amp; Maintenance Tickets:</strong> Log operating expenses per property and track unit repair/maintenance tickets from reported to resolved.</li>
+        <li><strong>Arrears Aging Report (FR-H3) &amp; SQLite Health Check (FR-I4):</strong> Bucket overdue balances by 1–30, 31–60, 61–90, and 90+ days, and run on-demand SQLite <code>PRAGMA integrity_check</code> diagnostics.</li>
+        <li><strong>Sub-Meter Utility Splitter &amp; Printable Lease Contracts:</strong> Compute exact electric/water sub-meter shares and generate printable Philippine lease contracts.</li>
+      </ul>
+
+      <h3>🛡️ Security, Play Protect &amp; Experience</h3>
+      <ul>
+        <li><strong>Play Protect Verified Safe:</strong> Removed direct <code>SEND_SMS</code> permission in favor of launching the device's default SMS app with pre-filled reminders — eliminating Android Play Protect warnings.</li>
+        <li><strong>14-Day Anti-Bypass Trial &amp; Tier Gating:</strong> Full 14-day trial on install, Starter (₱49/mo, 1 property up to 15 units, AdMob supported), and 100% Ad-Free Tenera Pro &amp; Business tiers.</li>
+        <li><strong>Refined Light &amp; Dark Mode:</strong> High-contrast Roof Ledger palette with streamlined action buttons and zero redundant dialog clutter.</li>
+      </ul>
+
+      <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn">⬇️ Download Tenera APK (v1.0.1)</a>
+    </article>
+
+    <!-- v1.0 -->
+    <article class="card">
+      <span class="tag tag-prev">PREVIOUS RELEASE</span>
       <h2>Version v1.0 (Initial Public Release)</h2>
-      <p style="color: var(--ink-muted); font-size: 14px; margin-bottom: 14px;">Release Date: October 2026 · Target: Android 7.0+ (API 24 to 34+)</p>
+      <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Release Date: October 2026 · Target: Android 7.0+ (API 24 to 34+)</p>
       
-      <h3>🚀 Architecture & Features</h3>
+      <h3>🚀 Architecture &amp; Features</h3>
       <ul>
         <li><strong>SQLite SSOT:</strong> Removed all static lists. All properties, rooms, tenants, and payment logs query and write to local SQLite.</li>
         <li><strong>Dynamic Ledger Math:</strong> Live calculation of collected amount, expected amount, vacant units, and overdue counts.</li>
@@ -65,12 +174,12 @@
         <li><strong>Room Matrix:</strong> Color-coded visual room status grid with tenant long-press vacate action.</li>
       </ul>
 
-      <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn">⬇️ Download Tenera APK (v1.0)</a>
-    </div>
-  </div>
+      <a href="https://github.com/Watot12345/Tenera/releases/tag/v1.0" target="_blank" rel="noopener" class="btn" style="background: #475569;">📦 View v1.0 on GitHub</a>
+    </article>
+  </main>
 
   <footer>
-    <p>© 2026 Tenera Property Manager · <a href="https://github.com/Watot12345/Tenera" style="color: var(--primary-deep);">GitHub Repository</a></p>
+    <p>© 2026 Tenera Property Manager · <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener">GitHub Repository</a></p>
   </footer>
 </body>
 </html>

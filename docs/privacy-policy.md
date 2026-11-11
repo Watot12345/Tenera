@@ -20,9 +20,10 @@ When you choose to enable Firebase Cloud Sync:
 - Records are transmitted over encrypted HTTPS/TLS connections to Google Firebase Firestore servers.
 - Data is partitioned under an anonymous unique landlord identifier generated on your device. We do not sell, rent, or monetize your property records.
 
-## 3. Camera & Storage Permissions
-- **Camera / Photo Library**: Used exclusively if you choose to take or attach a photo proof of cash rent handover. Photos are stored locally within the application directory.
-- **Network Access**: Used only to check for app updates via the public GitHub Releases API and to synchronize with Firebase when initiated.
+## 3. Camera, Messaging & Network Permissions
+- **Camera / Photo Library**: Used exclusively if you choose to take or attach a photo proof of cash rent handover or a tenant government ID. Photos are stored locally within the application directory.
+- **SMS & Messaging**: Tenera does not request background `SEND_SMS` permissions; payment reminders open safely in your device's default SMS or Messenger app.
+- **Network Access & Advertising**: Used to check for app updates via the public GitHub Releases API, synchronize with Firebase when initiated, and display Google AdMob banners on the Starter plan (Pro and Business tiers are 100% ad-free).
 
 ## 4. Compliance
 Tenera adheres to the principles of the **Philippine Data Privacy Act of 2012 (RA 10173)** and the General Data Protection Regulation (GDPR).

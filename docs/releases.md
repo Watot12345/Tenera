@@ -9,7 +9,21 @@ All official releases of Tenera are published to the [GitHub Releases](https://g
 
 ---
 
-## 🏷️ Version v1.0 (Latest Release)
+## 🏷️ Version v1.0.1 (Latest Release)
+
+*Release Date: November 2026*  
+*Target: Android 7.0 (API 24) to Android 15+*
+
+### 🚀 What's New in v1.0.1
+- **Partial & Advance Payments + Tenant SOA**: Record partial or advance payments with running balances, sequential receipts, and void/adjustment audit trails (BR-2, FR-E3, FR-E4, FR-E6).
+- **Move-Out Security Deposit Settlement & Escrow Reports**: Track security deposits strictly as liabilities (separate from rent income) and calculate move-out deductions and refunds (BR-4, FR-D7, FR-H7).
+- **Government ID Attachment & Late-Fee Rules**: Attach tenant ID photos offline and configure optional grace days and late fees with 1-tap waiver support (FR-C2, FR-D5).
+- **Expense Tracker, Maintenance Tickets & Arrears Aging Report**: Track property expenses, unit repair tickets, 30/60/90+ day arrears aging buckets, and on-demand SQLite `PRAGMA integrity_check` diagnostics.
+- **Play Protect Safe SMS Reminders**: Uses the device's default SMS app via `sms:` intent without invasive `SEND_SMS` permissions.
+
+---
+
+## 🏷️ Version v1.0
 
 *Release Date: October 2026*  
 *Target: Android 7.0 (API 24) to Android 14+*

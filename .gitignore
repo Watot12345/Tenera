@@ -111,5 +111,6 @@ secrets.json
 *.xlsx
 *.pptx
 google*.html
+!docs/google*.html
 *.log
 *.crash

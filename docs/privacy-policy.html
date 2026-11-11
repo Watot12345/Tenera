@@ -4,69 +4,142 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tenera - Privacy Policy & Terms</title>
+  <meta name="description" content="Privacy Policy and Terms of Use for Tenera Property Manager.">
+  <meta name="theme-color" content="#1D3557">
+  <link rel="icon" type="image/png" href="assets/app_icon_squircle.png">
   <style>
     :root {
       --primary-deep: #1D3557;
       --accent: #E9C46A;
-      --background: #F8F9FA;
+      --background: #F8FAFC;
       --surface: #FFFFFF;
       --ink: #1B2430;
-      --ink-muted: #64748B;
+      --ink-muted: #52637A;
       --border: #E2E8F0;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--background); color: var(--ink); line-height: 1.6; }
-    header { background: var(--primary-deep); color: white; padding: 20px; border-bottom: 3px solid var(--accent); }
-    .container { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
-    nav a { color: #E2E8F0; text-decoration: none; font-weight: 600; margin-left: 16px; }
-    nav a:hover { color: var(--accent); }
-    .card { background: white; border-radius: 16px; border: 1px solid var(--border); padding: 32px; margin-bottom: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-    h1 { font-size: 28px; margin-bottom: 12px; color: var(--primary-deep); }
-    h2 { font-size: 20px; margin-top: 20px; margin-bottom: 8px; color: var(--primary-deep); }
-    p { margin-bottom: 14px; color: #334155; }
-    footer { text-align: center; padding: 40px; color: var(--ink-muted); font-size: 14px; }
+    body { background-color: var(--background); color: var(--ink); line-height: 1.6; min-block-size: 100dvh; display: flex; flex-direction: column; }
+    header {
+      background: linear-gradient(135deg, var(--primary-deep) 0%, #152238 100%);
+      color: white;
+      padding-block: 16px;
+      padding-inline: 20px;
+      border-block-end: 3px solid var(--accent);
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 50;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
+    }
+    .nav-container {
+      max-inline-size: 1140px;
+      margin-inline: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: safe center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: white;
+    }
+    .logo-img {
+      display: block;
+      inline-size: 40px;
+      block-size: 40px;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+    .logo-text h1 { font-size: 20px; font-weight: 800; line-height: 1.15; }
+    .logo-text span { display: block; font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    nav {
+      display: flex;
+      gap: 8px;
+      align-items: safe center;
+      flex-wrap: wrap;
+      flex-wrap: balance;
+    }
+    nav a {
+      color: #E2E8F0;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding-block: 6px;
+      padding-inline: 12px;
+      border-radius: 8px;
+      transition: color 0.2s, background-color 0.2s;
+    }
+    nav a:hover { color: var(--accent); background-color: rgba(255, 255, 255, 0.08); }
+    nav a[aria-current="page"] {
+      color: var(--accent);
+      background-color: rgba(233, 196, 106, 0.14);
+      border-block-end: 2px solid var(--accent);
+    }
+    .nav-cta {
+      background-color: var(--accent);
+      color: var(--ink) !important;
+      font-weight: 800;
+    }
+    .container { max-inline-size: 920px; margin-inline: auto; padding-block: 42px; padding-inline: 20px; flex-grow: 1; }
+    .card { background: var(--surface); border-radius: 18px; border: 1px solid var(--border); padding: 36px; margin-block-end: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    h1 { font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.1rem); margin-block-end: 8px; color: var(--primary-deep); font-weight: 900; }
+    h2 { font-size: 19px; margin-block: 24px 8px; color: var(--primary-deep); font-weight: 800; }
+    p { margin-block-end: 14px; color: #334155; font-size: 15px; }
+    footer { background: #0F172A; color: #94A3B8; text-align: center; padding-block: 40px; padding-inline: 20px; font-size: 14px; }
+    footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
   </style>
 </head>
 <body>
   <header>
-    <div style="max-width: 900px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-      <a href="index.html" style="color: white; text-decoration: none; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
-        <img src="assets/app_icon_squircle.png" alt="Tenera Logo" style="width: 34px; height: 34px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
-        Tenera
+    <div class="nav-container">
+      <a href="index.html" class="logo-badge">
+        <img src="assets/app_icon_squircle.png" alt="Tenera Logo" class="logo-img" width="40" height="40">
+        <div class="logo-text">
+          <h1>Tenera</h1>
+          <span>Property Manager</span>
+        </div>
       </a>
-      <nav>
+      <nav aria-label="Primary">
         <a href="index.html">Home</a>
+        <a href="index.html#features">Features</a>
+        <a href="index.html#pricing">Pricing</a>
         <a href="releases.html">Changelog</a>
-        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="privacy-policy.html" aria-current="page">Privacy</a>
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="nav-cta">⬇️ Download APK</a>
       </nav>
     </div>
   </header>
 
-  <div class="container">
-    <div class="card">
-      <h1>🛡️ Privacy Policy & Terms of Use</h1>
-      <p style="color: var(--ink-muted); font-size: 14px; margin-bottom: 24px;">Effective Date: October 2026</p>
+  <main class="container">
+    <article class="card">
+      <h1>🛡️ Privacy Policy &amp; Terms of Use</h1>
+      <p style="color: var(--ink-muted); font-size: 14px; margin-block-end: 24px;">Effective Date: November 2026 · Version 1.0.1</p>
 
       <h2>1. Offline-First Privacy Guarantee</h2>
-      <p>Tenera is built from the ground up as an offline-first application. By default, your property data, tenant personal information, rental ledgers, and cash handover photo attachments are stored locally on your device in a private SQLite database sandbox.</p>
+      <p>Tenera is architected from the ground up as an offline-first application. By default, your property data, tenant personal information, government ID photo attachments, rental ledgers, expense logs, and cash handover photo proofs are stored locally on your device in a private SQLite database sandbox (<code>tenera.db</code>).</p>
 
-      <h2>2. Cloud Sync & Firebase</h2>
-      <p>Cloud synchronization is 100% opt-in. When initiated under <strong>More ➔ Cloud & Database Sync</strong>, data is transferred securely using industry-standard TLS encryption to Google Firebase Firestore servers under a private, anonymous device identifier. We never sell, rent, or monetize your property records.</p>
+      <h2>2. Cloud Sync &amp; Firebase</h2>
+      <p>Cloud synchronization is 100% opt-in. When initiated under <strong>More ➔ Cloud &amp; Database Sync</strong>, records are transferred securely using industry-standard HTTPS/TLS encryption to Google Firebase servers under a private, device-partitioned landlord identifier. We never sell, rent, or monetize your property or tenant records.</p>
 
-      <h2>3. Device Permissions</h2>
-      <p><strong>Camera / Storage:</strong> Used only when you choose to take or attach a photo proof of cash rent handover. Photos stay in local storage.<br>
-      <strong>Network:</strong> Used solely to check for APK updates via the public GitHub Releases API and to synchronize with Firebase when manually triggered.</p>
+      <h2>3. Device Permissions &amp; Play Protect Safety</h2>
+      <p><strong>Camera / Storage:</strong> Used strictly when you choose to take or attach a photo proof of cash rent handover or a tenant government ID. Photos stay inside local device storage.<br>
+      <strong>SMS &amp; Messaging:</strong> Tenera does <em>not</em> request invasive background <code>SEND_SMS</code> permissions. All SMS and Messenger payment reminders open safely in your phone's default messaging app so you always review and control every message sent.<br>
+      <strong>Network &amp; Advertising:</strong> Network access is used to check for APK updates via the public GitHub Releases API, synchronize with Firebase when manually triggered, and serve non-intrusive Google AdMob banners on the Starter plan (Tenera Pro and Business plans are 100% ad-free).</p>
 
-      <h2>4. Compliance</h2>
-      <p>Tenera complies with the provisions of the <strong>Philippine Data Privacy Act of 2012 (RA 10173)</strong> and the European General Data Protection Regulation (GDPR).</p>
+      <h2>4. Data Protection Compliance</h2>
+      <p>Tenera complies with the provisions of the <strong>Philippine Data Privacy Act of 2012 (Republic Act No. 10173)</strong> and the European General Data Protection Regulation (GDPR).</p>
 
-      <h2>5. Questions & Feedback</h2>
-      <p>If you have any questions or feedback, please open an issue on the <a href="https://github.com/Watot12345/Tenera" style="color: var(--primary-deep); font-weight: 700;">Tenera GitHub Repository</a>.</p>
-    </div>
-  </div>
+      <h2>5. Questions &amp; Feedback</h2>
+      <p>If you have any questions or feedback regarding privacy or data security, please open an issue on the <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener" style="color: var(--primary-deep); font-weight: 700;">Tenera GitHub Repository</a>.</p>
+    </article>
+  </main>
 
   <footer>
-    <p>© 2026 Tenera Property Manager · Open Source on GitHub</p>
+    <p>© 2026 Tenera Property Manager · <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener">GitHub Repository</a></p>
   </footer>
 </body>
 </html>
