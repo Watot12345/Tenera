@@ -70,7 +70,7 @@ class TeneraApp extends StatelessWidget {
       valueListenable: ThemeService.themeModeNotifier,
       builder: (context, currentMode, _) {
         return MaterialApp(
-          title: 'Tenera',
+          title: 'Tenera Property Manager',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
