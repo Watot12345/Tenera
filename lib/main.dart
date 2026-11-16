@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,11 +24,41 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
-  await ThemeService.initialize();
-  FirebaseService.instance.initialize();
-  await TrialService.initialize();
-  await AdService.initialize();
+
+  // Fast, safe theme load before first frame (never block runApp on slow/failing I/O)
+  try {
+    await ThemeService.initialize().timeout(const Duration(milliseconds: 500));
+  } catch (e) {
+    debugPrint('ThemeService.initialize fallback: $e');
+  }
+
+  // Render the Flutter UI immediately so Android never hangs on LaunchTheme
   runApp(const TeneraApp());
+
+  // Initialize background services asynchronously after first frame
+  unawaited(_initializeServicesInBackground());
+}
+
+Future<void> _initializeServicesInBackground() async {
+  try {
+    await FirebaseService.instance
+        .initialize()
+        .timeout(const Duration(seconds: 4));
+  } catch (e) {
+    debugPrint('FirebaseService.initialize skipped: $e');
+  }
+
+  try {
+    await TrialService.initialize().timeout(const Duration(seconds: 4));
+  } catch (e) {
+    debugPrint('TrialService.initialize fallback: $e');
+  }
+
+  try {
+    await AdService.initialize().timeout(const Duration(seconds: 4));
+  } catch (e) {
+    debugPrint('AdService.initialize skipped: $e');
+  }
 }
 
 class TeneraApp extends StatelessWidget {

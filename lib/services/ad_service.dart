@@ -56,9 +56,13 @@ class AdService {
 
   /// Refreshes the ad-free state from the current subscription plan.
   static Future<void> refreshAdStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final plan = prefs.getString(prefKeySubscriptionPlan) ?? 'starter';
-    final isAdFree = (plan == 'pro' || plan == 'business');
-    isAdFreeNotifier.value = isAdFree;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final plan = prefs.getString(prefKeySubscriptionPlan) ?? 'starter';
+      final isAdFree = (plan == 'pro' || plan == 'business');
+      isAdFreeNotifier.value = isAdFree;
+    } catch (e) {
+      debugPrint('AdService.refreshAdStatus error: $e');
+    }
   }
 }

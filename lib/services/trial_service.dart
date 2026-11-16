@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
@@ -91,114 +92,128 @@ class TrialService {
 
   /// Initialize and verify trial status with anti-tampering checks.
   static Future<void> initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now().toUtc();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now().toUtc();
 
-    // 1. Check Paid Subscriber Status (from Prefs & SQLite)
-    final prefsPaid = prefs.getBool(prefKeyIsPaidSubscriber) ?? false;
-    final sqlitePaidStr = await _readSqliteMeta(prefKeyIsPaidSubscriber);
-    final sqlitePaid = sqlitePaidStr == 'true';
+      // 1. Check Paid Subscriber Status (from Prefs & SQLite)
+      final prefsPaid = prefs.getBool(prefKeyIsPaidSubscriber) ?? false;
+      final sqlitePaidStr = await _readSqliteMeta(prefKeyIsPaidSubscriber);
+      final sqlitePaid = sqlitePaidStr == 'true';
 
-    final isPaid = prefsPaid || sqlitePaid;
-    _cachedIsPaidSubscriber = isPaid;
+      final isPaid = prefsPaid || sqlitePaid;
+      _cachedIsPaidSubscriber = isPaid;
 
-    if (isPaid) {
-      // Ensure sync across both stores
-      if (!prefsPaid) await prefs.setBool(prefKeyIsPaidSubscriber, true);
-      if (!sqlitePaid) await _writeSqliteMeta(prefKeyIsPaidSubscriber, 'true');
-      isExpiredNotifier.value = false;
-      return;
-    }
-
-    // 2. Load or Generate Unique Device / Installation ID
-    String? deviceId = prefs.getString(prefKeyDeviceId);
-    if (deviceId == null) {
-      deviceId = await _readSqliteMeta(prefKeyDeviceId);
-      if (deviceId == null) {
-        deviceId = 'dev_${now.millisecondsSinceEpoch}_${(now.microsecond % 10000)}';
-        await _writeSqliteMeta(prefKeyDeviceId, deviceId);
+      if (isPaid) {
+        if (!prefsPaid) await prefs.setBool(prefKeyIsPaidSubscriber, true);
+        if (!sqlitePaid) await _writeSqliteMeta(prefKeyIsPaidSubscriber, 'true');
+        isExpiredNotifier.value = false;
+        return;
       }
-      await prefs.setString(prefKeyDeviceId, deviceId);
-    }
 
-    // 3. Reconcile Trial Start Date (earliest known across Prefs, SQLite, and Cloud)
-    DateTime? startDate;
-    final prefsStartStr = prefs.getString(prefKeyTrialStartDate);
-    final sqliteStartStr = await _readSqliteMeta(prefKeyTrialStartDate);
+      // 2. Load or Generate Unique Device / Installation ID
+      String? deviceId = prefs.getString(prefKeyDeviceId);
+      if (deviceId == null) {
+        deviceId = await _readSqliteMeta(prefKeyDeviceId);
+        if (deviceId == null) {
+          deviceId = 'dev_${now.millisecondsSinceEpoch}_${(now.microsecond % 10000)}';
+          await _writeSqliteMeta(prefKeyDeviceId, deviceId);
+        }
+        await prefs.setString(prefKeyDeviceId, deviceId);
+      }
 
-    final prefsStart = prefsStartStr != null ? DateTime.tryParse(prefsStartStr)?.toUtc() : null;
-    final sqliteStart = sqliteStartStr != null ? DateTime.tryParse(sqliteStartStr)?.toUtc() : null;
+      // 3. Reconcile Trial Start Date (earliest known across Prefs, SQLite, and Cloud)
+      DateTime? startDate;
+      final prefsStartStr = prefs.getString(prefKeyTrialStartDate);
+      final sqliteStartStr = await _readSqliteMeta(prefKeyTrialStartDate);
 
-    if (prefsStart != null && sqliteStart != null) {
-      startDate = prefsStart.isBefore(sqliteStart) ? prefsStart : sqliteStart;
-    } else {
-      startDate = prefsStart ?? sqliteStart;
-    }
+      final prefsStart = prefsStartStr != null ? DateTime.tryParse(prefsStartStr)?.toUtc() : null;
+      final sqliteStart = sqliteStartStr != null ? DateTime.tryParse(sqliteStartStr)?.toUtc() : null;
 
-    // 4. Cloud Firestore cross-check (prevents uninstall/data-clear bypass on mobile)
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
-    if (!isTest && !kIsWeb) {
-      try {
-        final cloudDate = await _fetchCloudTrialStartDate(deviceId);
-        if (cloudDate != null) {
-          if (startDate == null || cloudDate.isBefore(startDate)) {
-            startDate = cloudDate;
+      if (prefsStart != null && sqliteStart != null) {
+        startDate = prefsStart.isBefore(sqliteStart) ? prefsStart : sqliteStart;
+      } else {
+        startDate = prefsStart ?? sqliteStart;
+      }
+
+      // 4. Cloud Firestore cross-check (only if Firebase is initialized)
+      final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+      if (!isTest && !kIsWeb) {
+        try {
+          final cloudDate = await _fetchCloudTrialStartDate(deviceId);
+          if (cloudDate != null) {
+            if (startDate == null || cloudDate.isBefore(startDate)) {
+              startDate = cloudDate;
+            }
+          } else if (startDate != null) {
+            _syncTrialToCloud(deviceId, startDate);
           }
-        } else if (startDate != null) {
+        } catch (e) {
+          debugPrint('TrialService cloud sync: $e');
+        }
+      }
+
+      // If still null, this is genuinely the first launch on this device
+      if (startDate == null) {
+        startDate = now;
+        if (!isTest && !kIsWeb) {
           _syncTrialToCloud(deviceId, startDate);
         }
-      } catch (e) {
-        debugPrint('TrialService cloud sync: $e');
       }
-    }
 
-    // If still null, this is genuinely the first launch on this device
-    if (startDate == null) {
-      startDate = now;
+      _cachedTrialStartDate = startDate;
+      await prefs.setString(prefKeyTrialStartDate, startDate.toIso8601String());
+      await _writeSqliteMeta(prefKeyTrialStartDate, startDate.toIso8601String());
+
+      // 5. Anti-Clock-Tampering Guard (Monotonic Clock)
+      final prefsHighestStr = prefs.getString(prefKeyHighestTimestamp);
+      final sqliteHighestStr = await _readSqliteMeta(prefKeyHighestTimestamp);
+
+      DateTime? highestTime;
+      final prefsHighest = prefsHighestStr != null ? DateTime.tryParse(prefsHighestStr)?.toUtc() : null;
+      final sqliteHighest = sqliteHighestStr != null ? DateTime.tryParse(sqliteHighestStr)?.toUtc() : null;
+
+      if (prefsHighest != null && sqliteHighest != null) {
+        highestTime = prefsHighest.isAfter(sqliteHighest) ? prefsHighest : sqliteHighest;
+      } else {
+        highestTime = prefsHighest ?? sqliteHighest;
+      }
+
+      if (highestTime == null || now.isAfter(highestTime)) {
+        highestTime = now;
+      }
+
+      _cachedHighestTimestamp = highestTime;
+      await prefs.setString(prefKeyHighestTimestamp, highestTime.toIso8601String());
+      await _writeSqliteMeta(prefKeyHighestTimestamp, highestTime.toIso8601String());
+
+      // Verify authoritative network UTC time in background without blocking startup
       if (!isTest && !kIsWeb) {
-        _syncTrialToCloud(deviceId, startDate);
+        _verifyNetworkTimeInBackground(prefs, highestTime);
       }
+
+      // 6. Evaluate Trial Expiration
+      final expired = await isTrialExpired();
+      isExpiredNotifier.value = expired;
+    } catch (e) {
+      debugPrint('TrialService.initialize error: $e');
+      isExpiredNotifier.value = false;
     }
+  }
 
-    _cachedTrialStartDate = startDate;
-    await prefs.setString(prefKeyTrialStartDate, startDate.toIso8601String());
-    await _writeSqliteMeta(prefKeyTrialStartDate, startDate.toIso8601String());
-
-    // 5. Anti-Clock-Tampering Guard (Monotonic Clock)
-    final prefsHighestStr = prefs.getString(prefKeyHighestTimestamp);
-    final sqliteHighestStr = await _readSqliteMeta(prefKeyHighestTimestamp);
-
-    DateTime? highestTime;
-    final prefsHighest = prefsHighestStr != null ? DateTime.tryParse(prefsHighestStr)?.toUtc() : null;
-    final sqliteHighest = sqliteHighestStr != null ? DateTime.tryParse(sqliteHighestStr)?.toUtc() : null;
-
-    if (prefsHighest != null && sqliteHighest != null) {
-      highestTime = prefsHighest.isAfter(sqliteHighest) ? prefsHighest : sqliteHighest;
-    } else {
-      highestTime = prefsHighest ?? sqliteHighest;
-    }
-
-    // Attempt authoritative network time verification when online
-    if (!isTest) {
+  static Future<void> _verifyNetworkTimeInBackground(
+    SharedPreferences prefs,
+    DateTime currentHighest,
+  ) async {
+    try {
       final networkTime = await _fetchNetworkUtcTime();
-      if (networkTime != null) {
-        if (highestTime == null || networkTime.isAfter(highestTime)) {
-          highestTime = networkTime;
-        }
+      if (networkTime != null && networkTime.isAfter(currentHighest)) {
+        _cachedHighestTimestamp = networkTime;
+        await prefs.setString(prefKeyHighestTimestamp, networkTime.toIso8601String());
+        await _writeSqliteMeta(prefKeyHighestTimestamp, networkTime.toIso8601String());
+        isExpiredNotifier.value = await isTrialExpired();
       }
-    }
-
-    if (highestTime == null || now.isAfter(highestTime)) {
-      highestTime = now;
-    }
-
-    _cachedHighestTimestamp = highestTime;
-    await prefs.setString(prefKeyHighestTimestamp, highestTime.toIso8601String());
-    await _writeSqliteMeta(prefKeyHighestTimestamp, highestTime.toIso8601String());
-
-    // 6. Evaluate Trial Expiration
-    final expired = await isTrialExpired();
-    isExpiredNotifier.value = expired;
+    } catch (_) {}
   }
 
   /// Authoritative check: Is the 14-day free trial expired?
@@ -335,7 +350,7 @@ class TrialService {
 
   /// Retrieve cloud trial start date to defeat reinstall / storage clear bypass
   static Future<DateTime?> _fetchCloudTrialStartDate(String deviceId) async {
-    if (kIsWeb) return null; // Client-side web extensions/adblockers block Firestore WebChannel
+    if (kIsWeb || Firebase.apps.isEmpty) return null;
     try {
       final doc = await FirebaseFirestore.instance
           .collection('app_trials')
@@ -360,7 +375,7 @@ class TrialService {
 
   /// Sync trial start date to cloud
   static Future<void> _syncTrialToCloud(String deviceId, DateTime startDate) async {
-    if (kIsWeb) return;
+    if (kIsWeb || Firebase.apps.isEmpty) return;
     try {
       await FirebaseFirestore.instance.collection('app_trials').doc(deviceId).set({
         'deviceId': deviceId,

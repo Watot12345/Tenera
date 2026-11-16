@@ -126,9 +126,25 @@
     <h1>📋 Release Notes &amp; Changelog</h1>
     <p style="color: var(--ink-muted); margin-block-end: 28px;">Track all official builds, features, and security improvements published to GitHub Releases.</p>
 
-    <!-- v1.0.1 -->
+    <!-- v1.0.2 -->
     <article class="card latest">
       <span class="tag">✓ LATEST STABLE RELEASE</span>
+      <h2>Tenera Property Manager v1.0.2 (Startup Reliability &amp; Play Protect Fix)</h2>
+      <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Target: Android 7.0+ (API 24 to 35) · Offline SQLite SSOT</p>
+
+      <h3>🚀 Fixes &amp; Improvements</h3>
+      <ul>
+        <li><strong>Instant Non-Blocking App Launch:</strong> Moved Firebase, Trial verification, and Google Mobile Ads initialization to run asynchronously after the first Flutter frame so the app never stalls on the native launch screen or exits on slow/offline devices.</li>
+        <li><strong>Startup Safety Guards:</strong> Eliminated the Firebase/TrialService initialization race condition and added timeouts + fallbacks for offline &amp; restricted-network environments.</li>
+        <li><strong>Play Protect Verified Clean Manifest:</strong> Removed leftover <code>SEND_SMS</code> permission from <code>AndroidManifest.xml</code>; all reminders use the device's default SMS app safely.</li>
+      </ul>
+
+      <a href="https://github.com/Watot12345/Tenera/releases/latest/download/Tenera-Property-Manager-v1.0.2.apk" class="btn">⬇️ Download Tenera Property Manager (v1.0.2)</a>
+    </article>
+
+    <!-- v1.0.1 -->
+    <article class="card">
+      <span class="tag tag-prev">PREVIOUS RELEASE</span>
       <h2>Version v1.0.1 (Audit, SOA, Operations &amp; Security Update)</h2>
       <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Target: Android 7.0+ (API 24 to 35) · Offline SQLite SSOT</p>
 

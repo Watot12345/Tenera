@@ -10,7 +10,7 @@
   <meta property="og:description" content="Track rent collections, partial payments, utility sub-meters, expenses, and tenant SOAs 100% offline in SQLite.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://watot12345.github.io/Tenera/">
-  <meta property="og:image" content="https://watot12345.github.io/Tenera/assets/logo_full.png">
+  <meta property="og:image" content="https://watot12345.github.io/Tenera/assets/tenera_branding_banner.png">
   <link rel="icon" type="image/png" href="assets/app_icon_squircle.png">
   <style>
     :root {
@@ -261,131 +261,53 @@
       color: #92400E;
     }
 
-    /* Interactive App Preview Card */
-    .preview-card {
-      background: var(--primary-deep);
-      color: white;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 20px 45px rgba(29, 53, 87, 0.25);
-      border: 2px solid rgba(233, 196, 106, 0.4);
-    }
-    .preview-header {
+    /* App Screenshot Showcase */
+    .hero-showcase {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      margin-block-end: 18px;
-      padding-block-end: 12px;
-      border-block-end: 1px solid rgba(255, 255, 255, 0.12);
+      gap: 18px;
+      position: relative;
+      padding-block: 8px;
     }
-    .preview-title {
-      font-size: 15px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .phone-frame {
+      background: #0F172A;
+      border-radius: 30px;
+      padding: 9px;
+      box-shadow: 0 22px 48px rgba(15, 23, 42, 0.24), 0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+      inline-size: clamp(205px, 24vw, 255px);
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
     }
-    .preview-chip {
-      font-size: 11px;
-      font-weight: 700;
-      background: rgba(42, 157, 143, 0.25);
-      color: #6EE7B7;
-      padding-block: 3px;
-      padding-inline: 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(110, 231, 183, 0.35);
+    .phone-frame.primary {
+      z-index: 2;
     }
-    .ledger-metrics {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-block-end: 18px;
+    .phone-frame.secondary {
+      inline-size: clamp(185px, 21vw, 230px);
+      margin-block-start: 28px;
+      opacity: 0.96;
     }
-    .metric-box {
-      background: rgba(255, 255, 255, 0.08);
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    .phone-frame:hover {
+      transform: translateY(-4px);
     }
-    .metric-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #CBD5E1;
-      margin-block-end: 4px;
-    }
-    .metric-value {
-      font-size: 22px;
-      font-weight: 900;
-      color: var(--accent);
-    }
-    .metric-sub {
-      font-size: 11px;
-      color: #94A3B8;
-      margin-block-start: 2px;
-    }
-    .room-grid-preview {
-      background: #FFFFFF;
-      color: var(--ink);
-      border-radius: 16px;
-      padding: 16px;
-    }
-    .room-grid-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-block-end: 12px;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--primary-deep);
-    }
-    .room-legend {
-      display: flex;
-      gap: 10px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--ink-muted);
-    }
-    .legend-dot {
-      display: inline-block;
-      inline-size: 8px;
-      block-size: 8px;
-      border-radius: 50%;
-      margin-inline-end: 4px;
-    }
-    .room-tiles {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-    .room-tile {
-      padding: 10px 8px;
-      border-radius: 12px;
-      text-align: center;
-      font-size: 11px;
-      font-weight: 800;
-    }
-    .room-tile span {
+    .phone-frame img {
       display: block;
-      font-size: 10px;
-      font-weight: 600;
-      opacity: 0.85;
-      margin-block-start: 2px;
+      inline-size: 100%;
+      block-size: auto;
+      aspect-ratio: 390 / 844;
+      border-radius: 22px;
+      background: #F4F7F6;
     }
-    .tile-paid {
-      background: #D8F3DC;
-      color: #1B4332;
-      border: 1px solid #95D5B2;
-    }
-    .tile-overdue {
-      background: #FFE5D9;
-      color: #9B2226;
-      border: 1px solid #F4A261;
-    }
-    .tile-vacant {
-      background: #F1F5F9;
-      color: #475569;
-      border: 1px dashed #CBD5E1;
+    @media (max-width: 560px) {
+      .hero-showcase {
+        gap: 12px;
+      }
+      .phone-frame.secondary {
+        display: none;
+      }
+      .phone-frame.primary {
+        inline-size: min(270px, 78dvw);
+      }
     }
 
     /* Sections */
@@ -645,17 +567,17 @@
       <div class="hero-content">
         <div class="hero-brand-row">
           <img src="assets/app_icon_squircle.png" alt="Tenera App Icon" class="hero-app-icon" width="68" height="68" fetchpriority="high">
-          <span class="pill-tag" id="release-pill">✨ Official Release v1.0.1 Available</span>
+          <span class="pill-tag" id="release-pill">✨ Official Release v1.0.2 Available</span>
         </div>
         <h2>Simple, Powerful &amp; Offline-First Property &amp; Tenant Management</h2>
         <p>Built for Filipino landlords, boarding house operators, and apartment managers. Track rent &amp; partial payments, generate Tenant Statements of Account (SOA), split utility sub-meters, track expenses &amp; security deposits, and keep 100% of your records safe on your phone with SQLite.</p>
 
         <div class="cta-group">
           <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn-primary" id="download-cta">
-            ⬇️ Download Tenera APK (v1.0.1)
+            ⬇️ Download Tenera APK (v1.0.2)
           </a>
           <a href="releases.html" class="btn-secondary">
-            📋 What's New in v1.0.1
+            📋 What's New in v1.0.2
           </a>
           <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener" class="btn-secondary">
             📦 GitHub Repo
@@ -671,43 +593,24 @@
         </div>
       </div>
 
-      <!-- Visual Roof Ledger Preview -->
-      <div class="preview-card" aria-label="Tenera Roof Ledger App Preview">
-        <div class="preview-header">
-          <div class="preview-title">🏠 Roof Ledger Dashboard</div>
-          <span class="preview-chip">● SQLite Offline Ready</span>
+      <!-- App Screenshots Showcase -->
+      <div class="hero-showcase" aria-label="Tenera Mobile App Screenshots">
+        <div class="phone-frame primary">
+          <img
+            src="assets/app_screenshot_home.png"
+            alt="Tenera Home Dashboard showing collected rent, overdue tenants, and quick actions"
+            width="780"
+            height="1688"
+            fetchpriority="high"
+          >
         </div>
-        <div class="ledger-metrics">
-          <div class="metric-box">
-            <div class="metric-label">Collected This Month</div>
-            <div class="metric-value">₱42,500</div>
-            <div class="metric-sub">of ₱48,000 expected (88.5%)</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Security Deposit Escrow</div>
-            <div class="metric-value" style="color: #6EE7B7;">₱24,000</div>
-            <div class="metric-sub">Tracked separately from income</div>
-          </div>
-        </div>
-        <div class="room-grid-preview">
-          <div class="room-grid-header">
-            <span>Sampaguita Residence · 8 Units</span>
-            <div class="room-legend">
-              <span><i class="legend-dot" style="background:#2A9D8F;"></i>Paid</span>
-              <span><i class="legend-dot" style="background:#E76F51;"></i>Overdue</span>
-              <span><i class="legend-dot" style="background:#94A3B8;"></i>Vacant</span>
-            </div>
-          </div>
-          <div class="room-tiles">
-            <div class="room-tile tile-paid">Rm 101<span>Paid · ₱5.5k</span></div>
-            <div class="room-tile tile-paid">Rm 102<span>Paid · ₱5.5k</span></div>
-            <div class="room-tile tile-overdue">Rm 103<span>Bal: ₱2.0k</span></div>
-            <div class="room-tile tile-paid">Rm 104<span>Paid · ₱6.0k</span></div>
-            <div class="room-tile tile-paid">Rm 201<span>Paid · ₱6.0k</span></div>
-            <div class="room-tile tile-vacant">Rm 202<span>Vacant</span></div>
-            <div class="room-tile tile-paid">Rm 203<span>Paid · ₱6.0k</span></div>
-            <div class="room-tile tile-paid">Rm 204<span>Paid · ₱6.0k</span></div>
-          </div>
+        <div class="phone-frame secondary">
+          <img
+            src="assets/app_screenshot_rooms.png"
+            alt="Tenera View Rooms visual squircle grid showing occupied, overdue, and vacant units"
+            width="780"
+            height="1688"
+          >
         </div>
       </div>
     </section>

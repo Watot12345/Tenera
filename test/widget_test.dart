@@ -190,7 +190,8 @@ void main() {
     // 3. Payments Tab
     await tester.tap(find.byKey(const Key('nav_payments')));
     await tester.pumpAndSettle();
-    expect(find.text('Total Collections (October)'), findsOneWidget);
+    final currentMonth = DateFormat('MMMM').format(DateTime.now());
+    expect(find.text('Total Collections ($currentMonth)'), findsOneWidget);
     expect(find.text('+ Record New Payment'), findsOneWidget);
 
     // 4. More Tab

@@ -129,7 +129,17 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted || _hasNavigated) return;
 
     // Check whether the 14-day free trial has expired without a paid subscription
-    final isTrialExpired = await TrialService.isTrialExpired();
+    bool isTrialExpired = false;
+    try {
+      isTrialExpired = await TrialService.isTrialExpired().timeout(
+        const Duration(milliseconds: 1500),
+      );
+    } catch (e) {
+      debugPrint('TrialService.isTrialExpired fallback: $e');
+      isTrialExpired = false;
+    }
+
+    if (!mounted || _hasNavigated) return;
 
     // Navigate to destination
     final Widget destination;
