@@ -3,199 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tenera - Release Notes & Changelog</title>
-  <meta name="description" content="Official release notes, version history, and APK downloads for Tenera Property Manager.">
-  <meta name="theme-color" content="#1D3557">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    try {
+      var s = localStorage.getItem('color-scheme');
+      if (s === 'light' || s === 'dark') {
+        document.querySelector('meta[name="color-scheme"]').content = s;
+      }
+    } catch (_) {}
+  </script>
+  <title>Release Notes &amp; Changelog — Tenera Property Manager</title>
+  <meta name="description" content="Official Android APK release notes, fixes, and feature updates for Tenera Property Manager.">
+  <meta name="theme-color" content="#0E6B63">
   <link rel="icon" type="image/png" href="assets/app_icon_squircle.png">
-  <style>
-    :root {
-      --primary-deep: #1D3557;
-      --accent: #E9C46A;
-      --accent-hover: #DFB54E;
-      --background: #F8FAFC;
-      --surface: #FFFFFF;
-      --ink: #1B2430;
-      --ink-muted: #52637A;
-      --border: #E2E8F0;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--background); color: var(--ink); line-height: 1.6; min-block-size: 100dvh; display: flex; flex-direction: column; }
-    header {
-      background: linear-gradient(135deg, var(--primary-deep) 0%, #152238 100%);
-      color: white;
-      padding-block: 16px;
-      padding-inline: 20px;
-      border-block-end: 3px solid var(--accent);
-      position: sticky;
-      inset-block-start: 0;
-      z-index: 50;
-      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
-    }
-    .nav-container {
-      max-inline-size: 1140px;
-      margin-inline: auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: safe center;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .logo-badge {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: white;
-    }
-    .logo-img {
-      display: block;
-      inline-size: 40px;
-      block-size: 40px;
-      aspect-ratio: 1 / 1;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-    }
-    .logo-text h1 { font-size: 20px; font-weight: 800; line-height: 1.15; }
-    .logo-text span { display: block; font-size: 11px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-    nav {
-      display: flex;
-      gap: 8px;
-      align-items: safe center;
-      flex-wrap: wrap;
-      flex-wrap: balance;
-    }
-    nav a {
-      color: #E2E8F0;
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 600;
-      padding-block: 6px;
-      padding-inline: 12px;
-      border-radius: 8px;
-      transition: color 0.2s, background-color 0.2s;
-    }
-    nav a:hover { color: var(--accent); background-color: rgba(255, 255, 255, 0.08); }
-    nav a[aria-current="page"] {
-      color: var(--accent);
-      background-color: rgba(233, 196, 106, 0.14);
-      border-block-end: 2px solid var(--accent);
-    }
-    .nav-cta {
-      background-color: var(--accent);
-      color: var(--ink) !important;
-      font-weight: 800;
-    }
-    .container { max-inline-size: 920px; margin-inline: auto; padding-block: 42px; padding-inline: 20px; flex-grow: 1; }
-    .card { background: var(--surface); border-radius: 18px; border: 1px solid var(--border); padding: 32px; margin-block-end: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-    .card.latest { border: 2px solid var(--accent); box-shadow: 0 8px 24px rgba(29, 53, 87, 0.08); }
-    h1 { font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.2rem); margin-block-end: 8px; color: var(--primary-deep); font-weight: 900; }
-    h2 { font-size: 22px; margin-block: 8px 6px; color: var(--primary-deep); font-weight: 800; }
-    h3 { font-size: 16px; margin-block: 18px 8px; color: var(--ink); font-weight: 800; }
-    ul { margin-inline-start: 20px; margin-block-end: 16px; }
-    li { margin-block-end: 8px; font-size: 14.5px; color: #334155; }
-    .tag { display: inline-block; background: #D8F3DC; color: #1B4332; font-weight: 800; font-size: 12px; padding-block: 4px; padding-inline: 12px; border-radius: 999px; margin-block-end: 8px; }
-    .tag-prev { background: #E2E8F0; color: #334155; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; background: var(--primary-deep); color: white; padding-block: 12px; padding-inline: 24px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; margin-block-start: 10px; }
-    .btn:hover { background: #162944; }
-    footer { background: #0F172A; color: #94A3B8; text-align: center; padding-block: 40px; padding-inline: 20px; font-size: 14px; }
-    footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <div class="nav-container">
-      <a href="index.html" class="logo-badge">
-        <img src="assets/app_icon_squircle.png" alt="Tenera Logo" class="logo-img" width="40" height="40">
-        <div class="logo-text">
-          <h1>Tenera</h1>
+
+  <header class="site-header">
+    <div class="container nav-bar">
+      <a href="index.html" class="brand-link">
+        <img src="assets/app_icon_squircle.png" alt="Tenera icon" class="brand-icon" width="40" height="40">
+        <span class="brand-wordmark">
+          <strong>Tenera</strong>
           <span>Property Manager</span>
-        </div>
+        </span>
       </a>
-      <nav aria-label="Primary">
-        <a href="index.html">Home</a>
-        <a href="index.html#features">Features</a>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="index.html">Overview</a>
+        <a href="index.html#features">Capabilities</a>
         <a href="index.html#pricing">Pricing</a>
+        <a href="index.html#install">Install</a>
         <a href="releases.html" aria-current="page">Changelog</a>
         <a href="privacy-policy.html">Privacy</a>
-        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="nav-cta">⬇️ Download APK</a>
       </nav>
+
+      <div class="nav-actions">
+        <button type="button" id="theme-toggle" class="theme-toggle" title="Switch light or dark theme">
+          <span class="icon-to-dark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span class="sr-only">Switch to dark theme</span>
+          </span>
+          <span class="icon-to-light">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <span class="sr-only">Switch to light theme</span>
+          </span>
+        </button>
+
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn btn-primary btn-sm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download APK</span>
+        </a>
+      </div>
     </div>
   </header>
 
-  <main class="container">
-    <h1>📋 Release Notes &amp; Changelog</h1>
-    <p style="color: var(--ink-muted); margin-block-end: 28px;">Track all official builds, features, and security improvements published to GitHub Releases.</p>
+  <main class="page-main">
+    <div class="container narrow-container">
+      <div class="section-header">
+        <span class="eyebrow">Release History</span>
+        <h1 class="section-title">Changelog &amp; APK Downloads</h1>
+        <p class="section-subtitle">Official builds, reliability fixes, and landlord tools published to GitHub Releases.</p>
+      </div>
 
-    <!-- v1.0.2 -->
-    <article class="card latest">
-      <span class="tag">✓ LATEST STABLE RELEASE</span>
-      <h2>Tenera Property Manager v1.0.2 (Startup Reliability &amp; Play Protect Fix)</h2>
-      <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Target: Android 7.0+ (API 24 to 35) · Offline SQLite SSOT</p>
+      <!-- v1.0.2 -->
+      <article class="release-card latest">
+        <span class="plan-badge">Latest Stable Release</span>
+        <h2>Tenera Property Manager v1.0.2</h2>
+        <p class="release-meta">Android 7.0+ (API 24–36) · Offline SQLite SSOT · Startup &amp; R8 Reliability Fix</p>
 
-      <h3>🚀 Fixes &amp; Improvements</h3>
-      <ul>
-        <li><strong>Instant Non-Blocking App Launch:</strong> Moved Firebase, Trial verification, and Google Mobile Ads initialization to run asynchronously after the first Flutter frame so the app never stalls on the native launch screen or exits on slow/offline devices.</li>
-        <li><strong>Startup Safety Guards:</strong> Eliminated the Firebase/TrialService initialization race condition and added timeouts + fallbacks for offline &amp; restricted-network environments.</li>
-        <li><strong>Play Protect Verified Clean Manifest:</strong> Removed leftover <code>SEND_SMS</code> permission from <code>AndroidManifest.xml</code>; all reminders use the device's default SMS app safely.</li>
-      </ul>
+        <h3>Fixes &amp; Reliability Improvements</h3>
+        <ul>
+          <li><strong>Android Release Startup Crash Fix (AGP 9 / R8):</strong> Added explicit ProGuard/R8 keep rules for RoomDatabase and WorkManager reflective constructors so release APKs launch cleanly on all Android devices.</li>
+          <li><strong>Instant Non-Blocking Launch:</strong> Moved Firebase, Trial verification, and Google Mobile Ads initialization to run asynchronously after the first Flutter frame so slow or offline devices never stall on startup.</li>
+          <li><strong>Play Protect Verified Clean Manifest:</strong> Removed leftover <code>SEND_SMS</code> permission from <code>AndroidManifest.xml</code>; all reminders use the device's default SMS app safely.</li>
+        </ul>
 
-      <a href="https://github.com/Watot12345/Tenera/releases/latest/download/Tenera-Property-Manager-v1.0.2.apk" class="btn">⬇️ Download Tenera Property Manager (v1.0.2)</a>
-    </article>
+        <a href="https://github.com/Watot12345/Tenera/releases/latest/download/Tenera-Property-Manager-v1.0.2.apk" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Download v1.0.2 APK</span>
+        </a>
+      </article>
 
-    <!-- v1.0.1 -->
-    <article class="card">
-      <span class="tag tag-prev">PREVIOUS RELEASE</span>
-      <h2>Version v1.0.1 (Audit, SOA, Operations &amp; Security Update)</h2>
-      <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Target: Android 7.0+ (API 24 to 35) · Offline SQLite SSOT</p>
+      <!-- v1.0.1 -->
+      <article class="release-card">
+        <span class="tier-chip">Previous Release</span>
+        <h2>Version v1.0.1 — Audit, SOA &amp; Operations Update</h2>
+        <p class="release-meta">Android 7.0+ · Offline SQLite SSOT</p>
 
-      <h3>🧾 Ledger, Partial Payments &amp; Security Deposit Escrow</h3>
-      <ul>
-        <li><strong>Partial &amp; Advance Payments (BR-6 / FR-E3):</strong> Record partial rent payments or advance credits with automatic running balance calculation.</li>
-        <li><strong>Tenant Statement of Account (SOA / FR-E4):</strong> Full chronological ledger per tenant showing rent charges, utility splits, payments, and running balance.</li>
-        <li><strong>Void &amp; Adjustment Audit Trail (BR-2 / FR-E6):</strong> Mistaken payment entries can be voided with a mandatory reason while preserving immutable financial history.</li>
-        <li><strong>Move-Out Deposit Settlement &amp; Escrow Reports (BR-4 / FR-D7 / FR-H7):</strong> Security deposits are tracked strictly as escrow liabilities (never inflated into collected rent income), with move-out deduction itemization and refund calculation.</li>
-      </ul>
+        <h3>Ledger, Partial Payments &amp; Security Deposit Escrow</h3>
+        <ul>
+          <li><strong>Partial &amp; Advance Payments:</strong> Record partial rent payments or advance credits with automatic running balance calculation.</li>
+          <li><strong>Tenant Statement of Account (SOA):</strong> Full chronological ledger per tenant showing rent charges, utility splits, payments, and running balance.</li>
+          <li><strong>Void &amp; Adjustment Audit Trail:</strong> Mistaken payment entries can be voided with a mandatory reason while preserving immutable history.</li>
+          <li><strong>Move-Out Deposit Settlement &amp; Escrow Reports:</strong> Security deposits are tracked strictly as escrow liabilities with itemized deductions and refund calculation.</li>
+        </ul>
 
-      <h3>🏢 Tenant ID, Late Fees, Maintenance &amp; Operations</h3>
-      <ul>
-        <li><strong>Government ID Attachment (FR-C2) &amp; Late-Fee Rules (FR-D5):</strong> Attach tenant ID photos offline and configure optional per-lease grace days and late penalties with 1-tap landlord waiver support.</li>
-        <li><strong>Expense Tracker &amp; Maintenance Tickets:</strong> Log operating expenses per property and track unit repair/maintenance tickets from reported to resolved.</li>
-        <li><strong>Arrears Aging Report (FR-H3) &amp; SQLite Health Check (FR-I4):</strong> Bucket overdue balances by 1–30, 31–60, 61–90, and 90+ days, and run on-demand SQLite <code>PRAGMA integrity_check</code> diagnostics.</li>
-        <li><strong>Sub-Meter Utility Splitter &amp; Printable Lease Contracts:</strong> Compute exact electric/water sub-meter shares and generate printable Philippine lease contracts.</li>
-      </ul>
+        <h3>Tenant ID, Late Fees, Maintenance &amp; Operations</h3>
+        <ul>
+          <li><strong>Government ID Attachment &amp; Late-Fee Rules:</strong> Attach tenant ID photos offline and configure optional grace days and late penalties with 1-tap waivers.</li>
+          <li><strong>Expense Tracker &amp; Maintenance Tickets:</strong> Log operating expenses per property and track unit repair tickets from reported to resolved.</li>
+          <li><strong>Arrears Aging &amp; SQLite Health Check:</strong> Bucket overdue balances by 1–30, 31–60, 61–90, and 90+ days, and run on-demand SQLite <code>PRAGMA integrity_check</code> diagnostics.</li>
+          <li><strong>Sub-Meter Utility Splitter &amp; Lease Contracts:</strong> Compute exact electric/water sub-meter shares and generate printable Philippine lease contracts.</li>
+        </ul>
+      </article>
 
-      <h3>🛡️ Security, Play Protect &amp; Experience</h3>
-      <ul>
-        <li><strong>Play Protect Verified Safe:</strong> Removed direct <code>SEND_SMS</code> permission in favor of launching the device's default SMS app with pre-filled reminders — eliminating Android Play Protect warnings.</li>
-        <li><strong>14-Day Anti-Bypass Trial &amp; Tier Gating:</strong> Full 14-day trial on install, Starter (₱49/mo, 1 property up to 15 units, AdMob supported), and 100% Ad-Free Tenera Pro &amp; Business tiers.</li>
-        <li><strong>Refined Light &amp; Dark Mode:</strong> High-contrast Roof Ledger palette with streamlined action buttons and zero redundant dialog clutter.</li>
-      </ul>
+      <!-- v1.0 -->
+      <article class="release-card">
+        <span class="tier-chip">Initial Release</span>
+        <h2>Version v1.0 — Initial Public Release</h2>
+        <p class="release-meta">October 2026 · Android 7.0+</p>
 
-      <a href="https://github.com/Watot12345/Tenera/releases/latest/download/app-release.apk" class="btn">⬇️ Download Tenera APK (v1.0.1)</a>
-    </article>
+        <h3>Core Architecture &amp; Features</h3>
+        <ul>
+          <li><strong>Offline SQLite SSOT:</strong> Properties, rooms, tenants, and payment logs stored locally on-device with live ledger math.</li>
+          <li><strong>Room Matrix &amp; Payment Logging:</strong> Visual room occupancy grid, live tenant search, cash photo proof, and GCash/Bank references.</li>
+          <li><strong>In-App Updates &amp; Optional Cloud Sync:</strong> Automatic GitHub Releases update checker and opt-in Firebase backup.</li>
+        </ul>
 
-    <!-- v1.0 -->
-    <article class="card">
-      <span class="tag tag-prev">PREVIOUS RELEASE</span>
-      <h2>Version v1.0 (Initial Public Release)</h2>
-      <p style="color: var(--ink-muted); font-size: 13.5px; margin-block-end: 14px;">Release Date: October 2026 · Target: Android 7.0+ (API 24 to 34+)</p>
-      
-      <h3>🚀 Architecture &amp; Features</h3>
-      <ul>
-        <li><strong>SQLite SSOT:</strong> Removed all static lists. All properties, rooms, tenants, and payment logs query and write to local SQLite.</li>
-        <li><strong>Dynamic Ledger Math:</strong> Live calculation of collected amount, expected amount, vacant units, and overdue counts.</li>
-        <li><strong>In-App Updates:</strong> Automated update checker using GitHub Releases API with changelog prompt and direct APK download.</li>
-        <li><strong>Firebase Cloud Sync:</strong> Optional SQLite-to-Firestore hybrid sync engine with device-partitioned landlord storage.</li>
-        <li><strong>Payment Logging:</strong> Live tenant candidate search, optional cash photo proof, and digital reference numbers for GCash / Bank Transfer.</li>
-        <li><strong>Room Matrix:</strong> Color-coded visual room status grid with tenant long-press vacate action.</li>
-      </ul>
-
-      <a href="https://github.com/Watot12345/Tenera/releases/tag/v1.0" target="_blank" rel="noopener" class="btn" style="background: #475569;">📦 View v1.0 on GitHub</a>
-    </article>
+        <a href="https://github.com/Watot12345/Tenera/releases/tag/v1.0" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">View v1.0 on GitHub</a>
+      </article>
+    </div>
   </main>
 
-  <footer>
-    <p>© 2026 Tenera Property Manager · <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener">GitHub Repository</a></p>
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>© 2026 Tenera Property Manager · Open Source under MIT License</p>
+        <p><a href="index.html">Home</a> · <a href="privacy-policy.html">Privacy &amp; Terms</a> · <a href="https://github.com/Watot12345/Tenera" target="_blank" rel="noopener">GitHub</a></p>
+      </div>
+    </div>
   </footer>
+
+  <script src="site.js" defer></script>
 </body>
 </html>
